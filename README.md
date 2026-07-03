@@ -1,22 +1,22 @@
 # 🚪 Doorli
 ### Everything Local. Delivered.
 
-> **Doorli** (internal codename: *LocalConnect*) is a community super-app that connects every local business, service, and venue to every resident — groceries, food, hotels, wedding halls, home repairs, beauty, and more — all in one app with real-time delivery and live tracking.
+> **Doorli** is a community super-app that connects every local business, service, and venue to every resident — groceries, food, hotels, wedding halls, home repairs, beauty, and more — all in one app with real-time delivery and live tracking.
 
 **Author:** AHSAN MOHAMMED · [ahsanmohammed828@gmail.com](mailto:ahsanmohammed828@gmail.com)
 
 ---
 
-## 📚 Source Documents
+## 📚 Planning Documents
 
-This README synthesizes two planning documents that define the full product and architecture:
+Internal architecture and build plans for Doorli:
 
 | Document | Purpose | Scope |
 |---|---|---|
-| `doorli.pdf` — **LocalConnect ESAD v1.0** | Enterprise Software Architecture Document | 100M-user scale, 40+ microservices, polyglot persistence, security/compliance, multi-region DR |
-| `LocalConnect_Implementation_Plan (1).pdf` | **Implementation Master Plan v1.0** | Zero-to-production build guide — modules, schema, APIs, week-by-week MVP plan, AI agent prompts |
+| `doorli.pdf` | Enterprise Architecture Document | Scale architecture, microservices, security, infrastructure, long-term roadmap |
+| `LocalConnect_Implementation_Plan (1).pdf` | Implementation Master Plan | Modules, schema, APIs, week-by-week MVP plan, build instructions |
 
-**How to use them together:** Start building from the Implementation Plan (pragmatic monorepo, 16-week MVP). Evolve toward the ESAD architecture as user scale and team size grow.
+**Build approach:** Ship the MVP first (monorepo, 16-week plan). Scale architecture as the platform grows.
 
 ---
 
@@ -24,11 +24,53 @@ This README synthesizes two planning documents that define the full product and 
 
 Doorli is the **one app your neighbourhood has always needed**.
 
-Think of it as having the power of Talabat + Uber + Airbnb + UrbanClap — but built specifically for your local community. Whether you are a housewife ordering groceries, a family booking a wedding hall, a business owner listing your shop, or a driver looking to earn — Doorli connects everyone in one seamless platform.
+Whether you are ordering groceries, booking a wedding hall, listing your shop, or driving deliveries in your area — Doorli connects everyone in one seamless platform built for your community.
 
-**Vision:** Build the Talabat + Uber + UrbanClap + Airbnb of local communities — one app that handles every daily need, powered by a local delivery network and real-time technology.
+No more calling shops one by one. No more driving across town for a plumber. No more phone tag to book a hall. Everything is one tap away.
 
-**Launch geography:** Sri Lanka (Phase 1) → South Asia (Phase 2) → Worldwide (Phase 3)
+---
+
+## ✨ Core Features
+
+### 🛒 Local Marketplace
+Order groceries, medicine, bakery items, hardware, and more from every shop in your area. Real-time stock, instant checkout, and doorstep delivery.
+
+### 🍽️ Food & Dining
+Restaurants, cafes, home cooks, and cloud kitchens — browse menus, customise orders, track delivery live on a map.
+
+### 🏨 Hotels & Rooms
+Book hotels, guesthouses, holiday villas, and rooms. See real availability, instant confirmation, no phone calls needed.
+
+### 🎉 Halls & Event Venues
+Wedding halls, banquet rooms, conference centres, outdoor grounds — browse, compare, and book for any occasion.
+
+### 📋 Event Planning
+Build a complete event package in one place — venue, catering, decoration, photography, entertainment. Manage everything from one dashboard.
+
+### 🔧 Home Services
+Need a plumber, electrician, AC technician, carpenter, or cleaner? Post a request and get a verified professional at your door fast.
+
+### 🚗 Delivery & Transport
+Real-time driver tracking, live order updates, transparent delivery fees. Every order tracked from shop to door.
+
+### 💈 Beauty & Wellness
+Salons, barbershops, spas, clinics — book time slots without phone calls.
+
+---
+
+## 👥 Who is Doorli For?
+
+**Customers** — residents who want everything local delivered or booked without hassle.
+
+**Shop & Restaurant Owners** — go digital instantly, receive orders, manage stock, and grow sales.
+
+**Hotels & Hall Owners** — get discovered, manage bookings, accept deposits online.
+
+**Home Service Professionals** — plumbers, electricians, cleaners — receive job requests near you and earn more.
+
+**Delivery Drivers & Riders** — earn flexibly by accepting deliveries in your area.
+
+**Event Planners** — coordinate vendors, budgets, and timelines all in one place.
 
 ---
 
@@ -553,8 +595,10 @@ Doorli was born from one simple observation: the best businesses in any communit
 
 We are building the infrastructure that lets every corner shop, every family restaurant, every skilled tradesperson, and every event venue compete in the digital world — not by replacing them, but by connecting them to the customers who are already looking for exactly what they offer.
 
-Our mission is to make local life frictionless. Doorli is not just an app. It is the digital heart of your local community.
+Our mission is to make local life frictionless. To make the person who needs groceries at 8pm able to get them without leaving home. To make the young couple planning their wedding able to compare halls and book caterers on a Sunday morning. To make the homeowner with a burst pipe able to find a trusted plumber in minutes, not hours.
+
+Doorli is not just an app. It is the digital heart of your local community.
 
 ---
 
-*Built with ❤️ for local communities everywhere. Start with Phase 1 MVP — ship to production in 4 months.*
+*Built with ❤️ for local communities everywhere.*

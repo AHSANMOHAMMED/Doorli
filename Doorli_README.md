@@ -11,7 +11,7 @@
 
 Doorli is the **one app your neighbourhood has always needed**.
 
-Think of it as having the power of Talabat + Uber + Airbnb + UrbanClap — but built specifically for your local community. Whether you are a housewife ordering groceries, a family booking a wedding hall, a business owner listing your shop, or a driver looking to earn — Doorli connects everyone in one seamless platform.
+Whether you are ordering groceries, booking a wedding hall, listing your shop, or driving deliveries in your area — Doorli connects everyone in one seamless platform built for your community.
 
 No more calling shops one by one. No more driving across town for a plumber. No more phone tag to book a hall. Everything is one tap away.
 
