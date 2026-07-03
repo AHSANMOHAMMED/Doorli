@@ -1,0 +1,11 @@
+{
+  "name": "doorli",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Doorli — Everything Local. Delivered.",
+  "author": {
+    "name": "AHSAN MOHAMMED",
+    "email": "ahsanmohammed828@gmail.com"
+  },
+  "license": "MIT"
+}
