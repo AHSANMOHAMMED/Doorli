@@ -1,2 +1,2 @@
-// Week 5+ — Vendor onboarding and management
-export {};
+export { default as vendorsRouter } from './vendors.routes.js';
+export * from './vendors.service.js';

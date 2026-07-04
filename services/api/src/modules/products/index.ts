@@ -1,2 +1,2 @@
-// Week 5+ — Product CRUD and stock management
-export {};
+export { default as productsRouter } from './products.routes.js';
+export * from './products.service.js';

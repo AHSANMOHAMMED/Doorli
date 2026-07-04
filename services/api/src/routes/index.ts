@@ -4,6 +4,8 @@ import { checkDatabaseConnection } from '../lib/db.js';
 import { checkRedisConnection } from '../lib/redis.js';
 import { authRouter } from '../modules/auth/index.js';
 import { usersRouter } from '../modules/users/index.js';
+import { vendorsRouter } from '../modules/vendors/index.js';
+import { productsRouter } from '../modules/products/index.js';
 
 const router = Router();
 
@@ -35,5 +37,7 @@ router.get('/api/v1', (_req: Request, res: Response) => {
 
 router.use('/api/v1/auth', authRouter);
 router.use('/api/v1/users', usersRouter);
+router.use('/api/v1/vendors', vendorsRouter);
+router.use('/api/v1/products', productsRouter);
 
 export default router;
