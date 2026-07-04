@@ -1,2 +1,1 @@
-// Week 3+ — User profiles and addresses
-export {};
+export { default as usersRouter } from './users.routes.js';

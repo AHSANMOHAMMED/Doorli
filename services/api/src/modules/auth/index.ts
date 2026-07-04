@@ -1,2 +1,2 @@
-// Week 3+ — Auth module (OTP, JWT, role registration)
-export {};
+export { default as authRouter } from './auth.routes.js';
+export * from './auth.service.js';
