@@ -1,0 +1,13 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+:root {
+  --doorli-primary: #2563eb;
+  --doorli-bg: #f8fafc;
+}
+
+body {
+  background-color: var(--doorli-bg);
+  color: #0f172a;
+}

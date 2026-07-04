@@ -512,7 +512,7 @@ git config --global user.email "ahsanmohammed828@gmail.com"
 - Redis 7
 - Docker (recommended)
 
-### Installation
+### Quick Start (Week 1–2 Foundation)
 
 ```bash
 # Clone the repository
@@ -525,14 +525,51 @@ npm install
 # Copy environment variables
 cp .env.example .env
 
-# Start all services with Docker
-docker-compose up -d
+# Start PostgreSQL + PostGIS and Redis
+docker compose up -d
 
-# Run database migrations
-npx prisma migrate dev
+# Generate Prisma client and run migrations
+npm run db:generate
+npm run db:migrate:deploy
 
-# Start development servers
+# Seed sample data (2 vendors, 10 products, test users)
+npm run db:seed
+
+# Start all dev servers (API :4000, vendor-web :3000, Expo :8081)
 npm run dev
+```
+
+**Verify the setup:**
+
+```bash
+curl http://localhost:4000/health
+# Expected: { "status": "ok", "db": true, "redis": true, ... }
+
+curl http://localhost:4000/api/v1
+# Expected: { "success": true, "data": { "name": "Doorli API", ... } }
+```
+
+Open `http://localhost:3000` for the vendor dashboard placeholder.  
+Open Expo DevTools (from `npm run dev`) for the mobile app placeholder.
+
+**Monorepo structure:**
+
+| Path | Purpose |
+|---|---|
+| `services/api` | Express API — auth, orders, bookings (Week 3+) |
+| `services/delivery` | Driver dispatch stub (Week 11+) |
+| `services/notifications` | Push/SMS stub (Week 15+) |
+| `apps/mobile` | Expo app — customer, vendor, driver |
+| `apps/vendor-web` | Next.js vendor dashboard |
+| `packages/db` | Prisma schema + migrations |
+| `packages/types` | Shared TypeScript types |
+| `packages/utils` | Shared helpers |
+
+### Installation (legacy reference)
+
+```bash
+# Run database migrations (interactive dev)
+npm run db:migrate
 ```
 
 ### Environment Variables
