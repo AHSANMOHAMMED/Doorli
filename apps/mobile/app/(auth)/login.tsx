@@ -14,7 +14,7 @@ import { API_URL } from '../../lib/api';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const setRole = useAuthStore((s) => s.setRole);
+  const login = useAuthStore((s) => s.login);
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
   const [fullName, setFullName] = useState('');
@@ -50,7 +50,11 @@ export default function LoginScreen() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Invalid OTP');
-      setRole(data.data.user.role);
+      login({
+        accessToken: data.data.accessToken,
+        refreshToken: data.data.refreshToken,
+        user: data.data.user,
+      });
       router.replace('/(customer)');
     } catch (err) {
       Alert.alert('Error', err instanceof Error ? err.message : 'Verification failed');
