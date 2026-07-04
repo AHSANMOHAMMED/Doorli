@@ -11,15 +11,17 @@
   },
   "dependencies": {
     "@doorli/db": "*",
+    "@doorli/delivery": "*",
     "@doorli/types": "*",
     "@doorli/utils": "*",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
     "helmet": "^8.0.0",
     "ioredis": "^5.4.2",
     "jsonwebtoken": "^9.0.2",
-    "express-rate-limit": "^7.5.0",
+    "socket.io": "^4.8.3",
     "swagger-ui-express": "^5.0.1",
     "zod": "^3.24.1"
   },

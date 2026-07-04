@@ -1,2 +1,1 @@
-// Week 9+ — Order service, cart, checkout, status flow
-export {};
+export { default as ordersRouter } from './orders.routes.js';

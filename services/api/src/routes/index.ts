@@ -6,6 +6,8 @@ import { authRouter } from '../modules/auth/index.js';
 import { usersRouter } from '../modules/users/index.js';
 import { vendorsRouter } from '../modules/vendors/index.js';
 import { productsRouter } from '../modules/products/index.js';
+import { ordersRouter } from '../modules/orders/index.js';
+import { driversRouter } from '../modules/drivers/index.js';
 
 const router = Router();
 
@@ -39,5 +41,7 @@ router.use('/api/v1/auth', authRouter);
 router.use('/api/v1/users', usersRouter);
 router.use('/api/v1/vendors', vendorsRouter);
 router.use('/api/v1/products', productsRouter);
+router.use('/api/v1/orders', ordersRouter);
+router.use('/api/v1/drivers', driversRouter);
 
 export default router;

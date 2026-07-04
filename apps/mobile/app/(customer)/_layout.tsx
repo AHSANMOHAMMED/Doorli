@@ -13,6 +13,9 @@ export default function CustomerLayout() {
       <Stack.Screen name="search" options={{ title: 'Search' }} />
       <Stack.Screen name="vendor/[id]" options={{ title: 'Shop' }} />
       <Stack.Screen name="cart" options={{ title: 'Cart' }} />
+      <Stack.Screen name="checkout/[vendorId]" options={{ title: 'Checkout' }} />
+      <Stack.Screen name="orders" options={{ title: 'My Orders' }} />
+      <Stack.Screen name="order/[id]" options={{ title: 'Order' }} />
     </Stack>
   );
 }

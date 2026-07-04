@@ -44,7 +44,11 @@ export default function CustomerHome() {
           <Text style={styles.greeting}>Hello, {user?.fullName?.split(' ')[0] ?? 'there'} 👋</Text>
           <Text style={styles.subtitle}>What do you need from your neighbourhood?</Text>
         </View>
-        <TouchableOpacity style={styles.cartBtn} onPress={() => router.push('/(customer)/cart')}>
+        <View style={styles.headerActions}>
+          <TouchableOpacity style={styles.ordersBtn} onPress={() => router.push('/(customer)/orders')}>
+            <Text style={styles.ordersIcon}>📦</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.cartBtn} onPress={() => router.push('/(customer)/cart')}>
           <Text style={styles.cartIcon}>🛒</Text>
           {cartCount > 0 && (
             <View style={styles.cartBadge}>
@@ -52,6 +56,7 @@ export default function CustomerHome() {
             </View>
           )}
         </TouchableOpacity>
+        </View>
       </View>
 
       <TouchableOpacity
@@ -98,6 +103,9 @@ const styles = StyleSheet.create({
   },
   greeting: { fontSize: 22, fontWeight: 'bold', color: '#0f172a' },
   subtitle: { fontSize: 14, color: '#64748b', marginTop: 4 },
+  headerActions: { flexDirection: 'row', alignItems: 'center' },
+  ordersBtn: { padding: 8 },
+  ordersIcon: { fontSize: 22 },
   cartBtn: { position: 'relative', padding: 8 },
   cartIcon: { fontSize: 24 },
   cartBadge: {

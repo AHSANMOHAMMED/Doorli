@@ -1,4 +1,4 @@
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCartStore } from '../../store/cart';
@@ -64,6 +64,12 @@ export default function CartScreen() {
                     </View>
                   </View>
                 ))}
+                <TouchableOpacity
+                  style={styles.vendorCheckout}
+                  onPress={() => router.push(`/(customer)/checkout/${vendorId}`)}
+                >
+                  <Text style={styles.vendorCheckoutText}>Checkout this shop</Text>
+                </TouchableOpacity>
               </View>
             )}
           />
@@ -74,9 +80,10 @@ export default function CartScreen() {
             </View>
             <TouchableOpacity
               style={styles.checkoutBtn}
-              onPress={() =>
-                Alert.alert('Coming soon', 'Checkout ships in Week 9–10')
-              }
+              onPress={() => {
+                const firstVendor = Object.keys(byVendor)[0];
+                if (firstVendor) router.push(`/(customer)/checkout/${firstVendor}`);
+              }}
             >
               <Text style={styles.checkoutText}>Proceed to checkout</Text>
             </TouchableOpacity>
@@ -137,6 +144,14 @@ const styles = StyleSheet.create({
   qtyText: { fontSize: 16, fontWeight: '600', color: '#334155' },
   qty: { fontSize: 15, fontWeight: '600', minWidth: 20, textAlign: 'center' },
   remove: { fontSize: 16, color: '#ef4444', marginLeft: 8 },
+  vendorCheckout: {
+    padding: 12,
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#e2e8f0',
+    backgroundColor: '#f8fafc',
+  },
+  vendorCheckoutText: { color: '#2563eb', fontWeight: '600', fontSize: 14 },
   footer: {
     backgroundColor: '#fff',
     padding: 16,
