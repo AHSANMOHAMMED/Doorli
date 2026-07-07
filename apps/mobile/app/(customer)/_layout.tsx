@@ -4,9 +4,11 @@ export default function CustomerLayout() {
   return (
     <Stack
       screenOptions={{
-        headerStyle: { backgroundColor: '#f8fafc' },
+        headerStyle: { backgroundColor: '#fff' },
         headerTintColor: '#2563eb',
         headerTitleStyle: { fontWeight: '600' },
+        headerShadowVisible: false,
+        contentStyle: { backgroundColor: '#f8fafc' },
       }}
     >
       <Stack.Screen name="index" options={{ headerShown: false }} />
@@ -15,7 +17,7 @@ export default function CustomerLayout() {
       <Stack.Screen name="cart" options={{ title: 'Cart' }} />
       <Stack.Screen name="checkout/[vendorId]" options={{ title: 'Checkout' }} />
       <Stack.Screen name="orders" options={{ title: 'My Orders' }} />
-      <Stack.Screen name="order/[id]" options={{ title: 'Order' }} />
+      <Stack.Screen name="order/[id]" options={{ title: 'Order Details' }} />
     </Stack>
   );
 }

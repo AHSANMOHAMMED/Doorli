@@ -7,32 +7,49 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../store/auth';
-import { API_URL } from '../../lib/api';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const login = useAuthStore((s) => s.login);
-  const [phone, setPhone] = useState('');
-  const [code, setCode] = useState('');
+  const signIn = useAuthStore((s) => s.signIn);
+  const signUp = useAuthStore((s) => s.signUp);
+  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [step, setStep] = useState<'phone' | 'otp'>('phone');
+  const [role, setRole] = useState<'customer' | 'vendor' | 'driver'>('customer');
   const [loading, setLoading] = useState(false);
 
-  async function sendOtp() {
+  async function handleSubmit() {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please enter email and password');
+      return;
+    }
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/v1/auth/send-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Failed to send OTP');
-      setStep('otp');
-      Alert.alert('OTP Sent', 'Check your SMS. In dev mode, see the API console.');
+      if (mode === 'signin') {
+        const { error } = await signIn(email, password);
+        if (error) {
+          Alert.alert('Error', error);
+          return;
+        }
+      } else {
+        if (!fullName) {
+          Alert.alert('Error', 'Please enter your name');
+          return;
+        }
+        const { error } = await signUp(email, password, fullName, role);
+        if (error) {
+          Alert.alert('Error', error);
+          return;
+        }
+      }
+      router.replace('/(customer)');
     } catch (err) {
       Alert.alert('Error', err instanceof Error ? err.message : 'Something went wrong');
     } finally {
@@ -40,82 +57,97 @@ export default function LoginScreen() {
     }
   }
 
-  async function verifyOtp() {
-    setLoading(true);
-    try {
-      const res = await fetch(`${API_URL}/api/v1/auth/verify-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, code, fullName: fullName || undefined, role: 'customer' }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Invalid OTP');
-      login({
-        accessToken: data.data.accessToken,
-        refreshToken: data.data.refreshToken,
-        user: data.data.user,
-      });
-      router.replace('/(customer)');
-    } catch (err) {
-      Alert.alert('Error', err instanceof Error ? err.message : 'Verification failed');
-    } finally {
-      setLoading(false);
-    }
-  }
-
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Sign in to Doorli</Text>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <Text style={styles.logo}>Doorli</Text>
+        <Text style={styles.tagline}>Everything Local. Delivered.</Text>
 
-      {step === 'phone' ? (
-        <>
-          <TextInput
-            style={styles.input}
-            placeholder="+94771234567"
-            keyboardType="phone-pad"
-            value={phone}
-            onChangeText={setPhone}
-          />
-          <TouchableOpacity style={styles.button} onPress={sendOtp} disabled={loading || !phone}>
-            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Send OTP</Text>}
+        <View style={styles.tabs}>
+          <TouchableOpacity
+            style={[styles.tab, mode === 'signin' && styles.tabActive]}
+            onPress={() => setMode('signin')}
+          >
+            <Text style={[styles.tabText, mode === 'signin' && styles.tabTextActive]}>Sign In</Text>
           </TouchableOpacity>
-        </>
-      ) : (
-        <>
+          <TouchableOpacity
+            style={[styles.tab, mode === 'signup' && styles.tabActive]}
+            onPress={() => setMode('signup')}
+          >
+            <Text style={[styles.tabText, mode === 'signup' && styles.tabTextActive]}>Sign Up</Text>
+          </TouchableOpacity>
+        </View>
+
+        {mode === 'signup' && (
           <TextInput
             style={styles.input}
-            placeholder="Your name (new users)"
+            placeholder="Full Name"
             value={fullName}
             onChangeText={setFullName}
           />
-          <TextInput
-            style={styles.input}
-            placeholder="6-digit OTP"
-            keyboardType="number-pad"
-            maxLength={6}
-            value={code}
-            onChangeText={setCode}
-          />
-          <TouchableOpacity
-            style={styles.button}
-            onPress={verifyOtp}
-            disabled={loading || code.length !== 6}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.buttonText}>Verify & Continue</Text>
-            )}
-          </TouchableOpacity>
-        </>
-      )}
-    </View>
+        )}
+
+        <TextInput
+          style={styles.input}
+          placeholder="Email"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          value={email}
+          onChangeText={setEmail}
+        />
+
+        <TextInput
+          style={styles.input}
+          placeholder="Password"
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+        />
+
+        {mode === 'signup' && (
+          <View style={styles.roleContainer}>
+            <Text style={styles.roleLabel}>I am a...</Text>
+            <View style={styles.roleButtons}>
+              {(['customer', 'vendor', 'driver'] as const).map((r) => (
+                <TouchableOpacity
+                  key={r}
+                  style={[styles.roleBtn, role === r && styles.roleBtnActive]}
+                  onPress={() => setRole(r)}
+                >
+                  <Text style={[styles.roleBtnText, role === r && styles.roleBtnTextActive]}>
+                    {r.charAt(0).toUpperCase() + r.slice(1)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
+
+        <TouchableOpacity style={styles.button} onPress={handleSubmit} disabled={loading}>
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>{mode === 'signin' ? 'Sign In' : 'Create Account'}</Text>
+          )}
+        </TouchableOpacity>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: '#f8fafc' },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#2563eb', marginBottom: 24, textAlign: 'center' },
+  container: { flex: 1, backgroundColor: '#f8fafc' },
+  scroll: { flexGrow: 1, justifyContent: 'center', padding: 24 },
+  logo: { fontSize: 32, fontWeight: 'bold', color: '#2563eb', textAlign: 'center' },
+  tagline: { fontSize: 14, color: '#64748b', textAlign: 'center', marginBottom: 32 },
+  tabs: { flexDirection: 'row', backgroundColor: '#e2e8f0', borderRadius: 12, padding: 4, marginBottom: 20 },
+  tab: { flex: 1, paddingVertical: 10, borderRadius: 8, alignItems: 'center' },
+  tabActive: { backgroundColor: '#2563eb' },
+  tabText: { fontSize: 14, fontWeight: '600', color: '#64748b' },
+  tabTextActive: { color: '#fff' },
   input: {
     backgroundColor: '#fff',
     borderWidth: 1,
@@ -125,6 +157,21 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     fontSize: 16,
   },
+  roleContainer: { marginBottom: 12 },
+  roleLabel: { fontSize: 14, fontWeight: '600', color: '#334155', marginBottom: 8 },
+  roleButtons: { flexDirection: 'row', gap: 8 },
+  roleBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    backgroundColor: '#fff',
+    alignItems: 'center',
+  },
+  roleBtnActive: { borderColor: '#2563eb', backgroundColor: '#eff6ff' },
+  roleBtnText: { fontSize: 13, fontWeight: '500', color: '#64748b' },
+  roleBtnTextActive: { color: '#2563eb' },
   button: {
     backgroundColor: '#2563eb',
     borderRadius: 12,

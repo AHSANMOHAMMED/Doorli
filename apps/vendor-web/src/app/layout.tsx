@@ -1,15 +1,18 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { AuthProvider } from '@/lib/auth-context';
 
 export const metadata: Metadata = {
-  title: 'Doorli Vendor Dashboard',
-  description: 'Manage orders, products, and bookings for your local business',
+  title: 'Doorli — Everything Local. Delivered.',
+  description: 'Manage your local business, orders, bookings, and deliveries on Doorli.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className="antialiased">
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 }

@@ -127,17 +127,17 @@ export class DispatchService {
     });
 
     const candidates = drivers
-      .map((d) => ({
+      .map((d: { userId: string; currentLatitude: { toString(): string } | null; currentLongitude: { toString(): string } | null }) => ({
         userId: d.userId,
         distanceKm: haversineKm(
           pickupLat,
           pickupLng,
-          Number(d.currentLatitude),
-          Number(d.currentLongitude),
+          Number(d.currentLatitude?.toString() ?? '0'),
+          Number(d.currentLongitude?.toString() ?? '0'),
         ),
       }))
-      .filter((d) => d.distanceKm <= state.radiusKm)
-      .sort((a, b) => a.distanceKm - b.distanceKm);
+      .filter((d: { distanceKm: number }) => d.distanceKm <= state.radiusKm)
+      .sort((a: { distanceKm: number }, b: { distanceKm: number }) => a.distanceKm - b.distanceKm);
 
     if (candidates.length === 0) {
       state.attemptCount += 1;

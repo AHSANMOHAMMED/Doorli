@@ -1,20 +1,34 @@
-import { Redirect } from 'expo-router';
+import { useEffect } from 'react';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useAuthStore } from '../store/auth';
 
-export default function IndexScreen() {
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const role = useAuthStore((s) => s.user?.role);
+export default function Index() {
+  const router = useRouter();
+  const { user, isAuthenticated, loading } = useAuthStore();
 
-  if (!isAuthenticated) {
-    return <Redirect href="/(auth)/login" />;
-  }
+  useEffect(() => {
+    if (loading) return;
+    if (!isAuthenticated || !user) {
+      router.replace('/(auth)/login');
+      return;
+    }
+    if (user.role === 'vendor') {
+      router.replace('/(vendor)/orders');
+    } else if (user.role === 'driver') {
+      router.replace('/(driver)/jobs');
+    } else {
+      router.replace('/(customer)');
+    }
+  }, [user, isAuthenticated, loading]);
 
-  if (role === 'vendor') {
-    return <Redirect href="/(vendor)/orders" />;
-  }
-  if (role === 'driver') {
-    return <Redirect href="/(driver)/jobs" />;
-  }
-
-  return <Redirect href="/(customer)" />;
+  return (
+    <View style={styles.container}>
+      <ActivityIndicator color="#2563eb" />
+    </View>
+  );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc' },
+});

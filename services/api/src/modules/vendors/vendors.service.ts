@@ -186,7 +186,7 @@ export async function findNearbyVendors(params: {
     LIMIT 50
   `;
 
-  return rows.map((row) => ({
+  return rows.map((row: NearbyRow) => ({
     id: row.id,
     businessName: row.business_name,
     category: row.category,

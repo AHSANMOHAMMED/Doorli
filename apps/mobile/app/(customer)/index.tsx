@@ -15,33 +15,34 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { VendorCategory } from '@doorli/types';
 import { CategoryTabs } from '../../components/CategoryTabs';
 import { VendorCard } from '../../components/VendorCard';
-import { fetchNearbyVendors, fetchVendors } from '../../lib/api';
+import { fetchVendors, type Vendor } from '../../lib/api';
 import { useCartStore } from '../../store/cart';
 import { useAuthStore } from '../../store/auth';
 
 export default function CustomerHome() {
   const router = useRouter();
   const [category, setCategory] = useState<VendorCategory | 'all'>('all');
+  const [search, setSearch] = useState('');
   const cartCount = useCartStore((s) => s.totalItems());
   const user = useAuthStore((s) => s.user);
 
   const { data, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['vendors', category],
-    queryFn: async () => {
-      if (category === 'all') {
-        const res = await fetchVendors();
-        return res.data?.items ?? [];
-      }
-      const res = await fetchNearbyVendors(category);
-      return res.data ?? [];
-    },
+    queryFn: async () => fetchVendors(category),
   });
+
+  const filtered = (data ?? []).filter(
+    (v: Vendor) =>
+      !search ||
+      v.business_name.toLowerCase().includes(search.toLowerCase()) ||
+      (v.city ?? '').toLowerCase().includes(search.toLowerCase()),
+  );
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>Hello, {user?.fullName?.split(' ')[0] ?? 'there'} 👋</Text>
+          <Text style={styles.greeting}>Hello, {user?.fullName?.split(' ')[0] ?? 'there'}</Text>
           <Text style={styles.subtitle}>What do you need from your neighbourhood?</Text>
         </View>
         <View style={styles.headerActions}>
@@ -49,22 +50,24 @@ export default function CustomerHome() {
             <Text style={styles.ordersIcon}>📦</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.cartBtn} onPress={() => router.push('/(customer)/cart')}>
-          <Text style={styles.cartIcon}>🛒</Text>
-          {cartCount > 0 && (
-            <View style={styles.cartBadge}>
-              <Text style={styles.cartBadgeText}>{cartCount}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
+            <Text style={styles.cartIcon}>🛒</Text>
+            {cartCount > 0 && (
+              <View style={styles.cartBadge}>
+                <Text style={styles.cartBadgeText}>{cartCount}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
         </View>
       </View>
 
-      <TouchableOpacity
-        style={styles.searchBar}
-        onPress={() => router.push('/(customer)/search')}
-      >
-        <Text style={styles.searchPlaceholder}>🔍 Search shops and products...</Text>
-      </TouchableOpacity>
+      <View style={styles.searchBar}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search shops and products..."
+          value={search}
+          onChangeText={setSearch}
+        />
+      </View>
 
       <CategoryTabs selected={category} onSelect={setCategory} />
 
@@ -72,7 +75,7 @@ export default function CustomerHome() {
         <ActivityIndicator style={styles.loader} color="#2563eb" />
       ) : (
         <FlatList
-          data={data ?? []}
+          data={filtered}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <VendorCard
@@ -84,7 +87,7 @@ export default function CustomerHome() {
           ListEmptyComponent={
             <Text style={styles.empty}>No shops found nearby. Pull to refresh.</Text>
           }
-          contentContainerStyle={data?.length === 0 ? styles.emptyContainer : undefined}
+          contentContainerStyle={filtered.length === 0 ? styles.emptyContainer : undefined}
         />
       )}
     </SafeAreaView>
@@ -125,11 +128,11 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     backgroundColor: '#fff',
     borderRadius: 12,
-    padding: 14,
     borderWidth: 1,
     borderColor: '#e2e8f0',
+    paddingHorizontal: 14,
   },
-  searchPlaceholder: { color: '#94a3b8', fontSize: 15 },
+  searchInput: { paddingVertical: 14, fontSize: 15 },
   loader: { marginTop: 40 },
   empty: { textAlign: 'center', color: '#94a3b8', marginTop: 40, paddingHorizontal: 24 },
   emptyContainer: { flexGrow: 1, justifyContent: 'center' },

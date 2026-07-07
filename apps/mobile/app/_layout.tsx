@@ -1,8 +1,27 @@
-import { Stack } from 'expo-router';
+import { useEffect } from 'react';
+import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useAuthStore } from '../store/auth';
 
 const queryClient = new QueryClient();
+
+function AuthGate() {
+  const router = useRouter();
+  const { isAuthenticated, loading, loadSession } = useAuthStore();
+
+  useEffect(() => {
+    loadSession();
+  }, []);
+
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      router.replace('/(auth)/login');
+    }
+  }, [loading, isAuthenticated]);
+
+  return null;
+}
 
 export default function RootLayout() {
   return (
@@ -15,6 +34,7 @@ export default function RootLayout() {
         <Stack.Screen name="(driver)" options={{ headerShown: false }} />
       </Stack>
       <StatusBar style="auto" />
+      <AuthGate />
     </QueryClientProvider>
   );
 }

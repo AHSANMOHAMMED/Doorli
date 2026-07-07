@@ -1,10 +1,8 @@
-import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { cancelOrder, fetchOrder, formatPrice, type DriverLocationUpdate } from '../../../lib/api';
-import { getSocket, joinSocketRooms } from '../../../lib/socket';
+import { cancelOrder, fetchOrder, formatPrice } from '../../../lib/api';
 
 const STATUS_STEPS = ['pending', 'confirmed', 'preparing', 'ready', 'picked_up', 'delivered'];
 
@@ -12,7 +10,7 @@ const STATUS_LABELS: Record<string, string> = {
   pending: 'Order placed',
   confirmed: 'Confirmed by shop',
   preparing: 'Being prepared',
-  ready: 'Ready',
+  ready: 'Ready for pickup',
   picked_up: 'Out for delivery',
   delivered: 'Delivered',
   cancelled: 'Cancelled',
@@ -21,45 +19,29 @@ const STATUS_LABELS: Record<string, string> = {
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const [driverLocation, setDriverLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const queryClient = useQueryClient();
 
-  const { data, isLoading, refetch } = useQuery({
+  const { data: order, isLoading, refetch } = useQuery({
     queryKey: ['order', id],
-    queryFn: () => fetchOrder(id),
+    queryFn: async () => fetchOrder(id),
     refetchInterval: 15000,
+    enabled: !!id,
   });
 
-  const order = data?.data;
-
-  useEffect(() => {
-    if (!id || !order) return;
-    if (!['picked_up', 'ready'].includes(order.status)) return;
-
-    joinSocketRooms(`order:${id}`);
-    const socket = getSocket();
-
-    const onLocation = (update: DriverLocationUpdate) => {
-      if (update.orderId === id) {
-        setDriverLocation({ lat: update.lat, lng: update.lng });
-      }
-    };
-
-    socket.on('driver:location_update', onLocation);
-    return () => {
-      socket.off('driver:location_update', onLocation);
-    };
-  }, [id, order?.status]);
-
   async function handleCancel() {
-    Alert.alert('Cancel order', 'Cancel this order within 2 minutes of placing?', [
+    Alert.alert('Cancel order', 'Cancel this order?', [
       { text: 'No', style: 'cancel' },
       {
         text: 'Yes, cancel',
         style: 'destructive',
         onPress: async () => {
-          const res = await cancelOrder(id);
-          if (res.success) refetch();
-          else Alert.alert('Could not cancel', res.error ?? 'Try again');
+          try {
+            await cancelOrder(id);
+            queryClient.invalidateQueries({ queryKey: ['order', id] });
+            queryClient.invalidateQueries({ queryKey: ['my-orders'] });
+          } catch (err) {
+            Alert.alert('Could not cancel', err instanceof Error ? err.message : 'Try again');
+          }
         },
       },
     ]);
@@ -75,12 +57,13 @@ export default function OrderDetailScreen() {
 
   const currentStep = STATUS_STEPS.indexOf(order.status);
   const canCancel = order.status === 'pending';
+  const items = order.order_items ?? [];
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.orderNumber}>{order.orderNumber}</Text>
-        <Text style={styles.vendor}>{order.vendor.businessName}</Text>
+        <Text style={styles.orderNumber}>{order.order_number}</Text>
+        <Text style={styles.vendor}>{order.vendor?.business_name ?? 'Shop'}</Text>
         <Text style={styles.status}>{STATUS_LABELS[order.status] ?? order.status}</Text>
 
         {order.status !== 'cancelled' && (
@@ -91,7 +74,6 @@ export default function OrderDetailScreen() {
                   style={[
                     styles.dot,
                     idx <= currentStep && styles.dotActive,
-                    order.status === 'cancelled' && styles.dotCancelled,
                   ]}
                 />
                 <Text style={[styles.stepLabel, idx <= currentStep && styles.stepLabelActive]}>
@@ -102,28 +84,14 @@ export default function OrderDetailScreen() {
           </View>
         )}
 
-        {order.estimatedDeliveryTime && order.status !== 'delivered' && (
-          <Text style={styles.eta}>Est. {order.estimatedDeliveryTime} min</Text>
-        )}
-
-        {driverLocation && order.status === 'picked_up' && (
-          <View style={styles.trackingCard}>
-            <Text style={styles.sectionTitle}>Driver location (live)</Text>
-            <Text style={styles.coords}>
-              {driverLocation.lat.toFixed(5)}, {driverLocation.lng.toFixed(5)}
-            </Text>
-            <Text style={styles.trackingHint}>Map view coming in a future update</Text>
-          </View>
-        )}
-
         <View style={styles.items}>
           <Text style={styles.sectionTitle}>Items</Text>
-          {order.items.map((item) => (
+          {items.map((item) => (
             <View key={item.id} style={styles.itemRow}>
               <Text style={styles.itemName}>
-                {item.product.name} × {item.quantity}
+                {item.name} × {item.quantity}
               </Text>
-              <Text>{formatPrice(item.totalPrice)}</Text>
+              <Text>{formatPrice(Number(item.price) * item.quantity)}</Text>
             </View>
           ))}
         </View>
@@ -131,17 +99,24 @@ export default function OrderDetailScreen() {
         <View style={styles.summary}>
           <View style={styles.summaryRow}>
             <Text>Subtotal</Text>
-            <Text>{formatPrice(order.subtotal)}</Text>
+            <Text>{formatPrice(Number(order.subtotal))}</Text>
           </View>
           <View style={styles.summaryRow}>
             <Text>Delivery</Text>
-            <Text>{formatPrice(order.deliveryFee)}</Text>
+            <Text>{formatPrice(Number(order.delivery_fee))}</Text>
           </View>
           <View style={[styles.summaryRow, styles.totalRow]}>
             <Text style={styles.totalLabel}>Total</Text>
-            <Text style={styles.totalValue}>{formatPrice(order.totalAmount)}</Text>
+            <Text style={styles.totalValue}>{formatPrice(Number(order.total_amount))}</Text>
           </View>
         </View>
+
+        {order.delivery_address && (
+          <View style={styles.addressCard}>
+            <Text style={styles.sectionTitle}>Delivery address</Text>
+            <Text style={styles.addressText}>{order.delivery_address}</Text>
+          </View>
+        )}
 
         {canCancel && (
           <TouchableOpacity style={styles.cancelBtn} onPress={handleCancel}>
@@ -159,63 +134,31 @@ export default function OrderDetailScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8fafc' },
-  content: { padding: 16 },
+  content: { padding: 16, paddingBottom: 32 },
   orderNumber: { fontSize: 18, fontWeight: '700', color: '#0f172a' },
   vendor: { fontSize: 15, color: '#64748b', marginTop: 4 },
   status: { fontSize: 16, fontWeight: '600', color: '#2563eb', marginTop: 8 },
-  eta: { marginTop: 8, color: '#64748b' },
-  trackingCard: {
-    marginTop: 16,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-  },
-  coords: { fontSize: 15, fontWeight: '600', color: '#0f172a', marginTop: 4 },
-  trackingHint: { fontSize: 12, color: '#94a3b8', marginTop: 4 },
   timeline: { marginTop: 20, backgroundColor: '#fff', borderRadius: 12, padding: 16 },
   stepRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#e2e8f0',
-    marginRight: 12,
-  },
+  dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#e2e8f0', marginRight: 12 },
   dotActive: { backgroundColor: '#2563eb' },
-  dotCancelled: { backgroundColor: '#ef4444' },
   stepLabel: { color: '#94a3b8', fontSize: 14 },
   stepLabelActive: { color: '#0f172a', fontWeight: '500' },
   items: { marginTop: 20 },
   sectionTitle: { fontWeight: '600', marginBottom: 8, color: '#64748b' },
   itemRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8 },
   itemName: { flex: 1, color: '#334155' },
-  summary: {
-    marginTop: 16,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-  },
+  summary: { marginTop: 16, backgroundColor: '#fff', borderRadius: 12, padding: 16 },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
   totalRow: { borderTopWidth: 1, borderTopColor: '#e2e8f0', paddingTop: 12, marginTop: 4 },
   totalLabel: { fontWeight: '600' },
   totalValue: { fontWeight: '700', color: '#2563eb' },
+  addressCard: { marginTop: 16, backgroundColor: '#fff', borderRadius: 12, padding: 16 },
+  addressText: { color: '#334155', fontSize: 14, lineHeight: 20 },
   cancelBtn: {
-    marginTop: 20,
-    padding: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#fecaca',
-    alignItems: 'center',
+    marginTop: 20, padding: 14, borderRadius: 12, borderWidth: 1, borderColor: '#fecaca', alignItems: 'center',
   },
   cancelText: { color: '#ef4444', fontWeight: '600' },
-  homeBtn: {
-    marginTop: 12,
-    padding: 14,
-    borderRadius: 12,
-    backgroundColor: '#2563eb',
-    alignItems: 'center',
-  },
+  homeBtn: { marginTop: 12, padding: 14, borderRadius: 12, backgroundColor: '#2563eb', alignItems: 'center' },
   homeBtnText: { color: '#fff', fontWeight: '600' },
 });

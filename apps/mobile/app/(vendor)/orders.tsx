@@ -7,7 +7,7 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchVendorOrders, formatPrice, updateOrderStatus } from '../../lib/api';
 
 const VENDOR_ACTIONS: Record<string, { label: string; next: string }[]> = {
@@ -27,17 +27,22 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export default function VendorOrders() {
+  const queryClient = useQueryClient();
   const { data, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['vendor-orders'],
     queryFn: fetchVendorOrders,
     refetchInterval: 10000,
   });
 
-  const orders = data?.data ?? [];
+  const orders = data ?? [];
 
   async function advanceStatus(orderId: string, status: string) {
-    await updateOrderStatus(orderId, status);
-    refetch();
+    try {
+      await updateOrderStatus(orderId, status);
+      queryClient.invalidateQueries({ queryKey: ['vendor-orders'] });
+    } catch (err) {
+      console.error('Failed to update order status:', err);
+    }
   }
 
   if (isLoading) {
@@ -63,16 +68,17 @@ export default function VendorOrders() {
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
           renderItem={({ item }) => {
             const actions = VENDOR_ACTIONS[item.status] ?? [];
+            const items = item.order_items ?? [];
             return (
               <View style={styles.card}>
                 <View style={styles.header}>
-                  <Text style={styles.orderNumber}>{item.orderNumber}</Text>
+                  <Text style={styles.orderNumber}>{item.order_number}</Text>
                   <Text style={styles.status}>{STATUS_LABELS[item.status] ?? item.status}</Text>
                 </View>
-                <Text style={styles.total}>{formatPrice(item.totalAmount)}</Text>
-                {item.items.map((line) => (
+                <Text style={styles.total}>{formatPrice(Number(item.total_amount))}</Text>
+                {items.map((line) => (
                   <Text key={line.id} style={styles.line}>
-                    {line.product.name} × {line.quantity}
+                    {line.name} × {line.quantity}
                   </Text>
                 ))}
                 <View style={styles.actions}>

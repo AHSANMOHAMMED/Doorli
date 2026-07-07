@@ -2,16 +2,16 @@ import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator }
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { fetchMyOrders, formatPrice } from '../../lib/api';
+import { fetchMyOrders, formatPrice, formatStatus } from '../../lib/api';
 
-const STATUS_LABELS: Record<string, string> = {
-  pending: 'Pending',
-  confirmed: 'Confirmed',
-  preparing: 'Preparing',
-  ready: 'Ready for pickup',
-  picked_up: 'Out for delivery',
-  delivered: 'Delivered',
-  cancelled: 'Cancelled',
+const STATUS_COLORS: Record<string, string> = {
+  pending: '#f59e0b',
+  confirmed: '#2563eb',
+  preparing: '#2563eb',
+  ready: '#2563eb',
+  picked_up: '#2563eb',
+  delivered: '#16a34a',
+  cancelled: '#ef4444',
 };
 
 export default function OrdersScreen() {
@@ -21,10 +21,11 @@ export default function OrdersScreen() {
     queryFn: fetchMyOrders,
   });
 
-  const orders = data?.data ?? [];
+  const orders = data ?? [];
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <Text style={styles.title}>My Orders</Text>
       {isLoading ? (
         <ActivityIndicator style={styles.loader} color="#2563eb" />
       ) : orders.length === 0 ? (
@@ -45,11 +46,18 @@ export default function OrdersScreen() {
               onPress={() => router.push(`/(customer)/order/${item.id}`)}
             >
               <View style={styles.cardHeader}>
-                <Text style={styles.orderNumber}>{item.orderNumber}</Text>
-                <Text style={styles.status}>{STATUS_LABELS[item.status] ?? item.status}</Text>
+                <Text style={styles.orderNumber}>{item.order_number}</Text>
+                <Text style={[styles.status, { color: STATUS_COLORS[item.status] ?? '#64748b' }]}>
+                  {formatStatus(item.status)}
+                </Text>
               </View>
-              <Text style={styles.vendor}>{item.vendor.businessName}</Text>
-              <Text style={styles.total}>{formatPrice(item.totalAmount)}</Text>
+              <Text style={styles.vendor}>{item.vendor?.business_name ?? 'Shop'}</Text>
+              <View style={styles.footer}>
+                <Text style={styles.total}>{formatPrice(Number(item.total_amount))}</Text>
+                <Text style={styles.date}>
+                  {new Date(item.created_at).toLocaleDateString()}
+                </Text>
+              </View>
             </TouchableOpacity>
           )}
         />
@@ -60,6 +68,7 @@ export default function OrdersScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8fafc' },
+  title: { fontSize: 22, fontWeight: 'bold', color: '#0f172a', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4 },
   loader: { marginTop: 48 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
   emptyIcon: { fontSize: 48, marginBottom: 12 },
@@ -75,8 +84,10 @@ const styles = StyleSheet.create({
     borderColor: '#e2e8f0',
   },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  orderNumber: { fontWeight: '600', color: '#0f172a' },
-  status: { fontSize: 13, color: '#2563eb', fontWeight: '500' },
+  orderNumber: { fontWeight: '600', color: '#0f172a', fontSize: 15 },
+  status: { fontSize: 13, fontWeight: '500' },
   vendor: { color: '#64748b', fontSize: 14 },
-  total: { marginTop: 8, fontWeight: '700', color: '#0f172a' },
+  footer: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
+  total: { fontWeight: '700', color: '#0f172a' },
+  date: { color: '#94a3b8', fontSize: 13 },
 });

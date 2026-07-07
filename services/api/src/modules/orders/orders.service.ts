@@ -1,4 +1,4 @@
-import { prisma, OrderStatus, Prisma } from '@doorli/db';
+import { prisma, OrderStatus, Prisma, type Product, type Vendor } from '@doorli/db';
 import type { UserRole } from '@doorli/types';
 import { calculateDeliveryFee, generateOrderNumber, haversineKm } from '@doorli/utils';
 import { AppError } from '../../middleware/errorHandler.js';
@@ -68,7 +68,7 @@ async function resolveLineItems(vendorId: string, items: OrderItemInput[]) {
     throw new AppError(400, 'One or more products are invalid for this shop');
   }
 
-  const productMap = new Map(products.map((p) => [p.id, p]));
+  const productMap = new Map<string, Product>(products.map((p: Product) => [p.id, p]));
   let subtotal = 0;
   const lineItems: {
     productId: string;
@@ -78,7 +78,7 @@ async function resolveLineItems(vendorId: string, items: OrderItemInput[]) {
   }[] = [];
 
   for (const item of items) {
-    const product = productMap.get(item.productId)!;
+    const product = productMap.get(item.productId) as Product;
     if (!product.isAvailable) {
       throw new AppError(400, `${product.name} is not available`);
     }
@@ -204,7 +204,7 @@ export async function createOrder(customerId: string, input: CreateOrderInput) {
   const totalAmount = subtotal + deliveryFee;
   const orderNumber = generateOrderNumber();
 
-  const order = await prisma.$transaction(async (tx) => {
+  const order = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     for (const item of lineItems) {
       const updated = await tx.product.updateMany({
         where: {
@@ -303,18 +303,18 @@ export async function listDriverOrders(driverUserId: string) {
 
   let available = readyOrders;
 
-  const vendorIds = [...new Set(readyOrders.map((o) => o.vendorId))];
+  const vendorIds = [...new Set(readyOrders.map((o: { vendorId: string }) => o.vendorId))];
   const vendors = await prisma.vendor.findMany({
     where: { id: { in: vendorIds } },
     select: { id: true, latitude: true, longitude: true, deliveryRadiusKm: true },
   });
-  const vendorMap = new Map(vendors.map((v) => [v.id, v]));
+  const vendorMap = new Map<string, typeof vendors[number]>(vendors.map((v) => [v.id, v]));
 
   if (driver.currentLatitude != null && driver.currentLongitude != null) {
     const driverLat = Number(driver.currentLatitude);
     const driverLng = Number(driver.currentLongitude);
-    available = readyOrders.filter((order) => {
-      const vendor = vendorMap.get(order.vendorId);
+    available = readyOrders.filter((order: { vendorId: string }) => {
+      const vendor = vendorMap.get(order.vendorId) as Vendor | undefined;
       if (!vendor?.latitude || !vendor?.longitude) return true;
       const dist = haversineKm(
         driverLat,
@@ -468,7 +468,7 @@ export async function cancelOrder(orderId: string, customerId: string) {
     throw new AppError(400, 'Cancellation window has expired (2 minutes)');
   }
 
-  const updated = await prisma.$transaction(async (tx) => {
+  const updated = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const items = await tx.orderItem.findMany({ where: { orderId } });
     for (const item of items) {
       await tx.product.update({
@@ -520,7 +520,7 @@ export async function updateOrderStatus(
     if (!vendor || vendor.id !== order.vendorId) {
       throw new AppError(403, 'Not your order');
     }
-    const allowed = VENDOR_TRANSITIONS[order.status] ?? [];
+    const allowed = VENDOR_TRANSITIONS[order.status as OrderStatus] ?? [];
     if (!allowed.includes(nextStatus)) {
       throw new AppError(400, `Cannot move from ${order.status} to ${nextStatus}`);
     }
@@ -528,7 +528,7 @@ export async function updateOrderStatus(
     if (order.driverId !== userId) {
       throw new AppError(403, 'Not assigned to this order');
     }
-    const allowed = DRIVER_TRANSITIONS[order.status] ?? [];
+    const allowed = DRIVER_TRANSITIONS[order.status as OrderStatus] ?? [];
     if (!allowed.includes(nextStatus)) {
       throw new AppError(400, `Cannot move from ${order.status} to ${nextStatus}`);
     }

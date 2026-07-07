@@ -4,10 +4,87 @@
 
 :root {
   --doorli-primary: #2563eb;
+  --doorli-primary-dark: #1e40af;
+  --doorli-primary-light: #3b82f6;
+  --doorli-accent: #0ea5e9;
+  --doorli-success: #16a34a;
+  --doorli-warning: #f59e0b;
+  --doorli-error: #dc2626;
   --doorli-bg: #f8fafc;
+  --doorli-surface: #ffffff;
+  --doorli-border: #e2e8f0;
+  --doorli-text: #0f172a;
+  --doorli-text-muted: #64748b;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
   background-color: var(--doorli-bg);
-  color: #0f172a;
+  color: var(--doorli-text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@layer components {
+  .card {
+    @apply bg-white rounded-xl border border-slate-200 shadow-sm;
+  }
+  .btn-primary {
+    @apply bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-secondary {
+    @apply bg-white text-slate-700 px-4 py-2 rounded-lg font-medium border border-slate-200 hover:bg-slate-50 transition-colors;
+  }
+  .btn-danger {
+    @apply bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors;
+  }
+  .input {
+    @apply w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all;
+  }
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  .badge-success {
+    @apply bg-green-100 text-green-700;
+  }
+  .badge-warning {
+    @apply bg-amber-100 text-amber-700;
+  }
+  .badge-error {
+    @apply bg-red-100 text-red-700;
+  }
+  .badge-info {
+    @apply bg-blue-100 text-blue-700;
+  }
+  .badge-neutral {
+    @apply bg-slate-100 text-slate-700;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
