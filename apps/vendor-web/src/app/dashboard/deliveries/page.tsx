@@ -4,17 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { createClient } from '@/lib/supabase/client';
 import type { Delivery, Order, Profile } from '@/lib/types';
-import {
-  Truck,
-  Package,
-  MapPin,
-  Check,
-  Loader2,
-  KeyRound,
-  Navigation,
-  ChevronDown,
-  ChevronUp,
-} from 'lucide-react';
+import { Truck, Package, MapPin, Check, Loader as Loader2, KeyRound, Navigation, ChevronDown, ChevronUp } from 'lucide-react';
 
 type DeliveryStatus = 'assigned' | 'picked_up' | 'in_transit' | 'delivered' | 'cancelled';
 

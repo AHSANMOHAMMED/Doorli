@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { createClient } from '@/lib/supabase/client';
 import type { Vendor } from '@/lib/types';
-import { Loader2, Store, User, Check, AlertCircle } from 'lucide-react';
+import { Loader as Loader2, Store, User, Check, CircleAlert as AlertCircle } from 'lucide-react';
 
 interface VendorForm {
   business_name: string;

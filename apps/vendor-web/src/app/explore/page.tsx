@@ -4,20 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import type { Vendor, VendorCategory } from '@/lib/types';
-import {
-  Search,
-  Star,
-  MapPin,
-  Store,
-  ShoppingBag,
-  Utensils,
-  Hotel,
-  Calendar,
-  Wrench,
-  Sparkles,
-  Loader2,
-  ArrowLeft,
-} from 'lucide-react';
+import { Search, Star, MapPin, Store, ShoppingBag, Utensils, Hotel, Calendar, Wrench, Sparkles, Loader as Loader2, ArrowLeft } from 'lucide-react';
 
 const CATEGORIES: { key: VendorCategory | 'all'; label: string; icon: typeof Store }[] = [
   { key: 'all', label: 'All', icon: Store },

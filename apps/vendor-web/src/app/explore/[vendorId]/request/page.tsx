@@ -6,16 +6,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/auth-context';
 import type { Vendor } from '@/lib/types';
-import {
-  Loader2,
-  ArrowLeft,
-  Wrench,
-  CheckCircle2,
-  Store,
-  MapPin,
-  Calendar,
-  AlertTriangle,
-} from 'lucide-react';
+import { Loader as Loader2, ArrowLeft, Wrench, CircleCheck as CheckCircle2, Store, MapPin, Calendar, TriangleAlert as AlertTriangle } from 'lucide-react';
 
 const URGENCY_LEVELS = ['low', 'medium', 'high'] as const;
 type Urgency = (typeof URGENCY_LEVELS)[number];

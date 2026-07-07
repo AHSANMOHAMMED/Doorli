@@ -4,14 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { createClient } from '@/lib/supabase/client';
 import type { Booking, BookingStatus, BookingType, Vendor, Profile } from '@/lib/types';
-import {
-  CalendarDays,
-  Check,
-  X,
-  Loader2,
-  ChevronDown,
-  ChevronUp,
-} from 'lucide-react';
+import { CalendarDays, Check, X, Loader as Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface BookingWithCustomer extends Booking {
   total_amount: number;

@@ -4,17 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { createClient } from '@/lib/supabase/client';
 import type { ServiceRequest, ServiceRequestStatus, Vendor, Profile } from '@/lib/types';
-import {
-  Wrench,
-  Check,
-  X,
-  Loader2,
-  Truck,
-  Play,
-  MapPin,
-  ChevronDown,
-  ChevronUp,
-} from 'lucide-react';
+import { Wrench, Check, X, Loader as Loader2, Truck, Play, MapPin, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface ServiceRequestWithCustomer extends ServiceRequest {
   profiles?: Pick<Profile, 'full_name' | 'phone'> | null;

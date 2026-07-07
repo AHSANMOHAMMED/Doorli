@@ -5,17 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { createClient } from '@/lib/supabase/client';
 import type { Vendor, VendorCategory, Profile } from '@/lib/types';
-import {
-  Store,
-  Search,
-  Star,
-  Eye,
-  CheckCircle,
-  XCircle,
-  Loader2,
-  ShieldCheck,
-  ShieldAlert,
-} from 'lucide-react';
+import { Store, Search, Star, Eye, CircleCheck as CheckCircle, Circle as XCircle, Loader as Loader2, ShieldCheck, ShieldAlert } from 'lucide-react';
 
 interface VendorWithOwner extends Vendor {
   profiles?: Pick<Profile, 'full_name'> | null;

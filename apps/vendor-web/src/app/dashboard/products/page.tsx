@@ -4,15 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { createClient } from '@/lib/supabase/client';
 import type { Product, Vendor, VendorCategory } from '@/lib/types';
-import {
-  Package,
-  Plus,
-  Pencil,
-  Trash2,
-  X,
-  Loader2,
-  Image as ImageIcon,
-} from 'lucide-react';
+import { Package, Plus, Pencil, Trash2, X, Loader as Loader2, Image as ImageIcon } from 'lucide-react';
 
 interface ProductForm {
   name: string;

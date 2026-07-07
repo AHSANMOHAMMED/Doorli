@@ -5,17 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { createClient } from '@/lib/supabase/client';
 import type { Profile, UserRole } from '@/lib/types';
-import {
-  Users,
-  Search,
-  UserCheck,
-  UserX,
-  Loader2,
-  ShieldAlert,
-  ShieldCheck,
-  Mail,
-  Phone,
-} from 'lucide-react';
+import { Users, Search, UserCheck, UserX, Loader as Loader2, ShieldAlert, ShieldCheck, Mail, Phone } from 'lucide-react';
 
 const ROLE_FILTERS: { value: string; label: string }[] = [
   { value: 'all', label: 'All Roles' },

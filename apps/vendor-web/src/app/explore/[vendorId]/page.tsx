@@ -6,21 +6,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/auth-context';
 import type { Vendor, Product, Review, Profile, Cart, CartItem } from '@/lib/types';
-import {
-  Star,
-  MapPin,
-  Phone,
-  Clock,
-  ShoppingCart,
-  Plus,
-  Loader2,
-  ArrowLeft,
-  Store,
-  Calendar,
-  Wrench,
-  Package,
-  MessageSquare,
-} from 'lucide-react';
+import { Star, MapPin, Phone, Clock, ShoppingCart, Plus, Loader as Loader2, ArrowLeft, Store, Calendar, Wrench, Package, MessageSquare } from 'lucide-react';
 
 function StarRating({ rating, size = 'w-4 h-4' }: { rating: number; size?: string }) {
   return (

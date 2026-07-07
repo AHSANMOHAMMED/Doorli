@@ -6,21 +6,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/auth-context';
 import type { CartItem, Product, Vendor } from '@/lib/types';
-import {
-  ShoppingCart,
-  Loader2,
-  ArrowLeft,
-  ArrowRight,
-  Plus,
-  Minus,
-  Trash2,
-  Store,
-  CheckCircle2,
-  Truck,
-  CreditCard,
-  Wallet,
-  Banknote,
-} from 'lucide-react';
+import { ShoppingCart, Loader as Loader2, ArrowLeft, ArrowRight, Plus, Minus, Trash2, Store, CircleCheck as CheckCircle2, Truck, CreditCard, Wallet, Banknote } from 'lucide-react';
 
 const DELIVERY_FEE = 30;
 

@@ -6,16 +6,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/auth-context';
 import type { Vendor, BookingType, VendorCategory } from '@/lib/types';
-import {
-  Loader2,
-  ArrowLeft,
-  Calendar,
-  CheckCircle2,
-  Store,
-  Clock,
-  Users,
-  DollarSign,
-} from 'lucide-react';
+import { Loader as Loader2, ArrowLeft, Calendar, CircleCheck as CheckCircle2, Store, Clock, Users, DollarSign } from 'lucide-react';
 
 const FLAT_RATE: Record<VendorCategory, number> = {
   hotel: 100,

@@ -4,16 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { createClient } from '@/lib/supabase/client';
 import type { Order, OrderItem, Vendor, Profile, OrderStatus } from '@/lib/types';
-import {
-  ShoppingBag,
-  ChevronDown,
-  ChevronUp,
-  Check,
-  ChefHat,
-  PackageCheck,
-  X,
-  Loader2,
-} from 'lucide-react';
+import { ShoppingBag, ChevronDown, ChevronUp, Check, ChefHat, PackageCheck, X, Loader as Loader2 } from 'lucide-react';
 
 interface OrderWithCustomer extends Order {
   profiles?: Pick<Profile, 'full_name' | 'phone'> | null;

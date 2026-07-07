@@ -6,14 +6,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/auth-context';
 import type { Vendor } from '@/lib/types';
-import {
-  Star,
-  Loader2,
-  ArrowLeft,
-  CheckCircle2,
-  Store,
-  MessageSquare,
-} from 'lucide-react';
+import { Star, Loader as Loader2, ArrowLeft, CircleCheck as CheckCircle2, Store, MessageSquare } from 'lucide-react';
 
 export default function ReviewPage() {
   const params = useParams();

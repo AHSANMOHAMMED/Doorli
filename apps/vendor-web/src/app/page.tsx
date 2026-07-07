@@ -1,21 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import {
-  ShoppingBag,
-  Utensils,
-  Hotel,
-  Calendar,
-  Wrench,
-  Sparkles,
-  ArrowRight,
-  Store,
-  Users,
-  Truck,
-  Search,
-  PackageCheck,
-  CheckCircle2,
-} from 'lucide-react';
+import { ShoppingBag, Utensils, Hotel, Calendar, Wrench, Sparkles, ArrowRight, Store, Users, Truck, Search, PackageCheck, CircleCheck as CheckCircle2 } from 'lucide-react';
 
 const CATEGORIES = [
   {

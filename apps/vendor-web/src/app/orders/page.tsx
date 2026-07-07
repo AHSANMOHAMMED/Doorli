@@ -6,18 +6,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/auth-context';
 import type { Order, OrderItem, Vendor, OrderStatus, Booking, ServiceRequest } from '@/lib/types';
-import {
-  ShoppingBag,
-  ChevronDown,
-  ChevronUp,
-  Loader2,
-  ArrowLeft,
-  Store,
-  Star,
-  Calendar,
-  Wrench,
-  Package,
-} from 'lucide-react';
+import { ShoppingBag, ChevronDown, ChevronUp, Loader as Loader2, ArrowLeft, Store, Star, Calendar, Wrench, Package } from 'lucide-react';
 
 type FilterTab = 'all' | OrderStatus;
 type ViewTab = 'orders' | 'bookings' | 'requests';
