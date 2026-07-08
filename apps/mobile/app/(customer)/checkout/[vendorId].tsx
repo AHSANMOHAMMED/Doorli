@@ -11,6 +11,10 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { BlurView } from 'expo-blur';
+import { GlassCard } from '../../../components/GlassCard';
+import { GlassInput } from '../../../components/GlassInput';
+import { GlassButton } from '../../../components/GlassButton';
 import { createOrder, formatPrice } from '../../../lib/api';
 import { useCartStore } from '../../../store/cart';
 import { MapPin, Banknote, CreditCard, Wallet, FileText, ShoppingBag, ArrowLeft } from 'lucide-react-native';
@@ -63,13 +67,11 @@ export default function CheckoutScreen() {
   if (!items.length) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.emptyCard}>
-          <ShoppingBag color="#cbd5e1" size={48} />
+        <GlassCard style={styles.emptyCard}>
+          <ShoppingBag color="rgba(255,255,255,0.7)" size={48} />
           <Text style={styles.empty}>No items for this shop in your cart.</Text>
-          <TouchableOpacity style={styles.btn} onPress={() => router.back()}>
-            <Text style={styles.btnText}>Back to cart</Text>
-          </TouchableOpacity>
-        </View>
+          <GlassButton style={{ marginTop: 24 }} title="Back to cart" onPress={() => router.back()} />
+        </GlassCard>
       </SafeAreaView>
     );
   }
@@ -78,7 +80,7 @@ export default function CheckoutScreen() {
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <ArrowLeft color="#0f172a" size={24} />
+          <ArrowLeft color="#fff" size={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Checkout</Text>
         <View style={{ width: 44 }} />
@@ -89,13 +91,12 @@ export default function CheckoutScreen() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <MapPin color="#2563eb" size={20} />
+            <MapPin color="#0ea5e9" size={20} />
             <Text style={styles.sectionTitle}>Delivery Address</Text>
           </View>
-          <TextInput
-            style={styles.input}
+          <GlassInput
+            style={{ minHeight: 80, textAlignVertical: 'top' }}
             placeholder="Enter your exact delivery address..."
-            placeholderTextColor="#94a3b8"
             value={address}
             onChangeText={setAddress}
             multiline
@@ -104,10 +105,10 @@ export default function CheckoutScreen() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <ShoppingBag color="#2563eb" size={20} />
+            <ShoppingBag color="#0ea5e9" size={20} />
             <Text style={styles.sectionTitle}>Order Items</Text>
           </View>
-          <View style={styles.itemsCard}>
+          <GlassCard style={styles.itemsCard}>
             {items.map((item, index) => (
               <View key={item.productId} style={[styles.itemRow, index === items.length - 1 && styles.lastItemRow]}>
                 <Text style={styles.itemName} numberOfLines={2}>
@@ -116,12 +117,12 @@ export default function CheckoutScreen() {
                 <Text style={styles.itemPrice}>{formatPrice(item.price * item.quantity)}</Text>
               </View>
             ))}
-          </View>
+          </GlassCard>
         </View>
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Wallet color="#2563eb" size={20} />
+            <Wallet color="#0ea5e9" size={20} />
             <Text style={styles.sectionTitle}>Payment Method</Text>
           </View>
           <View style={styles.row}>
@@ -135,13 +136,16 @@ export default function CheckoutScreen() {
               return (
                 <TouchableOpacity
                   key={m.key}
-                  style={[styles.chip, isActive && styles.chipActive]}
+                  style={[styles.chipWrapper, isActive && styles.chipWrapperActive]}
                   onPress={() => setPaymentMethod(m.key)}
+                  activeOpacity={0.7}
                 >
-                  <Icon color={isActive ? '#2563eb' : '#64748b'} size={18} />
-                  <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
-                    {m.label}
-                  </Text>
+                  <BlurView intensity={20} tint="dark" style={[styles.chip, isActive && styles.chipActive]}>
+                    <Icon color={isActive ? '#fff' : 'rgba(255,255,255,0.7)'} size={18} />
+                    <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
+                      {m.label}
+                    </Text>
+                  </BlurView>
                 </TouchableOpacity>
               );
             })}
@@ -150,20 +154,19 @@ export default function CheckoutScreen() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <FileText color="#2563eb" size={20} />
+            <FileText color="#0ea5e9" size={20} />
             <Text style={styles.sectionTitle}>Special Instructions</Text>
           </View>
-          <TextInput
-            style={styles.input}
+          <GlassInput
+            style={{ minHeight: 80, textAlignVertical: 'top' }}
             placeholder="E.g. Ring the bell, drop at the door..."
-            placeholderTextColor="#94a3b8"
             value={instructions}
             onChangeText={setInstructions}
             multiline
           />
         </View>
 
-        <View style={styles.summary}>
+        <GlassCard style={styles.summary}>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Subtotal</Text>
             <Text style={styles.summaryValue}>{formatPrice(subtotal)}</Text>
@@ -176,172 +179,100 @@ export default function CheckoutScreen() {
             <Text style={styles.totalLabel}>Total to Pay</Text>
             <Text style={styles.totalValue}>{formatPrice(total)}</Text>
           </View>
-        </View>
+        </GlassCard>
       </ScrollView>
 
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={[styles.placeBtn, placing && styles.placeBtnDisabled]}
+      <BlurView intensity={30} tint="dark" style={styles.footer}>
+        <GlassButton
           onPress={placeOrder}
           disabled={placing}
-        >
-          {placing ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <View style={styles.placeBtnContent}>
-              <Text style={styles.placeBtnText}>Confirm & Pay</Text>
-              <Text style={styles.placeBtnTotal}>{formatPrice(total)}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
-      </View>
+          title={placing ? "Processing..." : `Confirm & Pay  •  ${formatPrice(total)}`}
+        />
+      </BlurView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8fafc' },
+  container: { flex: 1, backgroundColor: 'transparent' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
   },
   backBtn: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#f8fafc',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: '#0f172a' },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: '#fff' },
   content: { padding: 16, paddingBottom: 32 },
   emptyCard: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 32,
+    margin: 16,
   },
-  empty: { textAlign: 'center', marginTop: 16, color: '#64748b', fontSize: 16 },
-  btn: {
-    marginTop: 24,
-    backgroundColor: '#2563eb',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 16,
-  },
-  btnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
-  shopName: { fontSize: 24, fontWeight: '800', color: '#0f172a', marginBottom: 24 },
+  empty: { textAlign: 'center', marginTop: 16, color: 'rgba(255,255,255,0.7)', fontSize: 16 },
+  shopName: { fontSize: 24, fontWeight: '800', color: '#fff', marginBottom: 24 },
   section: { marginBottom: 28 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#1e293b' },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#fff' },
   row: { flexDirection: 'row', gap: 12, flexWrap: 'wrap' },
+  chipWrapper: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
+  chipWrapperActive: {
+    borderColor: 'rgba(14, 165, 233, 0.8)',
+  },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderRadius: 16,
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    shadowColor: '#94a3b8',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
+    backgroundColor: 'rgba(255,255,255,0.05)',
   },
-  chipActive: { backgroundColor: '#eff6ff', borderColor: '#3b82f6', borderWidth: 2 },
-  chipText: { fontSize: 15, fontWeight: '600', color: '#64748b' },
-  chipTextActive: { color: '#2563eb' },
-  input: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    borderRadius: 16,
-    padding: 16,
-    minHeight: 80,
-    textAlignVertical: 'top',
-    fontSize: 15,
-    color: '#0f172a',
-    shadowColor: '#94a3b8',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
-  },
+  chipActive: { backgroundColor: 'rgba(14, 165, 233, 0.4)' },
+  chipText: { fontSize: 15, fontWeight: '600', color: 'rgba(255,255,255,0.7)' },
+  chipTextActive: { color: '#fff' },
   itemsCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
     padding: 16,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    shadowColor: '#94a3b8',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
   },
   itemRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
+    borderBottomColor: 'rgba(255,255,255,0.1)',
   },
   lastItemRow: { borderBottomWidth: 0, paddingBottom: 0 },
-  itemName: { flex: 1, color: '#334155', fontSize: 15, fontWeight: '500', paddingRight: 16 },
-  itemPrice: { fontWeight: '700', color: '#0f172a', fontSize: 15 },
+  itemName: { flex: 1, color: '#fff', fontSize: 15, fontWeight: '500', paddingRight: 16 },
+  itemPrice: { fontWeight: '700', color: '#fff', fontSize: 15 },
   summary: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
     padding: 20,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    shadowColor: '#94a3b8',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 2,
   },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
-  summaryLabel: { color: '#64748b', fontSize: 15 },
-  summaryValue: { color: '#0f172a', fontSize: 15, fontWeight: '600' },
-  totalRow: { marginTop: 8, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#e2e8f0' },
-  totalLabel: { fontSize: 16, fontWeight: '700', color: '#0f172a' },
-  totalValue: { fontSize: 20, fontWeight: '800', color: '#2563eb' },
+  summaryLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 15 },
+  summaryValue: { color: '#fff', fontSize: 15, fontWeight: '600' },
+  totalRow: { marginTop: 8, paddingTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)' },
+  totalLabel: { fontSize: 16, fontWeight: '700', color: '#fff' },
+  totalValue: { fontSize: 20, fontWeight: '800', color: '#0ea5e9' },
   footer: {
     padding: 16,
     paddingBottom: 24,
-    backgroundColor: '#fff',
     borderTopWidth: 1,
-    borderTopColor: '#e2e8f0',
+    borderTopColor: 'rgba(255,255,255,0.1)',
   },
-  placeBtn: {
-    backgroundColor: '#2563eb',
-    padding: 16,
-    borderRadius: 16,
-    alignItems: 'center',
-    shadowColor: '#2563eb',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  placeBtnDisabled: { opacity: 0.7 },
-  placeBtnContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
-    paddingHorizontal: 8,
-  },
-  placeBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  placeBtnTotal: { color: '#fff', fontSize: 16, fontWeight: '800', opacity: 0.9 },
 });

@@ -14,7 +14,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProductCard } from '../../../components/ProductCard';
-import { fetchVendor, fetchVendorReviews, formatPrice } from '../../../lib/api';
+import { GlassCard } from '../../../components/GlassCard';
+import { fetchVendor, fetchVendorReviews, formatPrice, Product } from '../../../lib/api';
 import { useCartStore } from '../../../store/cart';
 import { Star, MapPin, Clock, ArrowLeft, CalendarDays, Wrench } from 'lucide-react-native';
 
@@ -36,7 +37,7 @@ export default function VendorDetailScreen() {
     enabled: !!id,
   });
 
-  function handleAdd(product: (typeof vendor extends { products: infer P } ? P : never)[number]) {
+  function handleAdd(product: Product) {
     if (!vendor) return;
     const price = Number(product.discount_price ?? product.price);
     addItem({
@@ -81,7 +82,7 @@ export default function VendorDetailScreen() {
         </ImageBackground>
 
         <View style={styles.content}>
-          <View style={styles.infoCard}>
+          <GlassCard style={styles.infoCard}>
             <View style={styles.infoRow}>
               <Star color="#f59e0b" fill="#f59e0b" size={18} />
               <Text style={styles.ratingText}>{Number(vendor.avg_rating).toFixed(1)}</Text>
@@ -89,7 +90,7 @@ export default function VendorDetailScreen() {
             </View>
             
             <View style={styles.infoRow}>
-              <Clock color="#64748b" size={16} />
+              <Clock color="rgba(255,255,255,0.7)" size={16} />
               <Text style={[styles.statusText, { color: vendor.is_open ? '#10b981' : '#ef4444' }]}>
                 {vendor.is_open ? 'Open Now' : 'Closed'}
               </Text>
@@ -100,13 +101,13 @@ export default function VendorDetailScreen() {
 
             {vendor.address_line && (
               <View style={styles.infoRow}>
-                <MapPin color="#64748b" size={16} />
+                <MapPin color="rgba(255,255,255,0.7)" size={16} />
                 <Text style={styles.addressText} numberOfLines={2}>{vendor.address_line}</Text>
               </View>
             )}
 
             {vendor.description && <Text style={styles.desc}>{vendor.description}</Text>}
-          </View>
+          </GlassCard>
 
           {(isBookable || isService) && (
             <View style={styles.actionRow}>
@@ -137,9 +138,9 @@ export default function VendorDetailScreen() {
               <ProductCard key={item.id} product={item} onAdd={() => handleAdd(item)} />
             ))}
             {(!vendor.products || vendor.products.length === 0) && (
-              <View style={styles.emptyCard}>
+              <GlassCard style={styles.emptyCard}>
                 <Text style={styles.empty}>No products available right now.</Text>
-              </View>
+              </GlassCard>
             )}
           </View>
 
@@ -147,14 +148,14 @@ export default function VendorDetailScreen() {
             <View style={styles.reviewsSection}>
               <Text style={styles.sectionTitle}>Customer Reviews ({reviews.length})</Text>
               {reviews.slice(0, 5).map((r: any) => (
-                <View key={r.id} style={styles.reviewCard}>
+                <GlassCard key={r.id} style={styles.reviewCard}>
                   <View style={styles.reviewStarsRow}>
                     {Array.from({ length: 5 }).map((_, i) => (
-                      <Star key={i} color={i < r.rating ? '#f59e0b' : '#cbd5e1'} fill={i < r.rating ? '#f59e0b' : 'transparent'} size={14} />
+                      <Star key={i} color={i < r.rating ? '#f59e0b' : 'rgba(255,255,255,0.2)'} fill={i < r.rating ? '#f59e0b' : 'transparent'} size={14} />
                     ))}
                   </View>
                   {r.comment && <Text style={styles.reviewComment}>{r.comment}</Text>}
-                </View>
+                </GlassCard>
               ))}
             </View>
           )}
@@ -165,7 +166,7 @@ export default function VendorDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8fafc' },
+  container: { flex: 1, backgroundColor: 'transparent' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   banner: {
     height: 280,
@@ -174,7 +175,7 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: 'rgba(0,0,0,0.5)', // Darker overlay for better contrast
   },
   navRow: {
     flexDirection: 'row',
@@ -185,14 +186,11 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    backgroundColor: 'rgba(255,255,255,0.1)', // Glass back btn
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   bannerContent: {
     padding: 24,
@@ -210,29 +208,20 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: '800',
     color: '#fff',
-    textShadowColor: 'rgba(0,0,0,0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
   },
   content: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: 'transparent',
     marginTop: -20,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
     paddingHorizontal: 16,
     paddingTop: 24,
     paddingBottom: 40,
   },
   infoCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
     padding: 16,
-    shadowColor: '#94a3b8',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 2,
     marginBottom: 24,
   },
   infoRow: {
@@ -241,33 +230,30 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     gap: 8,
   },
-  ratingText: { fontSize: 16, fontWeight: '700', color: '#0f172a' },
-  reviewsText: { fontSize: 14, color: '#64748b' },
+  ratingText: { fontSize: 16, fontWeight: '700', color: '#fff' },
+  reviewsText: { fontSize: 14, color: 'rgba(255,255,255,0.7)' },
   statusText: { fontSize: 14, fontWeight: '600' },
-  minOrderText: { fontSize: 14, color: '#64748b' },
-  addressText: { fontSize: 14, color: '#475569', flex: 1, lineHeight: 20 },
-  desc: { fontSize: 14, color: '#475569', lineHeight: 22, marginTop: 8, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#f1f5f9' },
+  minOrderText: { fontSize: 14, color: 'rgba(255,255,255,0.7)' },
+  addressText: { fontSize: 14, color: 'rgba(255,255,255,0.8)', flex: 1, lineHeight: 20 },
+  desc: { fontSize: 14, color: 'rgba(255,255,255,0.8)', lineHeight: 22, marginTop: 8, paddingTop: 12, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)' },
   actionRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
   actionBtnPrimary: {
     flex: 1,
     flexDirection: 'row',
-    backgroundColor: '#2563eb',
+    backgroundColor: 'rgba(37, 99, 235, 0.4)',
+    borderWidth: 1,
+    borderColor: 'rgba(37, 99, 235, 0.8)',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    shadowColor: '#2563eb',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
   },
   actionBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   sectionTitle: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#0f172a',
+    color: '#fff',
     marginBottom: 16,
   },
   productsList: {
@@ -275,24 +261,15 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   emptyCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
     padding: 24,
     alignItems: 'center',
   },
-  empty: { textAlign: 'center', color: '#64748b', fontSize: 15 },
+  empty: { textAlign: 'center', color: 'rgba(255,255,255,0.6)', fontSize: 15 },
   reviewsSection: { marginBottom: 20 },
   reviewCard: {
-    backgroundColor: '#fff',
     marginBottom: 12,
     padding: 16,
-    borderRadius: 16,
-    shadowColor: '#94a3b8',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 1,
   },
   reviewStarsRow: { flexDirection: 'row', gap: 2, marginBottom: 8 },
-  reviewComment: { fontSize: 15, color: '#334155', lineHeight: 22 },
+  reviewComment: { fontSize: 15, color: '#fff', lineHeight: 22 },
 });

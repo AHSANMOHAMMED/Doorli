@@ -11,12 +11,14 @@ export interface Vendor {
   address_line?: string | null;
   city?: string | null;
   logo_url?: string | null;
+  banner_url?: string | null;
   is_open: boolean;
   is_verified: boolean;
   avg_rating: number;
   total_reviews: number;
   min_order_amount?: number | null;
   delivery_radius_km?: number;
+  distance_km?: number;
 }
 
 export interface Product {

@@ -2,6 +2,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import type { Product } from '../lib/api';
 import { formatPrice } from '../lib/api';
 import { Plus } from 'lucide-react-native';
+import { GlassCard } from './GlassCard';
 
 interface Props {
   product: Product;
@@ -12,7 +13,7 @@ export function ProductCard({ product, onAdd }: Props) {
   const price = product.discountPrice ?? product.price;
 
   return (
-    <View style={styles.card}>
+    <GlassCard style={styles.card}>
       <View style={styles.imageContainer}>
         {product.imageUrl ? (
           <Image source={{ uri: product.imageUrl }} style={styles.image} />
@@ -28,9 +29,9 @@ export function ProductCard({ product, onAdd }: Props) {
       </View>
       
       <TouchableOpacity style={styles.addBtn} onPress={onAdd}>
-        <Plus color="#2563eb" size={20} />
+        <Plus color="#fff" size={20} />
       </TouchableOpacity>
-    </View>
+    </GlassCard>
   );
 }
 
@@ -38,20 +39,13 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: 12,
-    borderRadius: 16,
-    shadowColor: '#94a3b8',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
+    marginBottom: 12,
   },
   imageContainer: {
     width: 64,
     height: 64,
     borderRadius: 12,
-    backgroundColor: '#f8fafc',
+    backgroundColor: 'rgba(255,255,255,0.1)',
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
@@ -61,18 +55,20 @@ const styles = StyleSheet.create({
     height: '100%',
     resizeMode: 'cover',
   },
-  avatarText: { fontSize: 24, fontWeight: '700', color: '#94a3b8' },
+  avatarText: { fontSize: 24, fontWeight: '700', color: '#fff' },
   info: { flex: 1, marginLeft: 16, justifyContent: 'center' },
-  name: { fontSize: 16, fontWeight: '700', color: '#0f172a', marginBottom: 4 },
-  unit: { fontSize: 13, color: '#64748b', marginBottom: 4 },
-  price: { fontSize: 15, fontWeight: '800', color: '#2563eb' },
+  name: { fontSize: 16, fontWeight: '700', color: '#fff', marginBottom: 4 },
+  unit: { fontSize: 13, color: 'rgba(255,255,255,0.7)', marginBottom: 4 },
+  price: { fontSize: 15, fontWeight: '800', color: '#0ea5e9' }, // Teal/Blue hint
   addBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#eff6ff',
+    backgroundColor: 'rgba(14, 165, 233, 0.3)', // Glassy primary
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(14, 165, 233, 0.5)',
   },
 });

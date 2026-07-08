@@ -2,6 +2,8 @@ import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Alert, Scr
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { GlassCard } from '../../../components/GlassCard';
+import { GlassButton } from '../../../components/GlassButton';
 import { cancelOrder, fetchOrder, formatPrice } from '../../../lib/api';
 import { MapPin, Phone, MessageSquare, Clock, CheckCircle, Package, Store, ArrowLeft, MoreHorizontal } from 'lucide-react-native';
 
@@ -60,7 +62,7 @@ export default function OrderDetailScreen() {
   if (isLoading || !order) {
     return (
       <SafeAreaView style={styles.container}>
-        <ActivityIndicator color="#2563eb" style={{ marginTop: 48 }} />
+        <ActivityIndicator color="#0ea5e9" style={{ marginTop: 48 }} />
       </SafeAreaView>
     );
   }
@@ -73,7 +75,7 @@ export default function OrderDetailScreen() {
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <ArrowLeft color="#0f172a" size={24} />
+          <ArrowLeft color="#fff" size={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Order #{order.order_number}</Text>
         <View style={styles.headerPlaceholder} />
@@ -88,7 +90,7 @@ export default function OrderDetailScreen() {
         </View>
 
         {order.status !== 'cancelled' && (
-          <View style={styles.timelineCard}>
+          <GlassCard style={styles.timelineCard}>
             {STATUS_STEPS.map((step, idx) => {
               const isPast = idx < currentStep;
               const isCurrent = idx === currentStep;
@@ -107,7 +109,7 @@ export default function OrderDetailScreen() {
                       ]}
                     >
                       <Icon
-                        color={isPast ? '#16a34a' : isCurrent ? '#2563eb' : '#94a3b8'}
+                        color={isPast ? '#4ade80' : isCurrent ? '#38bdf8' : 'rgba(255,255,255,0.4)'}
                         size={16}
                       />
                     </View>
@@ -139,11 +141,11 @@ export default function OrderDetailScreen() {
                 </View>
               );
             })}
-          </View>
+          </GlassCard>
         )}
 
         {(order.status === 'picked_up' || order.status === 'delivered') && (
-          <View style={styles.driverCard}>
+          <GlassCard style={styles.driverCard}>
             <View style={styles.driverAvatar}>
               <Text style={styles.driverInitials}>JD</Text>
             </View>
@@ -152,15 +154,15 @@ export default function OrderDetailScreen() {
               <Text style={styles.driverVehicle}>Toyota Prius · ABC-123</Text>
             </View>
             <TouchableOpacity style={styles.actionBtn}>
-              <Phone color="#2563eb" size={20} />
+              <Phone color="#0ea5e9" size={20} />
             </TouchableOpacity>
             <TouchableOpacity style={styles.actionBtn}>
-              <MessageSquare color="#2563eb" size={20} />
+              <MessageSquare color="#0ea5e9" size={20} />
             </TouchableOpacity>
-          </View>
+          </GlassCard>
         )}
 
-        <View style={styles.sectionCard}>
+        <GlassCard style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Order Items</Text>
           {items.map((item, idx) => (
             <View key={item.id} style={[styles.itemRow, idx === items.length - 1 && styles.lastRow]}>
@@ -171,9 +173,9 @@ export default function OrderDetailScreen() {
               <Text style={styles.itemPrice}>{formatPrice(Number(item.price) * item.quantity)}</Text>
             </View>
           ))}
-        </View>
+        </GlassCard>
 
-        <View style={styles.sectionCard}>
+        <GlassCard style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Payment Summary</Text>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Subtotal</Text>
@@ -187,16 +189,16 @@ export default function OrderDetailScreen() {
             <Text style={styles.totalLabel}>Total</Text>
             <Text style={styles.totalValue}>{formatPrice(Number(order.total_amount))}</Text>
           </View>
-        </View>
+        </GlassCard>
 
         {order.delivery_address && (
-          <View style={styles.sectionCard}>
+          <GlassCard style={styles.sectionCard}>
             <Text style={styles.sectionTitle}>Delivery Details</Text>
             <View style={styles.addressRow}>
-              <MapPin color="#64748b" size={20} />
+              <MapPin color="rgba(255,255,255,0.7)" size={20} />
               <Text style={styles.addressText}>{order.delivery_address}</Text>
             </View>
-          </View>
+          </GlassCard>
         )}
 
         <View style={styles.actionsContainer}>
@@ -205,9 +207,7 @@ export default function OrderDetailScreen() {
               <Text style={styles.cancelText}>Cancel Order</Text>
             </TouchableOpacity>
           )}
-          <TouchableOpacity style={styles.homeBtn} onPress={() => router.replace('/(customer)')}>
-            <Text style={styles.homeBtnText}>Back to Home</Text>
-          </TouchableOpacity>
+          <GlassButton title="Back to Home" onPress={() => router.replace('/(customer)')} />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -215,47 +215,37 @@ export default function OrderDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8fafc' },
+  container: { flex: 1, backgroundColor: 'transparent' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
   },
   backBtn: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#f8fafc',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerPlaceholder: { width: 44 },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: '#0f172a' },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: '#fff' },
   content: { padding: 16, paddingBottom: 48 },
   statusBanner: {
     alignItems: 'center',
     paddingVertical: 16,
     marginBottom: 8,
   },
-  statusBannerTitle: { fontSize: 24, fontWeight: '800', color: '#0f172a', marginBottom: 4 },
-  statusBannerSubtitle: { fontSize: 16, color: '#64748b', fontWeight: '500' },
+  statusBannerTitle: { fontSize: 24, fontWeight: '800', color: '#fff', marginBottom: 4 },
+  statusBannerSubtitle: { fontSize: 16, color: 'rgba(255,255,255,0.7)', fontWeight: '500' },
   timelineCard: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
     padding: 24,
     marginBottom: 16,
-    shadowColor: '#94a3b8',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: '#f1f5f9',
   },
   timelineRow: { flexDirection: 'row', minHeight: 60 },
   timelineIconContainer: { alignItems: 'center', width: 32, marginRight: 16 },
@@ -266,116 +256,88 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 2,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
-  bgSuccess: { backgroundColor: '#dcfce7' },
-  bgActive: { backgroundColor: '#eff6ff' },
-  bgInactive: { backgroundColor: '#f1f5f9' },
+  bgSuccess: { backgroundColor: 'rgba(74, 222, 128, 0.15)', borderColor: 'rgba(74, 222, 128, 0.3)' },
+  bgActive: { backgroundColor: 'rgba(14, 165, 233, 0.15)', borderColor: 'rgba(14, 165, 233, 0.3)' },
+  bgInactive: { backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)' },
   timelineLine: { width: 2, flex: 1, marginVertical: -4, zIndex: 1 },
-  lineActive: { backgroundColor: '#16a34a' },
-  lineInactive: { backgroundColor: '#e2e8f0' },
+  lineActive: { backgroundColor: '#4ade80' },
+  lineInactive: { backgroundColor: 'rgba(255,255,255,0.1)' },
   timelineTextContainer: { flex: 1, paddingBottom: 24, paddingTop: 4 },
   timelineText: { fontSize: 15, fontWeight: '500' },
-  textActive: { color: '#0f172a' },
-  textInactive: { color: '#94a3b8' },
-  textBold: { fontWeight: '700', color: '#2563eb' },
-  timelineTime: { fontSize: 13, color: '#64748b', marginTop: 4 },
+  textActive: { color: '#fff' },
+  textInactive: { color: 'rgba(255,255,255,0.4)' },
+  textBold: { fontWeight: '700', color: '#38bdf8' },
+  timelineTime: { fontSize: 13, color: 'rgba(255,255,255,0.6)', marginTop: 4 },
   driverCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
     padding: 16,
-    borderRadius: 20,
     marginBottom: 16,
-    shadowColor: '#94a3b8',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: '#f1f5f9',
   },
   driverAvatar: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#e0f2fe',
+    backgroundColor: 'rgba(14, 165, 233, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
   },
-  driverInitials: { color: '#0284c7', fontWeight: '700', fontSize: 16 },
+  driverInitials: { color: '#0ea5e9', fontWeight: '700', fontSize: 16 },
   driverInfo: { flex: 1 },
-  driverName: { fontSize: 16, fontWeight: '700', color: '#0f172a' },
-  driverVehicle: { fontSize: 13, color: '#64748b', marginTop: 2 },
+  driverName: { fontSize: 16, fontWeight: '700', color: '#fff' },
+  driverVehicle: { fontSize: 13, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
   actionBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#eff6ff',
+    backgroundColor: 'rgba(255,255,255,0.1)',
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 8,
   },
   sectionCard: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
     padding: 20,
     marginBottom: 16,
-    shadowColor: '#94a3b8',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: '#f1f5f9',
   },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#0f172a', marginBottom: 16 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#fff', marginBottom: 16 },
   itemRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
+    borderBottomColor: 'rgba(255,255,255,0.1)',
   },
   lastRow: { borderBottomWidth: 0, paddingBottom: 0 },
   qtyBadge: {
-    backgroundColor: '#f1f5f9',
+    backgroundColor: 'rgba(255,255,255,0.1)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
     marginRight: 12,
   },
-  qtyText: { fontWeight: '700', color: '#475569', fontSize: 13 },
-  itemName: { flex: 1, color: '#334155', fontSize: 15, fontWeight: '500' },
-  itemPrice: { fontWeight: '700', color: '#0f172a', fontSize: 15 },
+  qtyText: { fontWeight: '700', color: '#fff', fontSize: 13 },
+  itemName: { flex: 1, color: '#fff', fontSize: 15, fontWeight: '500' },
+  itemPrice: { fontWeight: '700', color: '#fff', fontSize: 15 },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
-  summaryLabel: { color: '#64748b', fontSize: 15 },
-  summaryValue: { color: '#0f172a', fontSize: 15, fontWeight: '500' },
-  totalRow: { borderTopWidth: 1, borderTopColor: '#f1f5f9', paddingTop: 16, marginTop: 4 },
-  totalLabel: { fontWeight: '700', fontSize: 16, color: '#0f172a' },
-  totalValue: { fontWeight: '800', color: '#2563eb', fontSize: 18 },
+  summaryLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 15 },
+  summaryValue: { color: '#fff', fontSize: 15, fontWeight: '500' },
+  totalRow: { borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)', paddingTop: 16, marginTop: 4 },
+  totalLabel: { fontWeight: '700', fontSize: 16, color: '#fff' },
+  totalValue: { fontWeight: '800', color: '#0ea5e9', fontSize: 18 },
   addressRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  addressText: { flex: 1, color: '#334155', fontSize: 15, lineHeight: 22 },
+  addressText: { flex: 1, color: '#fff', fontSize: 15, lineHeight: 22 },
   actionsContainer: { marginTop: 8, gap: 12 },
   cancelBtn: {
     padding: 16,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#fecaca',
-    backgroundColor: '#fff',
+    borderColor: 'rgba(239, 68, 68, 0.5)',
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
     alignItems: 'center',
   },
   cancelText: { color: '#ef4444', fontWeight: '700', fontSize: 16 },
-  homeBtn: {
-    padding: 16,
-    borderRadius: 16,
-    backgroundColor: '#2563eb',
-    alignItems: 'center',
-    shadowColor: '#2563eb',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  homeBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
 });

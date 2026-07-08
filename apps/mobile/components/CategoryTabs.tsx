@@ -1,4 +1,5 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { BlurView } from 'expo-blur';
 import type { VendorCategory } from '@doorli/types';
 
 const CATEGORIES: { key: VendorCategory | 'all'; label: string; emoji: string }[] = [
@@ -19,11 +20,18 @@ export function CategoryTabs({ selected, onSelect }: Props) {
       {CATEGORIES.map((cat) => (
         <TouchableOpacity
           key={cat.key}
-          style={[styles.chip, selected === cat.key && styles.chipActive]}
+          style={[styles.chipWrapper, selected === cat.key && styles.chipWrapperActive]}
           onPress={() => onSelect(cat.key)}
+          activeOpacity={0.7}
         >
-          <Text style={styles.emoji}>{cat.emoji}</Text>
-          <Text style={[styles.label, selected === cat.key && styles.labelActive]}>{cat.label}</Text>
+          <BlurView 
+            intensity={20} 
+            tint="dark" 
+            style={[styles.chip, selected === cat.key && styles.chipActive]}
+          >
+            <Text style={styles.emoji}>{cat.emoji}</Text>
+            <Text style={[styles.label, selected === cat.key && styles.labelActive]}>{cat.label}</Text>
+          </BlurView>
         </TouchableOpacity>
       ))}
     </View>
@@ -32,19 +40,25 @@ export function CategoryTabs({ selected, onSelect }: Props) {
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16, paddingVertical: 12 },
+  chipWrapper: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
+  chipWrapperActive: {
+    borderColor: 'rgba(14, 165, 233, 0.8)',
+  },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: 'rgba(255,255,255,0.05)',
   },
-  chipActive: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
+  chipActive: { backgroundColor: 'rgba(14, 165, 233, 0.4)' },
   emoji: { fontSize: 14 },
-  label: { fontSize: 13, fontWeight: '500', color: '#475569' },
+  label: { fontSize: 14, fontWeight: '600', color: 'rgba(255,255,255,0.7)' },
   labelActive: { color: '#fff' },
 });

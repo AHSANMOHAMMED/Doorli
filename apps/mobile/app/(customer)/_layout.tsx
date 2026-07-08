@@ -4,20 +4,21 @@ export default function CustomerLayout() {
   return (
     <Stack
       screenOptions={{
-        headerStyle: { backgroundColor: '#fff' },
-        headerTintColor: '#2563eb',
+        headerStyle: { backgroundColor: 'transparent' },
+        headerTransparent: true,
+        headerTintColor: '#fff',
         headerTitleStyle: { fontWeight: '600' },
         headerShadowVisible: false,
-        contentStyle: { backgroundColor: '#f8fafc' },
+        contentStyle: { backgroundColor: 'transparent' },
       }}
     >
       <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Screen name="search" options={{ title: 'Search' }} />
-      <Stack.Screen name="vendor/[id]" options={{ title: 'Shop' }} />
-      <Stack.Screen name="cart" options={{ title: 'Cart' }} />
-      <Stack.Screen name="checkout/[vendorId]" options={{ title: 'Checkout' }} />
-      <Stack.Screen name="orders" options={{ title: 'My Orders' }} />
-      <Stack.Screen name="order/[id]" options={{ title: 'Order Details' }} />
+      <Stack.Screen name="search" options={{ title: 'Search', headerTransparent: true }} />
+      <Stack.Screen name="vendor/[id]" options={{ title: 'Shop', headerTransparent: true }} />
+      <Stack.Screen name="cart" options={{ title: 'Cart', headerTransparent: true }} />
+      <Stack.Screen name="checkout/[vendorId]" options={{ title: 'Checkout', headerTransparent: true }} />
+      <Stack.Screen name="orders" options={{ title: 'My Orders', headerTransparent: true }} />
+      <Stack.Screen name="order/[id]" options={{ title: 'Order Details', headerTransparent: true }} />
     </Stack>
   );
 }

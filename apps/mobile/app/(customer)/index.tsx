@@ -15,6 +15,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { VendorCategory } from '@doorli/types';
 import { CategoryTabs } from '../../components/CategoryTabs';
 import { VendorCard } from '../../components/VendorCard';
+import { GlassInput } from '../../components/GlassInput';
+import { Search } from 'lucide-react-native';
 import { fetchVendors, type Vendor } from '../../lib/api';
 import { useCartStore } from '../../store/cart';
 import { useAuthStore } from '../../store/auth';
@@ -60,9 +62,9 @@ export default function CustomerHome() {
         </View>
       </View>
 
-      <View style={styles.searchBar}>
-        <TextInput
-          style={styles.searchInput}
+      <View style={{ paddingHorizontal: 16, marginTop: 12 }}>
+        <GlassInput
+          icon={<Search color="rgba(255,255,255,0.5)" size={18} />}
           placeholder="Search shops and products..."
           value={search}
           onChangeText={setSearch}
@@ -72,7 +74,7 @@ export default function CustomerHome() {
       <CategoryTabs selected={category} onSelect={setCategory} />
 
       {isLoading ? (
-        <ActivityIndicator style={styles.loader} color="#2563eb" />
+        <ActivityIndicator style={styles.loader} color="#0ea5e9" />
       ) : (
         <FlatList
           data={filtered}
@@ -83,11 +85,14 @@ export default function CustomerHome() {
               onPress={() => router.push(`/(customer)/vendor/${item.id}`)}
             />
           )}
-          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
+          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#0ea5e9" />}
           ListEmptyComponent={
             <Text style={styles.empty}>No shops found nearby. Pull to refresh.</Text>
           }
-          contentContainerStyle={filtered.length === 0 ? styles.emptyContainer : undefined}
+          contentContainerStyle={[
+            styles.listContent,
+            filtered.length === 0 ? styles.emptyContainer : undefined
+          ]}
         />
       )}
     </SafeAreaView>
@@ -95,7 +100,7 @@ export default function CustomerHome() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8fafc' },
+  container: { flex: 1, backgroundColor: 'transparent' },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -104,8 +109,8 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 4,
   },
-  greeting: { fontSize: 22, fontWeight: 'bold', color: '#0f172a' },
-  subtitle: { fontSize: 14, color: '#64748b', marginTop: 4 },
+  greeting: { fontSize: 22, fontWeight: 'bold', color: '#ffffff' },
+  subtitle: { fontSize: 14, color: 'rgba(255,255,255,0.8)', marginTop: 4 },
   headerActions: { flexDirection: 'row', alignItems: 'center' },
   ordersBtn: { padding: 8 },
   ordersIcon: { fontSize: 22 },
@@ -123,17 +128,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cartBadgeText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
-  searchBar: {
-    marginHorizontal: 16,
-    marginVertical: 8,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    paddingHorizontal: 14,
-  },
-  searchInput: { paddingVertical: 14, fontSize: 15 },
   loader: { marginTop: 40 },
-  empty: { textAlign: 'center', color: '#94a3b8', marginTop: 40, paddingHorizontal: 24 },
+  listContent: { paddingHorizontal: 16, paddingBottom: 24 },
+  empty: { textAlign: 'center', color: 'rgba(255,255,255,0.6)', marginTop: 40, paddingHorizontal: 24 },
   emptyContainer: { flexGrow: 1, justifyContent: 'center' },
 });
