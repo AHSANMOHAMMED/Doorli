@@ -1,6 +1,7 @@
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import type { Product } from '../lib/api';
 import { formatPrice } from '../lib/api';
+import { Plus } from 'lucide-react-native';
 
 interface Props {
   product: Product;
@@ -12,16 +13,22 @@ export function ProductCard({ product, onAdd }: Props) {
 
   return (
     <View style={styles.card}>
-      <View style={styles.avatar}>
-        <Text style={styles.avatarText}>{product.name.charAt(0)}</Text>
+      <View style={styles.imageContainer}>
+        {product.imageUrl ? (
+          <Image source={{ uri: product.imageUrl }} style={styles.image} />
+        ) : (
+          <Text style={styles.avatarText}>{product.name.charAt(0)}</Text>
+        )}
       </View>
+      
       <View style={styles.info}>
-        <Text style={styles.name}>{product.name}</Text>
+        <Text style={styles.name} numberOfLines={2}>{product.name}</Text>
         {product.unit && <Text style={styles.unit}>Per {product.unit}</Text>}
         <Text style={styles.price}>{formatPrice(price)}</Text>
       </View>
+      
       <TouchableOpacity style={styles.addBtn} onPress={onAdd}>
-        <Text style={styles.addText}>+ Add</Text>
+        <Plus color="#2563eb" size={20} />
       </TouchableOpacity>
     </View>
   );
@@ -32,28 +39,40 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
-    padding: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
+    padding: 12,
+    borderRadius: 16,
+    shadowColor: '#94a3b8',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 10,
-    backgroundColor: '#f1f5f9',
+  imageContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 12,
+    backgroundColor: '#f8fafc',
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
-  avatarText: { fontSize: 18, fontWeight: '600', color: '#64748b' },
-  info: { flex: 1, marginLeft: 12 },
-  name: { fontSize: 15, fontWeight: '600', color: '#0f172a' },
-  unit: { fontSize: 12, color: '#94a3b8', marginTop: 2 },
-  price: { fontSize: 14, fontWeight: '600', color: '#2563eb', marginTop: 4 },
+  image: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  avatarText: { fontSize: 24, fontWeight: '700', color: '#94a3b8' },
+  info: { flex: 1, marginLeft: 16, justifyContent: 'center' },
+  name: { fontSize: 16, fontWeight: '700', color: '#0f172a', marginBottom: 4 },
+  unit: { fontSize: 13, color: '#64748b', marginBottom: 4 },
+  price: { fontSize: 15, fontWeight: '800', color: '#2563eb' },
   addBtn: {
-    backgroundColor: '#2563eb',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#eff6ff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 12,
   },
-  addText: { color: '#fff', fontSize: 13, fontWeight: '600' },
 });

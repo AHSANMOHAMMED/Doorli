@@ -13,6 +13,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { createOrder, formatPrice } from '../../../lib/api';
 import { useCartStore } from '../../../store/cart';
+import { MapPin, Banknote, CreditCard, Wallet, FileText, ShoppingBag, ArrowLeft } from 'lucide-react-native';
 
 export default function CheckoutScreen() {
   const { vendorId } = useLocalSearchParams<{ vendorId: string }>();
@@ -62,24 +63,39 @@ export default function CheckoutScreen() {
   if (!items.length) {
     return (
       <SafeAreaView style={styles.container}>
-        <Text style={styles.empty}>No items for this shop in your cart.</Text>
-        <TouchableOpacity style={styles.btn} onPress={() => router.back()}>
-          <Text style={styles.btnText}>Back to cart</Text>
-        </TouchableOpacity>
+        <View style={styles.emptyCard}>
+          <ShoppingBag color="#cbd5e1" size={48} />
+          <Text style={styles.empty}>No items for this shop in your cart.</Text>
+          <TouchableOpacity style={styles.btn} onPress={() => router.back()}>
+            <Text style={styles.btnText}>Back to cart</Text>
+          </TouchableOpacity>
+        </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.shopName}>{vendorName}</Text>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+          <ArrowLeft color="#0f172a" size={24} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Checkout</Text>
+        <View style={{ width: 44 }} />
+      </View>
+
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <Text style={styles.shopName}>Order from {vendorName}</Text>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Delivery address</Text>
+          <View style={styles.sectionHeader}>
+            <MapPin color="#2563eb" size={20} />
+            <Text style={styles.sectionTitle}>Delivery Address</Text>
+          </View>
           <TextInput
             style={styles.input}
-            placeholder="Enter your delivery address"
+            placeholder="Enter your exact delivery address..."
+            placeholderTextColor="#94a3b8"
             value={address}
             onChangeText={setAddress}
             multiline
@@ -87,43 +103,60 @@ export default function CheckoutScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Items</Text>
-          {items.map((item) => (
-            <View key={item.productId} style={styles.itemRow}>
-              <Text style={styles.itemName}>
-                {item.name} × {item.quantity}
-              </Text>
-              <Text style={styles.itemPrice}>{formatPrice(item.price * item.quantity)}</Text>
-            </View>
-          ))}
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Payment method</Text>
-          <View style={styles.row}>
-            {([
-              { key: 'cod', label: '💵 Cash on Delivery' },
-              { key: 'card', label: '💳 Card' },
-              { key: 'wallet', label: '👛 Wallet' },
-            ] as const).map((m) => (
-              <TouchableOpacity
-                key={m.key}
-                style={[styles.chip, paymentMethod === m.key && styles.chipActive]}
-                onPress={() => setPaymentMethod(m.key)}
-              >
-                <Text style={[styles.chipText, paymentMethod === m.key && styles.chipTextActive]}>
-                  {m.label}
+          <View style={styles.sectionHeader}>
+            <ShoppingBag color="#2563eb" size={20} />
+            <Text style={styles.sectionTitle}>Order Items</Text>
+          </View>
+          <View style={styles.itemsCard}>
+            {items.map((item, index) => (
+              <View key={item.productId} style={[styles.itemRow, index === items.length - 1 && styles.lastItemRow]}>
+                <Text style={styles.itemName} numberOfLines={2}>
+                  {item.quantity}x {item.name}
                 </Text>
-              </TouchableOpacity>
+                <Text style={styles.itemPrice}>{formatPrice(item.price * item.quantity)}</Text>
+              </View>
             ))}
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Special instructions</Text>
+          <View style={styles.sectionHeader}>
+            <Wallet color="#2563eb" size={20} />
+            <Text style={styles.sectionTitle}>Payment Method</Text>
+          </View>
+          <View style={styles.row}>
+            {([
+              { key: 'cod', label: 'Cash', icon: Banknote },
+              { key: 'card', label: 'Card', icon: CreditCard },
+              { key: 'wallet', label: 'Wallet', icon: Wallet },
+            ] as const).map((m) => {
+              const Icon = m.icon;
+              const isActive = paymentMethod === m.key;
+              return (
+                <TouchableOpacity
+                  key={m.key}
+                  style={[styles.chip, isActive && styles.chipActive]}
+                  onPress={() => setPaymentMethod(m.key)}
+                >
+                  <Icon color={isActive ? '#2563eb' : '#64748b'} size={18} />
+                  <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
+                    {m.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <FileText color="#2563eb" size={20} />
+            <Text style={styles.sectionTitle}>Special Instructions</Text>
+          </View>
           <TextInput
             style={styles.input}
-            placeholder="Optional notes for the shop"
+            placeholder="E.g. Ring the bell, drop at the door..."
+            placeholderTextColor="#94a3b8"
             value={instructions}
             onChangeText={setInstructions}
             multiline
@@ -133,14 +166,14 @@ export default function CheckoutScreen() {
         <View style={styles.summary}>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Subtotal</Text>
-            <Text>{formatPrice(subtotal)}</Text>
+            <Text style={styles.summaryValue}>{formatPrice(subtotal)}</Text>
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Delivery fee</Text>
-            <Text>{formatPrice(deliveryFee)}</Text>
+            <Text style={styles.summaryValue}>{formatPrice(deliveryFee)}</Text>
           </View>
           <View style={[styles.summaryRow, styles.totalRow]}>
-            <Text style={styles.totalLabel}>Total</Text>
+            <Text style={styles.totalLabel}>Total to Pay</Text>
             <Text style={styles.totalValue}>{formatPrice(total)}</Text>
           </View>
         </View>
@@ -155,7 +188,10 @@ export default function CheckoutScreen() {
           {placing ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.placeBtnText}>Place order · {formatPrice(total)}</Text>
+            <View style={styles.placeBtnContent}>
+              <Text style={styles.placeBtnText}>Confirm & Pay</Text>
+              <Text style={styles.placeBtnTotal}>{formatPrice(total)}</Text>
+            </View>
           )}
         </TouchableOpacity>
       </View>
@@ -165,64 +201,124 @@ export default function CheckoutScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8fafc' },
-  content: { padding: 16, paddingBottom: 24 },
-  empty: { textAlign: 'center', marginTop: 48, color: '#64748b' },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+  },
+  backBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#f8fafc',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: '#0f172a' },
+  content: { padding: 16, paddingBottom: 32 },
+  emptyCard: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 32,
+  },
+  empty: { textAlign: 'center', marginTop: 16, color: '#64748b', fontSize: 16 },
   btn: {
-    alignSelf: 'center',
-    marginTop: 16,
+    marginTop: 24,
     backgroundColor: '#2563eb',
     paddingHorizontal: 24,
     paddingVertical: 12,
-    borderRadius: 12,
+    borderRadius: 16,
   },
-  btnText: { color: '#fff', fontWeight: '600' },
-  shopName: { fontSize: 20, fontWeight: '700', color: '#0f172a', marginBottom: 16 },
-  section: { marginBottom: 20 },
-  sectionTitle: { fontSize: 14, fontWeight: '600', color: '#64748b', marginBottom: 8 },
-  row: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+  btnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  shopName: { fontSize: 24, fontWeight: '800', color: '#0f172a', marginBottom: 24 },
+  section: { marginBottom: 28 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#1e293b' },
+  row: { flexDirection: 'row', gap: 12, flexWrap: 'wrap' },
   chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 16,
     backgroundColor: '#fff',
     borderWidth: 1,
     borderColor: '#e2e8f0',
+    shadowColor: '#94a3b8',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
   },
-  chipActive: { backgroundColor: '#eff6ff', borderColor: '#2563eb' },
-  chipText: { fontSize: 14, color: '#64748b' },
-  chipTextActive: { color: '#2563eb', fontWeight: '600' },
+  chipActive: { backgroundColor: '#eff6ff', borderColor: '#3b82f6', borderWidth: 2 },
+  chipText: { fontSize: 15, fontWeight: '600', color: '#64748b' },
+  chipTextActive: { color: '#2563eb' },
   input: {
     backgroundColor: '#fff',
     borderWidth: 1,
     borderColor: '#e2e8f0',
-    borderRadius: 12,
-    padding: 12,
-    minHeight: 60,
+    borderRadius: 16,
+    padding: 16,
+    minHeight: 80,
     textAlignVertical: 'top',
+    fontSize: 15,
+    color: '#0f172a',
+    shadowColor: '#94a3b8',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  itemsCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    shadowColor: '#94a3b8',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
   },
   itemRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 8,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#f1f5f9',
   },
-  itemName: { flex: 1, color: '#334155' },
-  itemPrice: { fontWeight: '500', color: '#0f172a' },
+  lastItemRow: { borderBottomWidth: 0, paddingBottom: 0 },
+  itemName: { flex: 1, color: '#334155', fontSize: 15, fontWeight: '500', paddingRight: 16 },
+  itemPrice: { fontWeight: '700', color: '#0f172a', fontSize: 15 },
   summary: {
     backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 20,
+    padding: 20,
     borderWidth: 1,
     borderColor: '#e2e8f0',
+    shadowColor: '#94a3b8',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 2,
   },
-  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  summaryLabel: { color: '#64748b' },
-  totalRow: { marginTop: 8, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#e2e8f0' },
-  totalLabel: { fontSize: 16, fontWeight: '600' },
-  totalValue: { fontSize: 18, fontWeight: 'bold', color: '#2563eb' },
+  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
+  summaryLabel: { color: '#64748b', fontSize: 15 },
+  summaryValue: { color: '#0f172a', fontSize: 15, fontWeight: '600' },
+  totalRow: { marginTop: 8, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#e2e8f0' },
+  totalLabel: { fontSize: 16, fontWeight: '700', color: '#0f172a' },
+  totalValue: { fontSize: 20, fontWeight: '800', color: '#2563eb' },
   footer: {
     padding: 16,
+    paddingBottom: 24,
     backgroundColor: '#fff',
     borderTopWidth: 1,
     borderTopColor: '#e2e8f0',
@@ -230,9 +326,22 @@ const styles = StyleSheet.create({
   placeBtn: {
     backgroundColor: '#2563eb',
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 16,
     alignItems: 'center',
+    shadowColor: '#2563eb',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
   },
   placeBtnDisabled: { opacity: 0.7 },
-  placeBtnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  placeBtnContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    paddingHorizontal: 8,
+  },
+  placeBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  placeBtnTotal: { color: '#fff', fontSize: 16, fontWeight: '800', opacity: 0.9 },
 });

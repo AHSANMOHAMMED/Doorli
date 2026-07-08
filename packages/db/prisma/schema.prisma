@@ -1,10 +1,12 @@
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  extensions = [postgis]
 }
 
 enum UserRole {
@@ -12,6 +14,15 @@ enum UserRole {
   vendor
   driver
   admin
+}
+
+enum RideStatus {
+  searching
+  assigned
+  arrived
+  in_transit
+  completed
+  cancelled
 }
 
 enum VendorCategory {
@@ -85,6 +96,21 @@ enum PaymentReferenceType {
   booking
 }
 
+model LoyaltyPoint {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @unique @map("user_id") @db.Uuid
+  points    Int      @default(0)
+  earned    Int      @default(0)
+  redeemed  Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("loyalty_points")
+}
+
 model User {
   id              String   @id @default(uuid()) @db.Uuid
   fullName        String   @map("full_name") @db.VarChar(100)
@@ -101,6 +127,7 @@ model User {
   addresses            Address[]
   vendor               Vendor?
   driver               Driver?
+  loyaltyPoints        LoyaltyPoint?
   ordersAsCustomer     Order[]          @relation("CustomerOrders")
   ordersAsDriver       Order[]          @relation("DriverOrders")
   bookings             Booking[]
@@ -109,6 +136,7 @@ model User {
   reviews              Review[]
   payments             Payment[]
   notifications        Notification[]
+  ridesAsCustomer      RideRequest[]    @relation("CustomerRides")
 
   @@index([role])
   @@index([createdAt])
@@ -154,6 +182,7 @@ model Vendor {
   totalReviews     Int            @default(0) @map("total_reviews")
   deliveryRadiusKm Int            @default(5) @map("delivery_radius_km")
   minOrderAmount   Decimal?       @map("min_order_amount") @db.Decimal(10, 2)
+  erpTenantId      String?        @map("erp_tenant_id") @db.VarChar(50)
   createdAt        DateTime       @default(now()) @map("created_at")
   updatedAt        DateTime       @updatedAt @map("updated_at")
 
@@ -210,6 +239,7 @@ model Order {
   paymentStatus         PaymentStatus @default(pending) @map("payment_status")
   estimatedDeliveryTime Int?          @map("estimated_delivery_time")
   specialInstructions   String?       @map("special_instructions")
+  erpOrderId            String?       @map("erp_order_id") @db.VarChar(50)
   createdAt             DateTime      @default(now()) @map("created_at")
   updatedAt             DateTime      @updatedAt @map("updated_at")
 
@@ -306,6 +336,7 @@ model Driver {
   vehicleNumber       String?     @map("vehicle_number") @db.VarChar(20)
   licenseNumber       String?     @map("license_number") @db.VarChar(50)
   isOnline            Boolean     @default(false) @map("is_online")
+  location            Unsupported("GEOGRAPHY(POINT, 4326)")?
   currentLatitude     Decimal?    @map("current_latitude") @db.Decimal(10, 8)
   currentLongitude    Decimal?    @map("current_longitude") @db.Decimal(11, 8)
   lastLocationUpdate  DateTime?   @map("last_location_update")
@@ -316,6 +347,7 @@ model Driver {
   updatedAt           DateTime    @updatedAt @map("updated_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rides RideRequest[] @relation("DriverRides")
 
   @@index([isOnline])
   @@index([currentLatitude, currentLongitude])
@@ -378,4 +410,39 @@ model Notification {
   @@index([userId])
   @@index([isRead])
   @@map("notifications")
+}
+
+model RideRequest {
+  id              String      @id @default(uuid()) @db.Uuid
+  customerId      String      @map("customer_id") @db.Uuid
+  driverId        String?     @map("driver_id") @db.Uuid
+  pickupLat       Decimal     @db.Decimal(10, 8)
+  pickupLng       Decimal     @db.Decimal(11, 8)
+  dropoffLat      Decimal     @db.Decimal(10, 8)
+  dropoffLng      Decimal     @db.Decimal(11, 8)
+  status          RideStatus  @default(searching)
+  baseFare        Decimal     @map("base_fare") @db.Decimal(10, 2)
+  returnPremium   Decimal     @default(0) @map("return_premium") @db.Decimal(10, 2)
+  totalFare       Decimal     @map("total_fare") @db.Decimal(10, 2)
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  customer        User        @relation("CustomerRides", fields: [customerId], references: [id])
+  driver          Driver?     @relation("DriverRides", fields: [driverId], references: [id])
+
+  @@index([customerId])
+  @@index([driverId])
+  @@index([status])
+  @@map("ride_requests")
+}
+
+model GeographicZone {
+  id              String      @id @default(uuid()) @db.Uuid
+  name            String      @db.VarChar(100)
+  demandLevel     Int         @default(1) @map("demand_level")
+  boundaries      Unsupported("GEOGRAPHY(POLYGON, 4326)")?
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  @@map("geographic_zones")
 }

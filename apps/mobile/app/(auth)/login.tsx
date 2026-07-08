@@ -27,31 +27,44 @@ export default function LoginScreen() {
 
   async function handleSubmit() {
     if (!email || !password) {
-      Alert.alert('Error', 'Please enter email and password');
+      alert('Please enter your email and password.');
       return;
     }
+    
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      alert('Please enter a valid email address (e.g. name@example.com).');
+      return;
+    }
+
+    if (password.length < 6) {
+      alert('Password must be at least 6 characters long.');
+      return;
+    }
+
     setLoading(true);
     try {
       if (mode === 'signin') {
         const { error } = await signIn(email, password);
         if (error) {
-          Alert.alert('Error', error);
+          alert(`Sign In Failed: ${error}`);
           return;
         }
       } else {
         if (!fullName) {
-          Alert.alert('Error', 'Please enter your name');
+          alert('Please enter your Full Name.');
           return;
         }
         const { error } = await signUp(email, password, fullName, role);
         if (error) {
-          Alert.alert('Error', error);
+          alert(`Sign Up Failed: ${error}`);
           return;
         }
       }
       router.replace('/(customer)');
     } catch (err) {
-      Alert.alert('Error', err instanceof Error ? err.message : 'Something went wrong');
+      alert(`Error: ${err instanceof Error ? err.message : 'Something went wrong'}`);
     } finally {
       setLoading(false);
     }
@@ -85,26 +98,37 @@ export default function LoginScreen() {
           <TextInput
             style={styles.input}
             placeholder="Full Name"
+            placeholderTextColor="#94a3b8"
             value={fullName}
             onChangeText={setFullName}
+            autoComplete="name"
+            textContentType="name"
+            autoCorrect={false}
           />
         )}
 
         <TextInput
           style={styles.input}
           placeholder="Email"
+          placeholderTextColor="#94a3b8"
           keyboardType="email-address"
           autoCapitalize="none"
           value={email}
           onChangeText={setEmail}
+          autoComplete="email"
+          textContentType="emailAddress"
+          autoCorrect={false}
         />
 
         <TextInput
           style={styles.input}
           placeholder="Password"
+          placeholderTextColor="#94a3b8"
           secureTextEntry
           value={password}
           onChangeText={setPassword}
+          autoComplete="password"
+          textContentType="password"
         />
 
         {mode === 'signup' && (
@@ -156,6 +180,7 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 12,
     fontSize: 16,
+    color: '#0f172a',
   },
   roleContainer: { marginBottom: 12 },
   roleLabel: { fontSize: 14, fontWeight: '600', color: '#334155', marginBottom: 8 },

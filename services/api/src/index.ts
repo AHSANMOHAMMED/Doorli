@@ -3,6 +3,7 @@ import { Server } from 'socket.io';
 import { createApp } from './app.js';
 import { env } from './config/env.js';
 import { setSocketServer } from './lib/socket.js';
+import { createProxyMiddleware } from 'http-proxy-middleware';
 
 const app = createApp();
 const server = http.createServer(app);
@@ -23,6 +24,24 @@ io.on('connection', (socket) => {
 });
 
 setSocketServer(io);
+
+// Delivery/Dispatch service proxy
+app.use(
+  '/api/v1/deliveries',
+  createProxyMiddleware({
+    target: process.env.DELIVERY_SERVICE_URL || 'http://localhost:8086',
+    changeOrigin: true,
+  })
+);
+
+// Ride-Hailing service proxy
+app.use(
+  '/api/v1/rides',
+  createProxyMiddleware({
+    target: process.env.RIDE_HAILING_SERVICE_URL || 'http://localhost:8085',
+    changeOrigin: true,
+  })
+);
 
 server.listen(env.API_PORT, () => {
   console.log(`Doorli API running on http://localhost:${env.API_PORT}`);

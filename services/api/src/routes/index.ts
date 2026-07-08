@@ -8,6 +8,10 @@ import { vendorsRouter } from '../modules/vendors/index.js';
 import { productsRouter } from '../modules/products/index.js';
 import { ordersRouter } from '../modules/orders/index.js';
 import { driversRouter } from '../modules/drivers/index.js';
+import { bookingsRouter } from '../modules/bookings/index.js';
+import { serviceRequestsRouter } from '../modules/service-requests/index.js';
+import { reviewsRouter } from '../modules/reviews/index.js';
+import { paymentsRouter } from '../modules/payments/index.js';
 
 const router = Router();
 
@@ -43,5 +47,9 @@ router.use('/api/v1/vendors', vendorsRouter);
 router.use('/api/v1/products', productsRouter);
 router.use('/api/v1/orders', ordersRouter);
 router.use('/api/v1/drivers', driversRouter);
+router.use('/api/v1/bookings', bookingsRouter);
+router.use('/api/v1/service-requests', serviceRequestsRouter);
+router.use('/api/v1/reviews', reviewsRouter);
+router.use('/api/v1/payments', paymentsRouter);
 
 export default router;

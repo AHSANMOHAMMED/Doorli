@@ -1,36 +1,53 @@
+version: '3.8'
+
 services:
   postgres:
     image: postgis/postgis:16-3.4
     container_name: doorli-postgres
-    restart: unless-stopped
     environment:
-      POSTGRES_USER: doorli
-      POSTGRES_PASSWORD: doorli
-      POSTGRES_DB: doorli
+      POSTGRES_USER: doorli_user
+      POSTGRES_PASSWORD: doorli_password
+      POSTGRES_DB: doorli_db
     ports:
-      - '5432:5432'
+      - "5432:5432"
     volumes:
-      - doorli_postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U doorli -d doorli']
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
     container_name: doorli-redis
-    restart: unless-stopped
     ports:
-      - '6379:6379'
+      - "6379:6379"
+    command: redis-server --appendonly yes
     volumes:
-      - doorli_redis_data:/data
-    healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      - redis_data:/data
+    restart: unless-stopped
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.3.2
+    container_name: doorli-zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    restart: unless-stopped
+
+  kafka:
+    image: confluentinc/cp-kafka:7.3.2
+    container_name: doorli-kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    depends_on:
+      - zookeeper
+    restart: unless-stopped
 
 volumes:
-  doorli_postgres_data:
-  doorli_redis_data:
+  postgres_data:
+  redis_data:

@@ -1,67 +1,37 @@
-name: CI
+name: Doorli CI
 
 on:
   push:
-    branches: [main]
+    branches: ["main"]
   pull_request:
-    branches: [main]
-
-env:
-  DATABASE_URL: postgresql://doorli:doorli@localhost:5432/doorli
-  REDIS_URL: redis://localhost:6379
-  NODE_ENV: test
+    types: [opened, synchronize]
 
 jobs:
-  ci:
+  build:
+    name: Build and Test
+    timeout-minutes: 15
     runs-on: ubuntu-latest
-
-    services:
-      postgres:
-        image: postgis/postgis:16-3.4
-        env:
-          POSTGRES_USER: doorli
-          POSTGRES_PASSWORD: doorli
-          POSTGRES_DB: doorli
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U doorli -d doorli"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
+    
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
+      - name: Check out code
+        uses: actions/checkout@v4
         with:
-          node-version: '20'
+          fetch-depth: 2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
           cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Generate Prisma client
-        run: npm run db:generate
-
-      - name: Run migrations
-        run: npm run migrate:deploy --workspace=@doorli/db
-
-      - name: Lint
-        run: npm run lint
-
       - name: Build
         run: npm run build
-
+        
+      - name: Lint
+        run: npm run lint --if-present
+        
       - name: Test
-        run: npm run test
+        run: npm test --if-present

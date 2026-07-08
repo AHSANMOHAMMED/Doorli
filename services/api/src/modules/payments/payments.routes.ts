@@ -1,0 +1,76 @@
+import { Router, Request, Response, NextFunction } from 'express';
+import { ZodError } from 'zod';
+import { initiatePaymentSchema, refundPaymentSchema } from './payments.schema.js';
+import * as paymentsService from './payments.service.js';
+import { AppError } from '../../middleware/errorHandler.js';
+import { authenticateToken } from '../../middleware/authenticateToken.js';
+
+const paymentsRouter = Router();
+
+function validate<T>(schema: { parse: (data: unknown) => T }) {
+  return (req: Request, _res: Response, next: NextFunction) => {
+    try {
+      req.body = schema.parse(req.body);
+      next();
+    } catch (err) {
+      if (err instanceof ZodError) {
+        next(new AppError(400, err.errors.map((e) => e.message).join(', ')));
+      } else {
+        next(new AppError(400, 'Validation failed'));
+      }
+    }
+  };
+}
+
+paymentsRouter.use(authenticateToken);
+
+paymentsRouter.post('/initiate', validate(initiatePaymentSchema), async (req, res, next) => {
+  try {
+    if (!req.user) throw new AppError(401, 'Authentication required');
+    const payment = await paymentsService.initiatePayment(req.user.id, req.body);
+    res.json({ success: true, data: payment });
+  } catch (err) {
+    next(err);
+  }
+});
+
+paymentsRouter.post('/webhook/:gateway', async (req, res, next) => {
+  try {
+    const { gateway } = req.params;
+    const signature = req.headers['x-signature'] as string;
+    const result = await paymentsService.handleWebhook(gateway, req.body, signature);
+    res.json({ success: true, data: result });
+  } catch (err) {
+    next(err);
+  }
+});
+
+paymentsRouter.get('/:id', async (req, res, next) => {
+  try {
+    if (!req.user) throw new AppError(401, 'Authentication required');
+    const payment = await paymentsService.getPaymentById(
+      req.params.id as string,
+      req.user.id,
+      req.user.role
+    );
+    res.json({ success: true, data: payment });
+  } catch (err) {
+    next(err);
+  }
+});
+
+paymentsRouter.post('/refund', validate(refundPaymentSchema), async (req, res, next) => {
+  try {
+    if (!req.user) throw new AppError(401, 'Authentication required');
+    if (req.user.role !== 'admin') {
+      throw new AppError(403, 'Access denied');
+    }
+
+    const payment = await paymentsService.refundPayment(req.body.paymentId, req.body, req.user.role);
+    res.json({ success: true, data: payment });
+  } catch (err) {
+    next(err);
+  }
+});
+
+export default paymentsRouter;

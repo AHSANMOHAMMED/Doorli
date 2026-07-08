@@ -1,40 +1,24 @@
 import { useEffect } from 'react';
-import { Stack, useRouter } from 'expo-router';
+import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from '../store/auth';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const queryClient = new QueryClient();
 
-function AuthGate() {
-  const router = useRouter();
-  const { isAuthenticated, loading, loadSession } = useAuthStore();
+export default function RootLayout() {
+  const loadSession = useAuthStore((state) => state.loadSession);
 
   useEffect(() => {
     loadSession();
   }, []);
 
-  useEffect(() => {
-    if (!loading && !isAuthenticated) {
-      router.replace('/(auth)/login');
-    }
-  }, [loading, isAuthenticated]);
-
-  return null;
-}
-
-export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-        <Stack.Screen name="(customer)" options={{ headerShown: false }} />
-        <Stack.Screen name="(vendor)" options={{ headerShown: false }} />
-        <Stack.Screen name="(driver)" options={{ headerShown: false }} />
+      <StatusBar style="light" />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#0a0a0a' } }}>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       </Stack>
-      <StatusBar style="auto" />
-      <AuthGate />
     </QueryClientProvider>
   );
 }

@@ -33,7 +33,7 @@ export const useAuthStore = create<AuthState>()(
         if (error) return { error: error.message };
 
         if (data.user) {
-          const { data: profile } = await supabase
+          const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', data.user.id)
@@ -48,6 +48,20 @@ export const useAuthStore = create<AuthState>()(
                 email: profile.email ?? email,
                 role: profile.role,
                 avatarUrl: profile.avatar_url,
+              },
+              isAuthenticated: true,
+              loading: false,
+            });
+          } else {
+            console.warn('Profile fetch failed during sign in, using session metadata:', profileError);
+            set({
+              user: {
+                id: data.user.id,
+                fullName: data.user.user_metadata?.full_name || 'Test User',
+                phone: '',
+                email: data.user.email ?? email,
+                role: data.user.user_metadata?.role || 'customer',
+                avatarUrl: null,
               },
               isAuthenticated: true,
               loading: false,
@@ -87,7 +101,7 @@ export const useAuthStore = create<AuthState>()(
       loadSession: async () => {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
-          const { data: profile } = await supabase
+          const { data: profile, error } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', session.user.id)
@@ -102,6 +116,22 @@ export const useAuthStore = create<AuthState>()(
                 email: profile.email ?? session.user.email ?? '',
                 role: profile.role,
                 avatarUrl: profile.avatar_url,
+              },
+              isAuthenticated: true,
+              loading: false,
+            });
+            return;
+          } else if (error) {
+            // Fallback for development if 'profiles' table isn't created yet
+            console.warn('Profile fetch failed, using session metadata:', error);
+            set({
+              user: {
+                id: session.user.id,
+                fullName: session.user.user_metadata?.full_name || 'Test User',
+                phone: '',
+                email: session.user.email ?? '',
+                role: session.user.user_metadata?.role || 'customer',
+                avatarUrl: null,
               },
               isAuthenticated: true,
               loading: false,

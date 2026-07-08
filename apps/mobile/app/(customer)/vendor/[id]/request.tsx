@@ -12,7 +12,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
-import { createServiceRequest, fetchVendor } from '../../../lib/api';
+import { createServiceRequest, fetchVendor } from '../../../../lib/api';
 
 export default function ServiceRequestScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

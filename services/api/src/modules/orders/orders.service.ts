@@ -5,6 +5,7 @@ import { AppError } from '../../middleware/errorHandler.js';
 import { emitOrderEvent } from '../../lib/socket.js';
 import { getDispatchService } from '../../lib/dispatch.js';
 import { creditDriverOnDelivery } from '../drivers/drivers.service.js';
+import { ErpIntegrationService } from '../../lib/erpIntegration.js';
 import type { CreateOrderInput, PreviewOrderInput } from './orders.schema.js';
 
 const DELIVERY_BASE_FEE = 50;
@@ -245,6 +246,23 @@ export async function createOrder(customerId: string, input: CreateOrderInput) {
     status: order.status,
     totalAmount: Number(order.totalAmount),
   });
+
+  // ERP Sync Background Process
+  if (vendor.erpTenantId) {
+    ErpIntegrationService.syncOrderToErp({
+      tenantId: vendor.erpTenantId,
+      orderNumber: order.orderNumber,
+      orderType: order.orderType,
+      items: lineItems,
+      customerDetails: {
+        id: customerId,
+        paymentMethod: order.paymentMethod,
+        specialInstructions: order.specialInstructions
+      }
+    }).catch(err => {
+      console.error(`[ERP Sync Failed] Could not sync order ${order.orderNumber} to ERP tenant ${vendor.erpTenantId}:`, err.message);
+    });
+  }
 
   return order;
 }
