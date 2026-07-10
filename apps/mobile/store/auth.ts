@@ -1,23 +1,27 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { supabase } from '../lib/supabase';
+import { apiClient } from '../lib/axios';
 
 export interface AuthUser {
   id: string;
   fullName: string;
   phone: string;
-  email: string;
   role: 'customer' | 'vendor' | 'driver' | 'admin';
-  avatarUrl?: string | null;
+  isVerified: boolean;
+  avatar?: string | null;
 }
 
 interface AuthState {
   user: AuthUser | null;
+  accessToken: string | null;
+  refreshToken: string | null;
   isAuthenticated: boolean;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: string | null }>;
-  signUp: (email: string, password: string, fullName: string, role: AuthUser['role']) => Promise<{ error: string | null }>;
+  setTokens: (accessToken: string, refreshToken: string) => void;
+  setUser: (user: AuthUser) => void;
+  sendOtp: (phone: string) => Promise<{ error: string | null }>;
+  verifyOtpAndLogin: (phone: string, code: string, fullName?: string, role?: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   loadSession: () => Promise<void>;
 }
@@ -26,126 +30,94 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       user: null,
+      accessToken: null,
+      refreshToken: null,
       isAuthenticated: false,
       loading: true,
-      signIn: async (email, password) => {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) return { error: error.message };
 
-        if (data.user) {
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', data.user.id)
-            .maybeSingle();
+      setTokens: (accessToken, refreshToken) => {
+        set({ accessToken, refreshToken });
+      },
 
-          if (profile) {
-            set({
-              user: {
-                id: profile.id,
-                fullName: profile.full_name,
-                phone: profile.phone ?? '',
-                email: profile.email ?? email,
-                role: profile.role,
-                avatarUrl: profile.avatar_url,
-              },
-              isAuthenticated: true,
-              loading: false,
-            });
-          } else {
-            console.warn('Profile fetch failed during sign in, using session metadata:', profileError);
-            set({
-              user: {
-                id: data.user.id,
-                fullName: data.user.user_metadata?.full_name || 'Test User',
-                phone: '',
-                email: data.user.email ?? email,
-                role: data.user.user_metadata?.role || 'customer',
-                avatarUrl: null,
-              },
-              isAuthenticated: true,
-              loading: false,
-            });
+      setUser: (user) => {
+        set({ user });
+      },
+
+      sendOtp: async (phone: string) => {
+        try {
+          const res = await apiClient.post('/auth/send-otp', { phone });
+          if (res.data.success) {
+            return { error: null };
           }
+          return { error: res.data.error || 'Failed to send OTP' };
+        } catch (err: any) {
+          return { error: err.response?.data?.message || err.message };
         }
-        return { error: null };
       },
-      signUp: async (email, password, fullName, role) => {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { data: { full_name: fullName, role } },
-        });
-        if (error) return { error: error.message };
 
-        if (data.user) {
-          await supabase.from('profiles').upsert({
-            id: data.user.id,
-            email,
-            full_name: fullName,
-            role,
-          });
+      verifyOtpAndLogin: async (phone: string, code: string, fullName?: string, role?: string) => {
+        try {
+          const payload: any = { phone, code };
+          if (fullName) payload.fullName = fullName;
+          if (role) payload.role = role;
 
-          set({
-            user: { id: data.user.id, fullName, phone: '', email, role, avatarUrl: null },
-            isAuthenticated: true,
-            loading: false,
-          });
+          const res = await apiClient.post('/auth/verify-otp', payload);
+          if (res.data.success && res.data.data) {
+            const { user, accessToken, refreshToken } = res.data.data;
+            set({
+              user,
+              accessToken,
+              refreshToken,
+              isAuthenticated: true,
+            });
+            return { error: null };
+          }
+          return { error: res.data.error || 'Invalid OTP' };
+        } catch (err: any) {
+          return { error: err.response?.data?.message || err.message };
         }
-        return { error: null };
       },
+
       signOut: async () => {
-        await supabase.auth.signOut();
-        set({ user: null, isAuthenticated: false });
-      },
-      loadSession: async () => {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          const { data: profile, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .maybeSingle();
-
-          if (profile) {
-            set({
-              user: {
-                id: profile.id,
-                fullName: profile.full_name,
-                phone: profile.phone ?? '',
-                email: profile.email ?? session.user.email ?? '',
-                role: profile.role,
-                avatarUrl: profile.avatar_url,
-              },
-              isAuthenticated: true,
-              loading: false,
-            });
-            return;
-          } else if (error) {
-            // Fallback for development if 'profiles' table isn't created yet
-            console.warn('Profile fetch failed, using session metadata:', error);
-            set({
-              user: {
-                id: session.user.id,
-                fullName: session.user.user_metadata?.full_name || 'Test User',
-                phone: '',
-                email: session.user.email ?? '',
-                role: session.user.user_metadata?.role || 'customer',
-                avatarUrl: null,
-              },
-              isAuthenticated: true,
-              loading: false,
-            });
-            return;
+        const { refreshToken } = get();
+        if (refreshToken) {
+          try {
+            await apiClient.post('/auth/logout', { refreshToken });
+          } catch (e) {
+            // ignore logout error if server is unreachable
           }
         }
-        set({ user: null, isAuthenticated: false, loading: false });
+        set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false });
+      },
+
+      loadSession: async () => {
+        set({ loading: true });
+        const { accessToken } = get();
+        if (accessToken) {
+          try {
+            const res = await apiClient.get('/users/me');
+            if (res.data.success) {
+              set({ user: res.data.data, isAuthenticated: true, loading: false });
+              return;
+            }
+          } catch (e) {
+            // Token might be expired, interceptor will try to refresh it
+            // If it fails, interceptor logs out
+            console.warn('Failed to load session profile', e);
+          }
+        }
+        set({ loading: false });
       },
     }),
     {
-      name: 'doorli-auth',
+      name: 'doorli-auth-storage',
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }),
-    },
-  ),
+      partialize: (state) => ({
+        user: state.user,
+        accessToken: state.accessToken,
+        refreshToken: state.refreshToken,
+        isAuthenticated: state.isAuthenticated,
+      }),
+    }
+  )
 );

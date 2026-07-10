@@ -1,4 +1,3 @@
-version: '3.8'
 
 services:
   postgres:
@@ -48,6 +47,48 @@ services:
       - zookeeper
     restart: unless-stopped
 
+  elasticsearch:
+    image: elasticsearch:8.10.2
+    container_name: doorli-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:latest
+    container_name: doorli-minio
+    environment:
+      - MINIO_ROOT_USER=doorli_admin
+      - MINIO_ROOT_PASSWORD=doorli_password_123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    restart: unless-stopped
+
+  minio-setup:
+    image: minio/mc:latest
+    container_name: doorli-minio-setup
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set doorli http://minio:9000 doorli_admin doorli_password_123;
+      /usr/bin/mc mb doorli/doorli-media --ignore-existing;
+      /usr/bin/mc anonymous set public doorli/doorli-media;
+      exit 0;
+      "
+
 volumes:
   postgres_data:
   redis_data:
+  es_data:
+  minio_data:

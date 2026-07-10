@@ -19,6 +19,7 @@ export default function CustomerLayout() {
       <Stack.Screen name="checkout/[vendorId]" options={{ title: 'Checkout', headerTransparent: true }} />
       <Stack.Screen name="orders" options={{ title: 'My Orders', headerTransparent: true }} />
       <Stack.Screen name="order/[id]" options={{ title: 'Order Details', headerTransparent: true }} />
+      <Stack.Screen name="profile" options={{ title: 'My Profile', headerTransparent: true }} />
     </Stack>
   );
 }

@@ -49,6 +49,8 @@ export const GradientBackground: React.FC<GradientBackgroundProps> = ({ children
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    minHeight: height,
+    width: '100%',
     backgroundColor: '#0A0F1A', // Very dark blue/slate base
   },
   baseBg: {

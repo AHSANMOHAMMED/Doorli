@@ -73,7 +73,7 @@ export default function BookingScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Book at {vendor.business_name}</Text>
+        <Text style={styles.title}>Book at {vendor.businessName}</Text>
         <Text style={styles.subtitle}>Fill in the details to make a reservation</Text>
 
         <View style={styles.field}>

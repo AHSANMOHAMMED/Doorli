@@ -39,11 +39,11 @@ export default function VendorDetailScreen() {
 
   function handleAdd(product: Product) {
     if (!vendor) return;
-    const price = Number(product.discount_price ?? product.price);
+    const price = Number(product.discountPrice ?? product.price);
     addItem({
       productId: product.id,
       vendorId: vendor.id,
-      vendorName: vendor.business_name,
+      vendorName: vendor.businessName,
       name: product.name,
       price,
       unit: product.unit ?? null,
@@ -63,7 +63,7 @@ export default function VendorDetailScreen() {
   const isService = vendor.category === 'service';
   
   // Use a generic placeholder or the vendor's actual banner
-  const bannerImage = vendor.banner_url ? { uri: vendor.banner_url } : { uri: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=1000&auto=format&fit=crop' };
+  const bannerImage = vendor.bannerUrl ? { uri: vendor.bannerUrl } : { uri: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=1000&auto=format&fit=crop' };
 
   return (
     <View style={styles.container}>
@@ -77,7 +77,7 @@ export default function VendorDetailScreen() {
           </SafeAreaView>
           <View style={styles.bannerContent}>
             <Text style={styles.bannerCategory}>{vendor.category}</Text>
-            <Text style={styles.bannerTitle}>{vendor.business_name}</Text>
+            <Text style={styles.bannerTitle}>{vendor.businessName}</Text>
           </View>
         </ImageBackground>
 
@@ -85,24 +85,24 @@ export default function VendorDetailScreen() {
           <GlassCard style={styles.infoCard}>
             <View style={styles.infoRow}>
               <Star color="#f59e0b" fill="#f59e0b" size={18} />
-              <Text style={styles.ratingText}>{Number(vendor.avg_rating).toFixed(1)}</Text>
-              <Text style={styles.reviewsText}>({vendor.total_reviews} reviews)</Text>
+              <Text style={styles.ratingText}>{Number(vendor.avgRating).toFixed(1)}</Text>
+              <Text style={styles.reviewsText}>({vendor.totalReviews} reviews)</Text>
             </View>
             
             <View style={styles.infoRow}>
               <Clock color="rgba(255,255,255,0.7)" size={16} />
-              <Text style={[styles.statusText, { color: vendor.is_open ? '#10b981' : '#ef4444' }]}>
-                {vendor.is_open ? 'Open Now' : 'Closed'}
+              <Text style={[styles.statusText, { color: vendor.isOpen ? '#10b981' : '#ef4444' }]}>
+                {vendor.isOpen ? 'Open Now' : 'Closed'}
               </Text>
-              {vendor.min_order_amount && (
-                <Text style={styles.minOrderText}>· Min {formatPrice(Number(vendor.min_order_amount))}</Text>
+              {vendor.minOrderAmount && (
+                <Text style={styles.minOrderText}>· Min {formatPrice(Number(vendor.minOrderAmount))}</Text>
               )}
             </View>
 
-            {vendor.address_line && (
+            {vendor.addressLine && (
               <View style={styles.infoRow}>
                 <MapPin color="rgba(255,255,255,0.7)" size={16} />
-                <Text style={styles.addressText} numberOfLines={2}>{vendor.address_line}</Text>
+                <Text style={styles.addressText} numberOfLines={2}>{vendor.addressLine}</Text>
               </View>
             )}
 

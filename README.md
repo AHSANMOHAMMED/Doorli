@@ -87,46 +87,66 @@ Salons, barbershops, spas, clinics — book time slots without phone calls.
 
 ---
 
-## 🏛️ Architecture Strategy
+## 🏛️ Unified Enterprise Architecture
 
-### MVP Architecture (Months 1–4) — Build This First
+Doorli is a community super-app platform designed to serve **100 Million Users** (10M DAU) by connecting local commerce, community forums, government services (GovTech), emergency dispatch/SOS networks, and transportation systems into one unified ecosystem. 
 
+The architecture is built on a **multi-cloud, event-driven microservices monorepo**, integrated with a **multi-tenant enterprise SaaS ERP** back-office.
+
+### The Ecosystem Split
+
+The system is split into two primary components:
+1. **Marketplace & Citizen Portal**: 40+ microservices (Node.js), mobile apps (React Native), PostGIS Geo-Tracking, and Kafka event streaming.
+2. **Business SaaS (ERP)**: A complete multi-tenant ERP (Next.js + Drizzle ORM + PostgreSQL) for POS, Accounting, HR, Inventory, and Dealership management.
+
+```text
+                               [ THE DOORLI ECOSYSTEM ]
+                                          │
+         ┌────────────────────────────────┴────────────────────────────────┐
+         ▼                                                                 ▼
+ ┌────────────────────────────────┐                              ┌──────────────────┐
+ │     MARKETPLACE & CITIZEN      │                              │  BUSINESS SAAS   │
+ │         (Marketplace)          │                              │      (ERP)       │
+ ├────────────────────────────────┤                              ├──────────────────┤
+ │ • 40+ Microservices            │                              │ • Next.js Web    │
+ │ • React Native Expo Apps       │ <==== [ INTEGRATION BRIDGES ] ===>│ • 180+ Tables    │
+ │ • PostGIS Geo-Tracking         │   (Stock, Sales, Bookings)   │ • POS / Payments │
+ │ • Emergency Alert & SOS        │                              │ • HR / Payroll   │
+ │ • GovTech Directories          │                              │ • Accounting     │
+ └────────────────────────────────┘                              └──────────────────┘
 ```
-Monorepo → Modular services → REST + WebSocket → PostgreSQL + Redis
-```
 
-| Layer | Technology | Notes |
-|---|---|---|
-| Customer / Vendor / Driver Mobile | React Native + Expo | Single codebase, Expo Router |
-| Customer Web | Next.js 14 (App Router) | SSR + SEO |
-| Vendor Dashboard + Admin | Next.js 14 + shadcn/ui | Desktop order & platform control |
-| API Gateway | Nginx + Node.js | Rate limiting, routing |
-| Main API | Node.js + Express + TypeScript | Auth, orders, bookings, vendors |
-| Delivery Service | Node.js + Redis + PostGIS | Driver dispatch, live tracking |
-| Notification Service | Node.js + Firebase + MSG91 | Push, SMS, email |
-| Database | PostgreSQL 16 + PostGIS + Prisma | Transactional + geospatial |
-| Cache / Queue | Redis 7 + BullMQ | Sessions, jobs, pub/sub |
-| Real-time | Socket.io + Redis PubSub | Order & driver tracking |
-| Search | Elasticsearch 8 | Product & vendor search (Phase 2) |
-| Payments | Stripe + PayHere | Cards + LKR local methods |
-| Storage | AWS S3 / DigitalOcean Spaces | Images, PDFs |
-| DevOps | Docker Compose → Kubernetes | CI/CD via GitHub Actions |
+### Unified Technical Stack
 
-### Enterprise Evolution (Months 10+) — From ESAD
+| Component | Technology | Target Port | Status |
+|-----------|------------|-------------|--------|
+| **API Gateway** | Express Router / Kong Gateway | `4000` | Implemented |
+| **Marketplace Core** | Node.js (TypeScript) & Express | — | Implemented |
+| **Ride-Hailing Engine** | Express + Socket.io | `8085` | Implemented |
+| **SaaS ERP System** | Next.js 14 (App Router) | `3000` | Implemented |
+| **Databases** | PostgreSQL 16 (PostGIS) / Supabase DB | `5432` | Implemented |
+| **Cache & Realtime** | Redis 7 / Socket.io | `6379` | Implemented |
+| **Event Bus** | Apache Kafka & Zookeeper | `9092` / `2181` | Implemented |
+| **Search Engine** | Elasticsearch 8 | — | Implemented |
+| **Storage** | MinIO (S3 Compatible) | `9000` | Implemented |
+| **Mobile Apps** | React Native + Expo (Zustand + React Query) | — | Implemented |
 
-As scale grows toward 100M users, evolve incrementally:
+### Complete Microservice Catalog (40+ Services)
 
-| Capability | MVP | Enterprise Target |
-|---|---|---|
-| Architecture | Modular monorepo services | 40+ domain microservices, CQRS + Event Sourcing |
-| Mobile | React Native + Expo | Optional native Kotlin/Swift for performance-critical paths |
-| Databases | PostgreSQL + Redis | Polyglot: + MongoDB, DynamoDB, ClickHouse, Neo4j |
-| APIs | REST + WebSocket | + GraphQL (complex queries), gRPC (internal) |
-| Cloud | Single region (AWS) | Multi-region active-active (AWS primary, Azure DR, GCP analytics) |
-| Security | JWT + OTP + Zod | Zero-trust, OAuth 2.0/OIDC, mTLS, ISO 27001 / SOC 2 / PCI DSS |
-| Observability | Sentry + basic metrics | OpenTelemetry + Prometheus + Grafana + Jaeger + ELK |
-| CI/CD | GitHub Actions | GitOps with ArgoCD + Terraform IaC |
-| Extra domains | — | Community forums, government services, emergency SOS alerts |
+**Commerce & Marketplace Domain**
+- `catalog`, `inventory`, `order`, `payment`, `cart`, `delivery`, `ride-hail`, `seller`, `auction`, `buyer-protection`
+
+**Community, Forums & GovTech Domain**
+- `forum`, `moderation`, `reputation`, `gov-tech`, `tax`, `license`, `complaint`, `document-vault`, `consultation`
+
+**Emergency, Security & Shared Domain**
+- `alert`, `incident`, `dispatch`, `safety-map`, `sos`, `volunteer`, `auth`, `kyc`, `rbac`, `ai`
+
+### Integration Bridges (Marketplace ↔ ERP)
+
+1. **Inventory Sync Bridge**: Marketplace vendors update catalog products according to ERP warehouse levels.
+2. **Transaction Sync Bridge**: Marketplace orders are recorded as POS sales within the vendor's ERP.
+3. **Scheduling Sync Bridge**: Marketplace hotel, hall, or home service bookings reserve calendar slots in the ERP.
 
 ---
 

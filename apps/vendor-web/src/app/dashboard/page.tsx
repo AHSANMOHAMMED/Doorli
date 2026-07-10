@@ -1,11 +1,6 @@
-'use client';
-
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useAuth } from '@/lib/auth-context';
-import { createClient } from '@/lib/supabase/client';
-import type { Order, Vendor, Profile } from '@/lib/types';
-import type { OrderStatus } from '@/lib/types';
+import { createClient } from '@/lib/supabase/server';
+import { prisma } from '@doorli/db';
 import {
   ShoppingBag,
   Clock,
@@ -16,176 +11,114 @@ import {
   TrendingUp,
   Plus,
 } from 'lucide-react';
+import { redirect } from 'next/navigation';
 
-interface OrderWithCustomer extends Order {
-  profiles?: Pick<Profile, 'full_name' | 'phone'> | null;
-}
+export default async function DashboardPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-const STATUS_BADGE: Record<OrderStatus, string> = {
-  pending: 'badge-warning',
-  confirmed: 'badge-info',
-  preparing: 'badge-info',
-  ready: 'badge-info',
-  picked_up: 'badge-info',
-  delivered: 'badge-success',
-  cancelled: 'badge-error',
-};
-
-const STATUS_LABEL: Record<OrderStatus, string> = {
-  pending: 'Pending',
-  confirmed: 'Confirmed',
-  preparing: 'Preparing',
-  ready: 'Ready',
-  picked_up: 'Picked Up',
-  delivered: 'Delivered',
-  cancelled: 'Cancelled',
-};
-
-export default function DashboardPage() {
-  const { profile, loading: authLoading } = useAuth();
-  const supabase = createClient();
-
-  const [vendor, setVendor] = useState<Vendor | null>(null);
-  const [orders, setOrders] = useState<OrderWithCustomer[]>([]);
-  const [allOrders, setAllOrders] = useState<OrderWithCustomer[]>([]);
-  const [adminVendors, setAdminVendors] = useState<Vendor[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  const isAdmin = profile?.role === 'admin';
-  const isVendor = profile?.role === 'vendor';
-
-  useEffect(() => {
-    if (authLoading || !profile) return;
-    loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authLoading, profile]);
-
-  async function loadData() {
-    setLoading(true);
-    setError('');
-
-    try {
-      if (isVendor) {
-        // Find the vendor record for this user
-        const { data: vendorData, error: vendorError } = await supabase
-          .from('vendors')
-          .select('*')
-          .eq('user_id', profile!.id)
-          .maybeSingle();
-
-        if (vendorError) throw vendorError;
-        if (!vendorData) {
-          setError('No vendor profile found. Please complete onboarding first.');
-          setLoading(false);
-          return;
-        }
-
-        const v = vendorData as Vendor;
-        setVendor(v);
-
-        // Fetch this vendor's orders with customer profile join
-        const { data: orderData, error: orderError } = await supabase
-          .from('orders')
-          .select(
-            '*, order_items(*), profiles!orders_user_id_fkey(full_name, phone)',
-          )
-          .eq('vendor_id', v.id)
-          .order('created_at', { ascending: false })
-          .limit(5);
-
-        if (orderError) throw orderError;
-        setOrders((orderData ?? []) as unknown as OrderWithCustomer[]);
-
-        // Fetch all orders for stats
-        const { data: allOrderData, error: allOrderError } = await supabase
-          .from('orders')
-          .select('*')
-          .eq('vendor_id', v.id)
-          .order('created_at', { ascending: false });
-
-        if (allOrderError) throw allOrderError;
-        setAllOrders((allOrderData ?? []) as unknown as OrderWithCustomer[]);
-      } else if (isAdmin) {
-        // Admin: platform-wide stats
-        const { data: vendorData, error: vendorError } = await supabase
-          .from('vendors')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (vendorError) throw vendorError;
-        setAdminVendors((vendorData ?? []) as Vendor[]);
-
-        const { data: orderData, error: orderError } = await supabase
-          .from('orders')
-          .select(
-            '*, order_items(*), profiles!orders_user_id_fkey(full_name, phone)',
-          )
-          .order('created_at', { ascending: false })
-          .limit(5);
-
-        if (orderError) throw orderError;
-        setOrders((orderData ?? []) as unknown as OrderWithCustomer[]);
-
-        const { data: allOrderData, error: allOrderError } = await supabase
-          .from('orders')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (allOrderError) throw allOrderError;
-        setAllOrders((allOrderData ?? []) as unknown as OrderWithCustomer[]);
-      }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to load dashboard data';
-      setError(msg);
-    } finally {
-      setLoading(false);
-    }
+  if (!user) {
+    redirect('/login');
   }
 
-  // Compute stats
+  // Get user profile to determine role
+  const profile = await prisma.user.findUnique({
+    where: { id: user.id }
+  });
+
+  if (!profile) {
+    return (
+      <div className="bg-red-50 text-red-600 p-4 rounded-lg border border-red-200 m-8">
+        No profile found for this user in PostgreSQL.
+      </div>
+    );
+  }
+
+  const isAdmin = profile.role === 'admin';
+  const isVendor = profile.role === 'vendor';
+
+  let vendor = null;
+  let orders = [];
+  let allOrders = [];
+  let adminVendors = [];
+
+  if (isVendor) {
+    vendor = await prisma.vendor.findUnique({
+      where: { userId: user.id }
+    });
+
+    if (!vendor) {
+      return (
+        <div className="bg-red-50 text-red-600 p-4 rounded-lg border border-red-200 m-8">
+          No vendor profile found. Please complete onboarding first.
+        </div>
+      );
+    }
+
+    orders = await prisma.order.findMany({
+      where: { vendorId: vendor.id },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+      include: {
+        customer: { select: { fullName: true, phone: true } },
+        items: true,
+      }
+    });
+
+    allOrders = await prisma.order.findMany({
+      where: { vendorId: vendor.id },
+      orderBy: { createdAt: 'desc' },
+    });
+
+  } else if (isAdmin) {
+    adminVendors = await prisma.vendor.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+
+    orders = await prisma.order.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+      include: {
+        customer: { select: { fullName: true, phone: true } },
+        items: true,
+      }
+    });
+
+    allOrders = await prisma.order.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+  } else {
+    return (
+      <div className="bg-red-50 text-red-600 p-4 rounded-lg border border-red-200 m-8">
+        Access Denied: You are neither a vendor nor an admin.
+      </div>
+    );
+  }
+
   const totalOrders = allOrders.length;
   const pendingOrders = allOrders.filter(
     (o) => o.status === 'pending' || o.status === 'confirmed' || o.status === 'preparing',
   ).length;
   const totalRevenue = allOrders
     .filter((o) => o.status !== 'cancelled')
-    .reduce((sum, o) => sum + Number(o.total_amount), 0);
-  const avgRating = vendor ? vendor.avg_rating : 0;
-
-  if (authLoading || loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="bg-red-50 text-red-600 p-4 rounded-lg border border-red-200">
-        {error}
-      </div>
-    );
-  }
+    .reduce((sum, o) => sum + Number(o.totalAmount), 0);
+  const avgRating = vendor ? Number(vendor.avgRating) : 0;
 
   return (
     <div className="animate-fade-in space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-slate-900">
-          {isAdmin ? 'Platform Overview' : vendor?.business_name ?? 'Dashboard'}
+          {isAdmin ? 'Platform Overview' : vendor?.businessName ?? 'Dashboard'}
         </h1>
         <p className="text-slate-500 mt-1">
           {isAdmin
             ? 'Manage all vendors, orders, and platform activity'
             : vendor
-              ? `${vendor.category} · ${vendor.is_open ? 'Open now' : 'Closed'} · ${vendor.is_verified ? 'Verified' : 'Pending verification'}`
+              ? `${vendor.category} · ${vendor.isOpen ? 'Open now' : 'Closed'} · ${vendor.isVerified ? 'Verified' : 'Pending verification'}`
               : 'Welcome to your vendor dashboard'}
         </p>
       </div>
 
-      {/* Stat cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           icon={<ShoppingBag className="w-5 h-5" />}
@@ -213,7 +146,6 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* Admin extra stats */}
       {isAdmin && (
         <div className="grid gap-4 sm:grid-cols-3">
           <StatCard
@@ -225,45 +157,43 @@ export default function DashboardPage() {
           <StatCard
             icon={<Package className="w-5 h-5" />}
             label="Verified Vendors"
-            value={String(adminVendors.filter((v) => v.is_verified).length)}
+            value={String(adminVendors.filter((v) => v.isVerified).length)}
             color="bg-green-50 text-green-600"
           />
           <StatCard
             icon={<Clock className="w-5 h-5" />}
             label="Open Now"
-            value={String(adminVendors.filter((v) => v.is_open).length)}
+            value={String(adminVendors.filter((v) => v.isOpen).length)}
             color="bg-blue-50 text-blue-600"
           />
         </div>
       )}
 
-      {/* Quick actions */}
-      <div className="card p-6">
+      <div className="card p-6 border rounded-lg shadow-sm bg-white">
         <h2 className="font-semibold text-slate-900 mb-4">Quick Actions</h2>
         <div className="flex flex-wrap gap-3">
-          <Link href="/dashboard/orders" className="btn-primary inline-flex items-center gap-2">
+          <Link href="/dashboard/orders" className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors inline-flex items-center gap-2">
             <ShoppingBag className="w-4 h-4" />
             View Orders
           </Link>
-          <Link href="/dashboard/products" className="btn-secondary inline-flex items-center gap-2">
+          <Link href="/dashboard/products" className="bg-slate-100 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors inline-flex items-center gap-2">
             <Package className="w-4 h-4" />
             Manage Products
           </Link>
           {isVendor && (
-            <Link href="/dashboard/products" className="btn-secondary inline-flex items-center gap-2">
+            <Link href="/dashboard/products/new" className="bg-slate-100 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors inline-flex items-center gap-2">
               <Plus className="w-4 h-4" />
               Add Product
             </Link>
           )}
-          <Link href="/dashboard/settings" className="btn-secondary inline-flex items-center gap-2">
+          <Link href="/dashboard/settings" className="bg-slate-100 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors inline-flex items-center gap-2">
             <Settings className="w-4 h-4" />
             Settings
           </Link>
         </div>
       </div>
 
-      {/* Recent orders */}
-      <div className="card overflow-hidden">
+      <div className="card overflow-hidden border rounded-lg shadow-sm bg-white mt-8">
         <div className="flex items-center justify-between p-6 border-b border-slate-100">
           <h2 className="font-semibold text-slate-900">Recent Orders</h2>
           <Link
@@ -295,24 +225,28 @@ export default function DashboardPage() {
                 {orders.map((order) => (
                   <tr key={order.id} className="border-b border-slate-50 hover:bg-slate-50">
                     <td className="px-6 py-4 font-medium text-slate-900">
-                      #{order.order_number ?? order.id.slice(0, 8)}
+                      #{order.orderNumber ?? order.id.slice(0, 8)}
                     </td>
                     <td className="px-6 py-4 text-slate-600">
-                      {order.profiles?.full_name ?? 'Customer'}
+                      {order.customer?.fullName ?? 'Customer'}
                     </td>
                     <td className="px-6 py-4 text-slate-600">
-                      {order.order_items?.length ?? 0} items
+                      {order.items?.length ?? 0} items
                     </td>
                     <td className="px-6 py-4 font-medium text-slate-900">
-                      ${Number(order.total_amount).toFixed(2)}
+                      ${Number(order.totalAmount).toFixed(2)}
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`badge ${STATUS_BADGE[order.status]}`}>
-                        {STATUS_LABEL[order.status]}
+                      <span className={`px-2 py-1 text-xs font-semibold rounded-full capitalize ${
+                        order.status === 'delivered' ? 'bg-green-100 text-green-800' :
+                        order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                        'bg-blue-100 text-blue-800'
+                      }`}>
+                        {order.status.replace('_', ' ')}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-slate-500">
-                      {new Date(order.created_at).toLocaleDateString()}
+                      {new Date(order.createdAt).toLocaleDateString()}
                     </td>
                   </tr>
                 ))}
@@ -337,7 +271,7 @@ function StatCard({
   color: string;
 }) {
   return (
-    <div className="card p-5">
+    <div className="p-5 border rounded-lg shadow-sm bg-white">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm text-slate-500">{label}</p>

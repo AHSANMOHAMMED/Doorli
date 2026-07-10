@@ -16,9 +16,12 @@
     "@doorli/types": "*",
     "@doorli/utils": "*",
     "dotenv": "^16.4.7",
-    "ioredis": "^5.4.2"
+    "express": "^4.22.2",
+    "ioredis": "^5.4.2",
+    "socket.io-client": "^4.8.3"
   },
   "devDependencies": {
+    "@types/express": "^5.0.6",
     "@types/node": "^22.10.2",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"

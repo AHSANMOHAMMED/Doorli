@@ -1,142 +1,75 @@
-import { Router } from 'express';
-import { authenticateToken, requireRole } from '../../middleware/authenticateToken.js';
-import { validateBody } from '../../middleware/validate.js';
-import { paramId } from '../../lib/params.js';
-import {
-  createOrderSchema,
-  previewOrderSchema,
-  updateOrderStatusSchema,
-} from './orders.schema.js';
-import * as ordersService from './orders.service.js';
+import { Router, Request, Response, NextFunction } from 'express';
+import { createOrder, getOrdersByCustomer, getOrderById, updateOrderStatus } from './orders.service.js';
+import { authenticateToken } from '../../middleware/authenticateToken.js';
+import { OrderStatus } from '@prisma/client';
 
-const ordersRouter = Router();
+const router = Router();
 
-ordersRouter.use(authenticateToken);
-
-ordersRouter.post('/preview', validateBody(previewOrderSchema), async (req, res, next) => {
+// Get customer's orders
+router.get('/my', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const preview = await ordersService.previewOrder(req.body);
-    res.json({ success: true, data: preview });
-  } catch (err) {
-    next(err);
-  }
-});
-
-ordersRouter.post(
-  '/',
-  requireRole('customer', 'admin'),
-  validateBody(createOrderSchema),
-  async (req, res, next) => {
-    try {
-      const order = await ordersService.createOrder(req.user!.id, req.body);
-      res.status(201).json({ success: true, data: order });
-    } catch (err) {
-      next(err);
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({ success: false, error: 'Unauthorized' });
+      return;
     }
-  },
-);
-
-ordersRouter.get('/my', requireRole('customer', 'admin'), async (req, res, next) => {
-  try {
-    const orders = await ordersService.listCustomerOrders(req.user!.id);
-    res.json({ success: true, data: orders });
+    const orders = await getOrdersByCustomer(userId);
+    res.json({ success: true, data: { items: orders } });
   } catch (err) {
     next(err);
   }
 });
 
-ordersRouter.get('/vendor', requireRole('vendor', 'admin'), async (req, res, next) => {
+// Create new order
+router.post('/', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const status = typeof req.query.status === 'string' ? req.query.status : undefined;
-    const orders = await ordersService.listVendorOrders(
-      req.user!.id,
-      status as Parameters<typeof ordersService.listVendorOrders>[1],
-    );
-    res.json({ success: true, data: orders });
-  } catch (err) {
-    next(err);
-  }
-});
-
-ordersRouter.get('/driver', requireRole('driver', 'admin'), async (req, res, next) => {
-  try {
-    const orders = await ordersService.listDriverOrders(req.user!.id);
-    res.json({ success: true, data: orders });
-  } catch (err) {
-    next(err);
-  }
-});
-
-ordersRouter.get('/:id/track', async (req, res, next) => {
-  try {
-    const track = await ordersService.getOrderTrack(
-      paramId(req.params.id),
-      req.user!.id,
-      req.user!.role,
-    );
-    res.json({ success: true, data: track });
-  } catch (err) {
-    next(err);
-  }
-});
-
-ordersRouter.post('/:id/accept', requireRole('driver', 'admin'), async (req, res, next) => {
-  try {
-    const order = await ordersService.acceptOrder(paramId(req.params.id), req.user!.id);
-    res.json({ success: true, data: order });
-  } catch (err) {
-    next(err);
-  }
-});
-
-ordersRouter.post('/:id/decline', requireRole('driver', 'admin'), async (req, res, next) => {
-  try {
-    const result = await ordersService.declineOrder(paramId(req.params.id), req.user!.id);
-    res.json({ success: true, data: result });
-  } catch (err) {
-    next(err);
-  }
-});
-
-ordersRouter.get('/:id', async (req, res, next) => {
-  try {
-    const order = await ordersService.getOrderById(
-      paramId(req.params.id),
-      req.user!.id,
-      req.user!.role,
-    );
-    res.json({ success: true, data: order });
-  } catch (err) {
-    next(err);
-  }
-});
-
-ordersRouter.post('/:id/cancel', requireRole('customer', 'admin'), async (req, res, next) => {
-  try {
-    const order = await ordersService.cancelOrder(paramId(req.params.id), req.user!.id);
-    res.json({ success: true, data: order });
-  } catch (err) {
-    next(err);
-  }
-});
-
-ordersRouter.patch(
-  '/:id/status',
-  requireRole('vendor', 'driver', 'admin'),
-  validateBody(updateOrderStatusSchema),
-  async (req, res, next) => {
-    try {
-      const order = await ordersService.updateOrderStatus(
-        paramId(req.params.id),
-        req.user!.id,
-        req.user!.role,
-        req.body.status,
-      );
-      res.json({ success: true, data: order });
-    } catch (err) {
-      next(err);
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({ success: false, error: 'Unauthorized' });
+      return;
     }
-  },
-);
 
-export default ordersRouter;
+    const { vendorId, paymentMethod, deliveryAddressId, deliveryAddress, specialInstructions, items } = req.body;
+
+    const order = await createOrder({
+      customerId: userId,
+      vendorId,
+      paymentMethod,
+      deliveryAddressId,
+      deliveryAddress,
+      specialInstructions,
+      items,
+    });
+
+    res.status(201).json({ success: true, data: order });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Get order by ID
+router.get('/:id', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const order = await getOrderById(req.params.id);
+    if (!order) {
+      res.status(404).json({ success: false, error: 'Order not found' });
+      return;
+    }
+    res.json({ success: true, data: order });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Update order status (would normally be restricted to vendors/drivers/admins)
+router.patch('/:id/status', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { status } = req.body;
+    const order = await updateOrderStatus(req.params.id, status as OrderStatus);
+    res.json({ success: true, data: order });
+  } catch (err) {
+    next(err);
+  }
+});
+
+export default router;

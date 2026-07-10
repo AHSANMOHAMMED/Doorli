@@ -25,6 +25,8 @@ const envSchema = z.object({
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
   MSG91_API_KEY: z.string().optional(),
   OTP_TTL_SECONDS: z.coerce.number().default(300),
+  ERP_INTERNAL_SECRET: z.string().default('doorli_internal_sync_secret'),
+  ERP_SERVICE_URL: z.string().default('http://localhost:3000'),
 });
 
 export type Env = z.infer<typeof envSchema>;

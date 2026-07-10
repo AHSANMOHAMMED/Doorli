@@ -2,6 +2,7 @@ import './config/env.js';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import swaggerUi from 'swagger-ui-express';
 import routes from './routes/index.js';
 import { errorHandler } from './middleware/errorHandler.js';
@@ -31,11 +32,22 @@ const openApiSpec = {
   },
 };
 
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  limit: 500, // Limit each IP to 500 requests per windowMs
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+});
+
 export function createApp() {
   const app = express();
 
+  app.set('trust proxy', 1); // Trust first proxy if behind reverse proxy
+  
   app.use(helmet());
   app.use(cors());
+  app.use(limiter); // Apply rate limiter to all requests globally
+  
   app.use(express.json());
   app.use(requestLogger);
 

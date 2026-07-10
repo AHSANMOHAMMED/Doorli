@@ -43,6 +43,16 @@ app.use(
   })
 );
 
+// Storage service proxy
+app.use(
+  '/api/v1/storage',
+  createProxyMiddleware({
+    target: process.env.STORAGE_SERVICE_URL || 'http://localhost:4005',
+    changeOrigin: true,
+    pathRewrite: { '^/api/v1/storage': '/api/storage' }, // Map to the internal path
+  })
+);
+
 server.listen(env.API_PORT, () => {
   console.log(`Doorli API running on http://localhost:${env.API_PORT}`);
   console.log(`Swagger docs at http://localhost:${env.API_PORT}/api/docs`);

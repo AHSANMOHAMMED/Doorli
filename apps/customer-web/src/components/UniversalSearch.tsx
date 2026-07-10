@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import { Search, MapPin, Loader2, Store, Package } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 
 interface SearchResult {
   id: string;
@@ -15,6 +16,7 @@ interface SearchResult {
 }
 
 export function UniversalSearch() {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -29,13 +31,16 @@ export function UniversalSearch() {
 
       setIsSearching(true);
       try {
-        // In a real app, this points to our Elasticsearch-backed API
-        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
-        const data = await res.json();
-        setResults(data.results || []);
+        // Mocking search results for the dropdown
+        setTimeout(() => {
+          setResults([
+            { id: "1", type: "business", name: "Joe's Pizza", description: "Best pizza in town", distance: "0.5 mi" },
+            { id: "2", type: "product", name: "Pepperoni Pizza", description: "Large pepperoni pizza", price: "$15.99" }
+          ]);
+          setIsSearching(false);
+        }, 300);
       } catch (error) {
         console.error("Search failed:", error);
-      } finally {
         setIsSearching(false);
       }
     };
@@ -44,12 +49,20 @@ export function UniversalSearch() {
     return () => clearTimeout(debounce);
   }, [query]);
 
+  const handleSearch = (e?: FormEvent) => {
+    if (e) e.preventDefault();
+    if (query.trim()) {
+      setIsOpen(false);
+      router.push(`/search?q=${encodeURIComponent(query.trim())}`);
+    }
+  };
+
   return (
     <div className="relative group w-full">
       <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl blur opacity-25 transition duration-500"></div>
       
       <div className="relative flex flex-col bg-neutral-900/80 border border-white/10 backdrop-blur-xl rounded-2xl shadow-2xl z-50">
-        <div className="flex items-center p-2">
+        <form onSubmit={handleSearch} className="flex items-center p-2">
           <div className="flex-1 flex items-center px-4">
             <Search className="w-5 h-5 text-neutral-400" />
             <input 
@@ -69,10 +82,10 @@ export function UniversalSearch() {
             <MapPin className="w-4 h-4 text-neutral-400" />
             <span className="text-sm text-neutral-300">Current Location</span>
           </div>
-          <button className="px-6 py-3 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl font-medium transition-colors shadow-lg shadow-indigo-500/25">
+          <button type="submit" className="px-6 py-3 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl font-medium transition-colors shadow-lg shadow-indigo-500/25">
             Search
           </button>
-        </div>
+        </form>
 
         {/* Dropdown Results */}
         <AnimatePresence>
@@ -86,7 +99,15 @@ export function UniversalSearch() {
               {results.length > 0 ? (
                 <ul className="max-h-96 overflow-y-auto p-2">
                   {results.map((item) => (
-                    <li key={item.id} className="p-3 hover:bg-white/5 rounded-xl cursor-pointer flex items-start gap-4 transition-colors">
+                    <li 
+                      key={item.id} 
+                      onClick={() => {
+                        setQuery(item.name);
+                        setIsOpen(false);
+                        router.push(item.type === 'business' ? `/vendor/${item.id}` : `/search?q=${encodeURIComponent(item.name)}`);
+                      }}
+                      className="p-3 hover:bg-white/5 rounded-xl cursor-pointer flex items-start gap-4 transition-colors"
+                    >
                       <div className={cn("p-2 rounded-lg", item.type === 'business' ? 'bg-indigo-500/20 text-indigo-400' : 'bg-emerald-500/20 text-emerald-400')}>
                         {item.type === 'business' ? <Store className="w-5 h-5" /> : <Package className="w-5 h-5" />}
                       </div>

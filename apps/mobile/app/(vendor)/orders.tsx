@@ -68,17 +68,17 @@ export default function VendorOrders() {
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
           renderItem={({ item }) => {
             const actions = VENDOR_ACTIONS[item.status] ?? [];
-            const items = item.order_items ?? [];
+            const items = item.items ?? [];
             return (
               <View style={styles.card}>
                 <View style={styles.header}>
-                  <Text style={styles.orderNumber}>{item.order_number}</Text>
+                  <Text style={styles.orderNumber}>{item.orderNumber}</Text>
                   <Text style={styles.status}>{STATUS_LABELS[item.status] ?? item.status}</Text>
                 </View>
-                <Text style={styles.total}>{formatPrice(Number(item.total_amount))}</Text>
-                {items.map((line) => (
+                <Text style={styles.total}>{formatPrice(Number(item.totalAmount))}</Text>
+                {items.map((line: any) => (
                   <Text key={line.id} style={styles.line}>
-                    {line.name} × {line.quantity}
+                    {line.product?.name} × {line.quantity}
                   </Text>
                 ))}
                 <View style={styles.actions}>

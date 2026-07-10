@@ -22,7 +22,7 @@ export default function NavigateScreen() {
     queryFn: () => fetchOrder(orderId),
   });
 
-  const order = data?.data;
+  const order: any = data;
 
   if (isLoading || !order) {
     return (

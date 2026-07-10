@@ -69,7 +69,7 @@ export default function OrderDetailScreen() {
 
   const currentStep = STATUS_STEPS.indexOf(order.status);
   const canCancel = order.status === 'pending';
-  const items = order.order_items ?? [];
+  const items = order.items ?? [];
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -77,7 +77,7 @@ export default function OrderDetailScreen() {
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
           <ArrowLeft color="#fff" size={24} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Order #{order.order_number}</Text>
+        <Text style={styles.headerTitle}>Order #{order.orderNumber}</Text>
         <View style={styles.headerPlaceholder} />
       </View>
 
@@ -85,7 +85,7 @@ export default function OrderDetailScreen() {
         <View style={styles.statusBanner}>
           <Text style={styles.statusBannerTitle}>{STATUS_LABELS[order.status] ?? order.status}</Text>
           <Text style={styles.statusBannerSubtitle}>
-            {order.vendor?.business_name ?? 'Shop'}
+            {order.vendor?.businessName ?? 'Shop'}
           </Text>
         </View>
 
@@ -134,7 +134,7 @@ export default function OrderDetailScreen() {
                     </Text>
                     {isCurrent && (
                       <Text style={styles.timelineTime}>
-                        Updated {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        Updated {new Date(order.updatedAt || order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </Text>
                     )}
                   </View>
@@ -164,13 +164,13 @@ export default function OrderDetailScreen() {
 
         <GlassCard style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Order Items</Text>
-          {items.map((item, idx) => (
+          {items.map((item: any, idx: number) => (
             <View key={item.id} style={[styles.itemRow, idx === items.length - 1 && styles.lastRow]}>
               <View style={styles.qtyBadge}>
                 <Text style={styles.qtyText}>{item.quantity}x</Text>
               </View>
-              <Text style={styles.itemName}>{item.name}</Text>
-              <Text style={styles.itemPrice}>{formatPrice(Number(item.price) * item.quantity)}</Text>
+              <Text style={styles.itemName}>{item.product?.name}</Text>
+              <Text style={styles.itemPrice}>{formatPrice(Number(item.totalPrice))}</Text>
             </View>
           ))}
         </GlassCard>
@@ -183,20 +183,20 @@ export default function OrderDetailScreen() {
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Delivery</Text>
-            <Text style={styles.summaryValue}>{formatPrice(Number(order.delivery_fee))}</Text>
+            <Text style={styles.summaryValue}>{formatPrice(Number(order.deliveryFee))}</Text>
           </View>
           <View style={[styles.summaryRow, styles.totalRow]}>
             <Text style={styles.totalLabel}>Total</Text>
-            <Text style={styles.totalValue}>{formatPrice(Number(order.total_amount))}</Text>
+            <Text style={styles.totalValue}>{formatPrice(Number(order.totalAmount))}</Text>
           </View>
         </GlassCard>
 
-        {order.delivery_address && (
+        {order.deliveryAddress && (
           <GlassCard style={styles.sectionCard}>
             <Text style={styles.sectionTitle}>Delivery Details</Text>
             <View style={styles.addressRow}>
               <MapPin color="rgba(255,255,255,0.7)" size={20} />
-              <Text style={styles.addressText}>{order.delivery_address}</Text>
+              <Text style={styles.addressText}>{order.deliveryAddress.addressLine}</Text>
             </View>
           </GlassCard>
         )}

@@ -36,7 +36,7 @@ export default function CustomerHome() {
   const filtered = (data ?? []).filter(
     (v: Vendor) =>
       !search ||
-      v.business_name.toLowerCase().includes(search.toLowerCase()) ||
+      v.businessName.toLowerCase().includes(search.toLowerCase()) ||
       (v.city ?? '').toLowerCase().includes(search.toLowerCase()),
   );
 

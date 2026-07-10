@@ -70,7 +70,7 @@ export default function ServiceRequestScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Request Service from {vendor.business_name}</Text>
+        <Text style={styles.title}>Request Service from {vendor.businessName}</Text>
 
         <View style={styles.field}>
           <Text style={styles.label}>Title *</Text>

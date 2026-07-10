@@ -59,7 +59,7 @@ export default function OrdersScreen() {
                   <View style={styles.cardHeader}>
                     <View style={styles.vendorInfo}>
                       <Store color="rgba(255,255,255,0.6)" size={16} />
-                      <Text style={styles.vendor}>{item.vendor?.business_name ?? 'Shop'}</Text>
+                      <Text style={styles.vendor}>{item.vendor?.businessName ?? 'Shop'}</Text>
                   </View>
                   <View style={[styles.badge, { backgroundColor: config.bg }]}>
                     <StatusIcon color={config.color} size={12} />
@@ -72,12 +72,12 @@ export default function OrdersScreen() {
                 <View style={styles.cardBody}>
                   <View style={styles.orderNumberContainer}>
                     <Text style={styles.orderLabel}>Order ID</Text>
-                    <Text style={styles.orderNumber}>{item.order_number}</Text>
+                    <Text style={styles.orderNumber}>{item.orderNumber}</Text>
                   </View>
                   <View style={styles.priceContainer}>
-                    <Text style={styles.total}>{formatPrice(Number(item.total_amount))}</Text>
+                    <Text style={styles.total}>{formatPrice(Number(item.totalAmount))}</Text>
                     <Text style={styles.date}>
-                      {new Date(item.created_at).toLocaleDateString()}
+                      {new Date(item.createdAt).toLocaleDateString()}
                     </Text>
                   </View>
                 </View>

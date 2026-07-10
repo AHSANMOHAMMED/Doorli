@@ -4,20 +4,55 @@ import { calculateFare } from '../pricingEngine';
 
 const router = Router();
 
-// Basic Geographic Demand lookup stub (in a real system, you'd use PostGIS to check if lat/lng falls in a GeographicZone)
+// Geographic Demand lookup using PostGIS ST_Contains
 const getZoneDemand = async (lat: number, lng: number): Promise<number> => {
-  // Mock logic: randomly assign a demand between 1 and 5
-  return Math.floor(Math.random() * 5) + 1;
+  try {
+    const result = await prisma.$queryRaw<Array<{ demand_level: number }>>`
+      SELECT demand_level 
+      FROM geographic_zones 
+      WHERE ST_Contains(boundaries::geometry, ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geometry)
+      LIMIT 1
+    `;
+    return result.length > 0 ? result[0].demand_level : 1;
+  } catch (error) {
+    console.error("Error fetching zone demand:", error);
+    return 1; // Default fallback demand
+  }
+};
+
+// Calculate accurate geodetic distance in kilometers
+const calculateDistanceKm = async (lat1: number, lng1: number, lat2: number, lng2: number): Promise<number> => {
+  try {
+    const result = await prisma.$queryRaw<Array<{ dist_km: number }>>`
+      SELECT ST_Distance(
+        ST_SetSRID(ST_MakePoint(${lng1}, ${lat1}), 4326)::geography,
+        ST_SetSRID(ST_MakePoint(${lng2}, ${lat2}), 4326)::geography
+      ) / 1000 AS dist_km
+    `;
+    return result.length > 0 ? Number(result[0].dist_km) : 0;
+  } catch (error) {
+    console.error("Error calculating distance:", error);
+    return 0; // Fallback
+  }
 };
 
 router.post('/request-ride', async (req: Request, res: Response): Promise<any> => {
   try {
-    const { customerId, pickupLat, pickupLng, dropoffLat, dropoffLng, distanceKm, baseFare } = req.body;
+    const { customerId, pickupLat, pickupLng, dropoffLat, dropoffLng, baseFare } = req.body;
 
-    const pickupDemand = await getZoneDemand(pickupLat, pickupLng);
-    const dropoffDemand = await getZoneDemand(dropoffLat, dropoffLng);
+    // Run spatial queries concurrently
+    const [pickupDemand, dropoffDemand, serverDistanceKm] = await Promise.all([
+      getZoneDemand(pickupLat, pickupLng),
+      getZoneDemand(dropoffLat, dropoffLng),
+      calculateDistanceKm(pickupLat, pickupLng, dropoffLat, dropoffLng)
+    ]);
 
-    const { fare, returnPremium } = calculateFare(baseFare, pickupDemand, dropoffDemand, distanceKm);
+    // Safety check - prevent booking rides with no distance
+    if (serverDistanceKm < 0.1) {
+      return res.status(400).json({ message: 'Pickup and dropoff locations are too close.' });
+    }
+
+    const { fare, returnPremium } = calculateFare(baseFare, pickupDemand, dropoffDemand, serverDistanceKm);
 
     const ride = await prisma.rideRequest.create({
       data: {
@@ -36,6 +71,11 @@ router.post('/request-ride', async (req: Request, res: Response): Promise<any> =
     res.status(201).json({
       message: 'Ride requested successfully',
       ride,
+      metadata: {
+        distanceKm: serverDistanceKm,
+        pickupDemand,
+        dropoffDemand
+      }
     });
   } catch (error) {
     console.error('Failed to request ride:', error);

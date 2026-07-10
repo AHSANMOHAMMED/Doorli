@@ -52,6 +52,7 @@ export default function ProductsPage() {
   const [form, setForm] = useState<ProductForm>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const isAdmin = profile?.role === 'admin';
 
@@ -129,6 +130,34 @@ export default function ProductsPage() {
     });
     setFormError('');
     setShowModal(true);
+  }
+
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    setFormError('');
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const data = await res.json();
+      setForm({ ...form, image_url: data.url });
+    } catch (err) {
+      setFormError('Failed to upload image. Please try again.');
+    } finally {
+      setUploadingImage(false);
+    }
   }
 
   async function saveProduct(e: React.FormEvent) {
@@ -508,15 +537,42 @@ export default function ProductsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Image URL
+                  Product Image
                 </label>
-                <input
-                  type="url"
-                  value={form.image_url}
-                  onChange={(e) => setForm({ ...form, image_url: e.target.value })}
-                  className="input"
-                  placeholder="https://..."
-                />
+                {form.image_url ? (
+                  <div className="relative w-32 h-32 mb-2 rounded-lg overflow-hidden border border-slate-200">
+                    <img src={form.image_url} alt="Preview" className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, image_url: '' })}
+                      className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1 hover:bg-black/70"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center w-full">
+                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-300 border-dashed rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100">
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        {uploadingImage ? (
+                          <Loader2 className="w-6 h-6 animate-spin text-slate-400 mb-2" />
+                        ) : (
+                          <ImageIcon className="w-6 h-6 text-slate-400 mb-2" />
+                        )}
+                        <p className="text-sm text-slate-500">
+                          {uploadingImage ? 'Uploading...' : 'Click to upload image'}
+                        </p>
+                      </div>
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        disabled={uploadingImage}
+                      />
+                    </label>
+                  </div>
+                )}
               </div>
 
               <label className="flex items-center gap-3 cursor-pointer">

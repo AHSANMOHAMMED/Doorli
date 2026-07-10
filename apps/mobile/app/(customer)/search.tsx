@@ -21,13 +21,12 @@ export default function SearchScreen() {
     queryKey: ['vendors-search'],
     queryFn: async () => {
       const res = await fetchVendors();
-      return res.data?.items ?? [];
+      return res;
     },
   });
 
   const filtered = (data ?? []).filter(
-    (v) =>
-      v.businessName.toLowerCase().includes(query.toLowerCase()) ||
+      (v: any) => v.businessName.toLowerCase().includes(query.toLowerCase()) ||
       v.category.toLowerCase().includes(query.toLowerCase()) ||
       (v.city?.toLowerCase().includes(query.toLowerCase()) ?? false),
   );

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-// Assuming items or inventory tables exist
-import { items } from '@/lib/db/schema';
+import { warehouseStock } from '@/lib/db/schema';
+import { eq, and, sql } from 'drizzle-orm';
 
 export async function GET(req: Request) {
   try {
@@ -12,18 +12,28 @@ export async function GET(req: Request) {
 
     const url = new URL(req.url);
     const tenantId = url.searchParams.get('tenantId');
-    const productId = url.searchParams.get('productId');
+    const productId = url.searchParams.get('productId'); // Maps to ERP itemId
 
     if (!tenantId || !productId) {
       return NextResponse.json({ error: 'Missing parameters' }, { status: 400 });
     }
 
-    // Simulate fetching inventory from ERP
-    // const item = await db.query.items.findFirst({
-    //   where: (i, { eq, and }) => and(eq(i.tenantId, tenantId), eq(i.id, productId)),
-    // });
+    // Fetch aggregate inventory from ERP warehouseStock across all warehouses for this tenant and item
+    const stockResult = await db
+      .select({
+        totalStock: sql<number>`COALESCE(SUM(${warehouseStock.currentStock}), 0)`,
+      })
+      .from(warehouseStock)
+      .where(
+        and(
+          eq(warehouseStock.tenantId, tenantId),
+          eq(warehouseStock.itemId, productId)
+        )
+      );
 
-    return NextResponse.json({ success: true, stock: 100 }); // Mock response
+    const stock = Number(stockResult[0]?.totalStock || 0);
+
+    return NextResponse.json({ success: true, stock });
   } catch (error) {
     console.error('ERP Internal API Error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

@@ -1,38 +1,39 @@
 import { supabase } from './supabase';
+import { apiClient } from './axios';
 import type { VendorCategory } from '@doorli/types';
 
 export const DEFAULT_LOCATION = { lat: 6.9271, lng: 79.8612 };
 
 export interface Vendor {
   id: string;
-  business_name: string;
+  businessName: string;
   category: VendorCategory;
   description?: string | null;
-  address_line?: string | null;
+  addressLine?: string | null;
   city?: string | null;
-  logo_url?: string | null;
-  banner_url?: string | null;
-  is_open: boolean;
-  is_verified: boolean;
-  avg_rating: number;
-  total_reviews: number;
-  min_order_amount?: number | null;
-  delivery_radius_km?: number;
-  distance_km?: number;
+  logoUrl?: string | null;
+  bannerUrl?: string | null;
+  isOpen: boolean;
+  isVerified: boolean;
+  avgRating: number;
+  totalReviews: number;
+  minOrderAmount?: number | null;
+  deliveryRadiusKm?: number;
+  distanceKm?: number;
 }
 
 export interface Product {
   id: string;
-  vendor_id: string;
+  vendorId: string;
   name: string;
   description?: string | null;
   price: number;
-  discount_price?: number | null;
+  discountPrice?: number | null;
   unit?: string | null;
-  stock_quantity: number;
-  image_url?: string | null;
+  stockQuantity: number;
+  imageUrl?: string | null;
   category?: string | null;
-  is_available: boolean;
+  isAvailable: boolean;
 }
 
 export interface VendorDetail extends Vendor {
@@ -41,24 +42,28 @@ export interface VendorDetail extends Vendor {
 
 export interface Order {
   id: string;
-  order_number: string;
+  orderNumber: string;
   status: string;
-  payment_method: string;
-  payment_status: string;
+  paymentMethod: string;
+  paymentStatus: string;
   subtotal: number;
-  delivery_fee: number;
-  total_amount: number;
-  delivery_address?: string | null;
-  customer_notes?: string | null;
-  created_at: string;
-  delivered_at?: string | null;
-  vendor?: { id: string; business_name: string; phone?: string | null };
-  order_items?: Array<{
+  deliveryFee: number;
+  totalAmount: number;
+  deliveryAddressId?: string | null;
+  deliveryAddress?: { addressLine: string } | null;
+  specialInstructions?: string | null;
+  createdAt: string;
+  updatedAt?: string | null;
+  vendor?: { id: string; businessName: string; phone?: string | null };
+  items?: Array<{
     id: string;
-    name: string;
-    price: number;
+    product: {
+      name: string;
+      imageUrl?: string | null;
+    };
+    unitPrice: number;
     quantity: number;
-    image_url?: string | null;
+    totalPrice: number;
   }>;
 }
 
@@ -127,33 +132,21 @@ export function formatStatus(status: string): string {
 // --- Vendor queries ---
 
 export async function fetchVendors(category?: VendorCategory | 'all') {
-  let query = supabase.from('vendors').select('*').order('avg_rating', { ascending: false });
+  let url = '/vendors';
   if (category && category !== 'all') {
-    query = query.eq('category', category);
+    url += `?category=${category}`;
   }
-  const { data, error } = await query;
-  if (error) throw error;
-  return data as Vendor[];
+  const res = await apiClient.get(url);
+  return res.data?.data?.items ?? [];
 }
 
 export async function fetchVendor(id: string): Promise<VendorDetail> {
-  const { data: vendor, error: vendorError } = await supabase
-    .from('vendors')
-    .select('*')
-    .eq('id', id)
-    .maybeSingle();
-  if (vendorError) throw vendorError;
-  if (!vendor) throw new Error('Vendor not found');
-
-  const { data: products, error: productsError } = await supabase
-    .from('products')
-    .select('*')
-    .eq('vendor_id', id)
-    .eq('is_available', true)
-    .order('name');
-  if (productsError) throw productsError;
-
-  return { ...(vendor as Vendor), products: products as Product[] };
+  const res = await apiClient.get(`/vendors/${id}`);
+  if (!res.data?.success) {
+    throw new Error('Vendor not found');
+  }
+  const vendor = res.data.data;
+  return vendor as VendorDetail;
 }
 
 export async function fetchVendorReviews(vendorId: string) {
@@ -257,92 +250,52 @@ export async function createOrder(params: {
   notes?: string;
   deliveryFee?: number;
 }) {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
+  const { vendorId, items, deliveryAddress, paymentMethod, notes } = params;
 
-  const subtotal = params.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-  const deliveryFee = params.deliveryFee ?? 30;
-  const totalAmount = subtotal + deliveryFee;
+  // Clear local cart for this vendor immediately, even before the network request
+  // (Assuming caller does it or we rely on the state here, but `useCartStore.getState().clearVendor` is better done in UI)
+  
+  const res = await apiClient.post('/orders', {
+    vendorId,
+    deliveryAddress,
+    paymentMethod: paymentMethod ?? 'cod',
+    specialInstructions: notes,
+    items: items.map(i => ({
+      productId: i.productId,
+      quantity: i.quantity,
+      unitPrice: i.price,
+    })),
+  });
 
-  const { data: order, error: orderError } = await supabase
-    .from('orders')
-    .insert({
-      user_id: user.id,
-      vendor_id: params.vendorId,
-      status: 'pending',
-      payment_method: params.paymentMethod ?? 'cod',
-      payment_status: 'pending',
-      delivery_type: 'delivery',
-      subtotal,
-      delivery_fee: deliveryFee,
-      total_amount: totalAmount,
-      delivery_address: params.deliveryAddress,
-      customer_notes: params.notes ?? null,
-    })
-    .select('id, order_number')
-    .single();
-  if (orderError) throw orderError;
+  if (!res.data?.success) {
+    throw new Error(res.data?.error || 'Failed to create order');
+  }
 
-  const orderItems = params.items.map((item) => ({
-    order_id: order.id,
-    product_id: item.productId,
-    name: item.name,
-    price: item.price,
-    quantity: item.quantity,
-    image_url: item.image_url ?? null,
-  }));
-
-  const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
-  if (itemsError) throw itemsError;
-
-  // Clear the cart for this vendor
-  const { data: cart } = await supabase
-    .from('carts')
-    .select('id')
-    .eq('user_id', user.id)
-    .eq('vendor_id', params.vendorId)
-    .maybeSingle();
-  if (cart) await clearCart(cart.id);
-
-  return order;
+  return res.data.data;
 }
 
 export async function fetchMyOrders() {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return [];
-
-  const { data, error } = await supabase
-    .from('orders')
-    .select('*, vendor:vendors(id, business_name, phone), order_items(id, name, price, quantity, image_url)')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
-  if (error) throw error;
-  return data as Order[];
+  const res = await apiClient.get('/orders/my');
+  if (!res.data?.success) {
+    throw new Error('Failed to fetch orders');
+  }
+  return res.data.data.items;
 }
 
 export async function fetchOrder(id: string) {
-  const { data, error } = await supabase
-    .from('orders')
-    .select('*, vendor:vendors(id, business_name, phone), order_items(id, name, price, quantity, image_url)')
-    .eq('id', id)
-    .maybeSingle();
-  if (error) throw error;
-  return data as Order | null;
+  const res = await apiClient.get(`/orders/${id}`);
+  if (!res.data?.success) {
+    throw new Error('Failed to fetch order');
+  }
+  return res.data.data;
 }
 
 export async function cancelOrder(id: string) {
-  const { data, error } = await supabase
-    .from('orders')
-    .update({ status: 'cancelled' })
-    .eq('id', id)
-    .select()
-    .maybeSingle();
-  if (error) throw error;
-  return data;
+  const res = await apiClient.patch(`/orders/${id}/status`, { status: 'cancelled' });
+  if (!res.data?.success) {
+    throw new Error('Failed to cancel order');
+  }
+  return res.data.data;
 }
 
 // --- Booking operations ---
