@@ -137,6 +137,7 @@ model User {
   payments             Payment[]
   notifications        Notification[]
   ridesAsCustomer      RideRequest[]    @relation("CustomerRides")
+  deviceTokens         DeviceToken[]
 
   @@index([role])
   @@index([createdAt])
@@ -210,6 +211,9 @@ model Product {
   stockQuantity Int      @default(0) @map("stock_quantity")
   imageUrl      String?  @map("image_url")
   isAvailable   Boolean  @default(true) @map("is_available")
+  prepTimeMins  Int?     @map("prep_time_mins")
+  addons        Json?    // [{name, price}] for food customization
+  allergens     Json?    // string[]
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
@@ -290,6 +294,10 @@ model Booking {
   depositAmount  Decimal?      @map("deposit_amount") @db.Decimal(10, 2)
   status         BookingStatus @default(pending)
   requirements   String?
+  durationMins   Int?          @map("duration_mins")
+  roomType       String?       @map("room_type") @db.VarChar(100)
+  amenities      Json?
+  contractUrl    String?       @map("contract_url")
   createdAt      DateTime      @default(now()) @map("created_at")
   updatedAt      DateTime      @updatedAt @map("updated_at")
 
@@ -439,10 +447,95 @@ model RideRequest {
 model GeographicZone {
   id              String      @id @default(uuid()) @db.Uuid
   name            String      @db.VarChar(100)
+  city            String?     @db.VarChar(80)
   demandLevel     Int         @default(1) @map("demand_level")
   boundaries      Unsupported("GEOGRAPHY(POLYGON, 4326)")?
+  isActive        Boolean     @default(true) @map("is_active")
   createdAt       DateTime    @default(now()) @map("created_at")
   updatedAt       DateTime    @updatedAt @map("updated_at")
 
   @@map("geographic_zones")
+}
+
+model PromoCode {
+  id             String    @id @default(uuid()) @db.Uuid
+  code           String    @unique @db.VarChar(40)
+  description    String?
+  discountType   String    @map("discount_type") @db.VarChar(20) // percent | fixed
+  discountValue  Decimal   @map("discount_value") @db.Decimal(10, 2)
+  minOrderAmount Decimal?  @map("min_order_amount") @db.Decimal(10, 2)
+  maxUses        Int?      @map("max_uses")
+  usedCount      Int       @default(0) @map("used_count")
+  vendorId       String?   @map("vendor_id") @db.Uuid
+  isActive       Boolean   @default(true) @map("is_active")
+  startsAt       DateTime? @map("starts_at")
+  expiresAt      DateTime? @map("expires_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  @@index([isActive])
+  @@map("promo_codes")
+}
+
+model FlashSale {
+  id           String   @id @default(uuid()) @db.Uuid
+  vendorId     String   @map("vendor_id") @db.Uuid
+  productId    String?  @map("product_id") @db.Uuid
+  title        String   @db.VarChar(150)
+  discountPct  Int      @map("discount_pct")
+  startsAt     DateTime @map("starts_at")
+  endsAt       DateTime @map("ends_at")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([vendorId, isActive])
+  @@map("flash_sales")
+}
+
+model EventPackage {
+  id            String   @id @default(uuid()) @db.Uuid
+  customerId    String   @map("customer_id") @db.Uuid
+  title         String   @db.VarChar(200)
+  eventDate     DateTime @map("event_date") @db.Date
+  guestCount    Int?     @map("guest_count")
+  venueVendorId String?  @map("venue_vendor_id") @db.Uuid
+  status        String   @default("draft") @db.VarChar(40)
+  totalEstimate Decimal? @map("total_estimate") @db.Decimal(12, 2)
+  items         Json     @default("[]")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([customerId])
+  @@map("event_packages")
+}
+
+model DeliverySubscription {
+  id              String   @id @default(uuid()) @db.Uuid
+  customerId      String   @map("customer_id") @db.Uuid
+  vendorId        String   @map("vendor_id") @db.Uuid
+  frequency       String   @db.VarChar(20) // weekly | biweekly | monthly
+  nextDeliveryAt  DateTime @map("next_delivery_at")
+  items           Json
+  deliveryAddress String   @map("delivery_address")
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([customerId, isActive])
+  @@index([nextDeliveryAt])
+  @@map("delivery_subscriptions")
+}
+
+model DeviceToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  token     String   @unique @db.VarChar(512)
+  platform  String   @db.VarChar(20) // ios | android | web
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("device_tokens")
 }

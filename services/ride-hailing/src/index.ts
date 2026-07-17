@@ -70,6 +70,15 @@ io.on('connection', (socket) => {
     socket.join(`driver_${driverId}`);
     console.log(`Driver ${driverId} went online and joined room.`);
   });
+
+  socket.on('subscribe_driver', (driverId: string) => {
+    socket.join(`driver_${driverId}`);
+    console.log(`Client subscribed to driver_${driverId}`);
+  });
+
+  socket.on('subscribe_ride', (rideId: string) => {
+    socket.join(`ride_${rideId}`);
+  });
   
   socket.on('trigger_ride_assigned', (data) => {
     const { driverId, payload } = data;

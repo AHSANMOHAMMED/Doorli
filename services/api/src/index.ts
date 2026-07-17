@@ -49,7 +49,27 @@ app.use(
   createProxyMiddleware({
     target: process.env.STORAGE_SERVICE_URL || 'http://localhost:4005',
     changeOrigin: true,
-    pathRewrite: { '^/api/v1/storage': '/api/storage' }, // Map to the internal path
+    pathRewrite: { '^/api/v1/storage': '/api/storage' },
+  })
+);
+
+// Search service proxy
+app.use(
+  '/api/v1/search',
+  createProxyMiddleware({
+    target: process.env.SEARCH_SERVICE_URL || 'http://localhost:4004',
+    changeOrigin: true,
+    pathRewrite: { '^/api/v1/search': '/api/search' },
+  })
+);
+
+// AI recommendations service proxy
+app.use(
+  '/api/v1/ai',
+  createProxyMiddleware({
+    target: process.env.AI_SERVICE_URL || 'http://localhost:4006',
+    changeOrigin: true,
+    pathRewrite: { '^/api/v1/ai': '/api/ai' },
   })
 );
 

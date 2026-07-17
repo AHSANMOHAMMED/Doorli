@@ -68,4 +68,46 @@ usersRouter.post(
   },
 );
 
+usersRouter.post('/device-token', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const token = String(req.body.token || '');
+    const platform = String(req.body.platform || 'android');
+    if (!token) throw new AppError(400, 'token required');
+
+    const device = await prisma.deviceToken.upsert({
+      where: { token },
+      create: { userId: req.user!.id, token, platform },
+      update: { userId: req.user!.id, platform },
+    });
+    res.status(201).json({ success: true, data: device });
+  } catch (err) {
+    next(err);
+  }
+});
+
+usersRouter.get('/notifications', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const notifications = await prisma.notification.findMany({
+      where: { userId: req.user!.id },
+      orderBy: { sentAt: 'desc' },
+      take: 50,
+    });
+    res.json({ success: true, data: notifications });
+  } catch (err) {
+    next(err);
+  }
+});
+
+usersRouter.patch('/notifications/:id/read', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const n = await prisma.notification.updateMany({
+      where: { id: String(req.params.id), userId: req.user!.id },
+      data: { isRead: true },
+    });
+    res.json({ success: true, data: { updated: n.count } });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default usersRouter;

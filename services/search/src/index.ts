@@ -26,7 +26,7 @@ app.post('/api/search/sync', async (req: Request, res: Response): Promise<any> =
       },
       include: {
         vendor: {
-          select: { name: true }
+          select: { businessName: true }
         }
       }
     });
@@ -64,7 +64,7 @@ app.post('/api/search/sync', async (req: Request, res: Response): Promise<any> =
         description: doc.description,
         price: Number(doc.price),
         vendorId: doc.vendorId,
-        vendorName: doc.vendor.name,
+        vendorName: doc.vendor.businessName,
         image_url: doc.imageUrl
       }
     ]);

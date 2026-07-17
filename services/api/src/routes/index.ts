@@ -12,6 +12,13 @@ import { bookingsRouter } from '../modules/bookings/index.js';
 import { serviceRequestsRouter } from '../modules/service-requests/index.js';
 import { reviewsRouter } from '../modules/reviews/index.js';
 import { paymentsRouter } from '../modules/payments/index.js';
+import promosRouter from '../modules/promos/promos.routes.js';
+import adminRouter from '../modules/admin/admin.routes.js';
+import loyaltyRouter from '../modules/loyalty/loyalty.routes.js';
+import subscriptionsRouter from '../modules/subscriptions/subscriptions.routes.js';
+import eventsRouter from '../modules/events/events.routes.js';
+import citiesRouter from '../modules/cities/cities.routes.js';
+import recommendationsRouter from '../modules/recommendations/recommendations.routes.js';
 
 const router = Router();
 
@@ -51,5 +58,12 @@ router.use('/api/v1/bookings', bookingsRouter);
 router.use('/api/v1/service-requests', serviceRequestsRouter);
 router.use('/api/v1/reviews', reviewsRouter);
 router.use('/api/v1/payments', paymentsRouter);
+router.use('/api/v1/promos', promosRouter);
+router.use('/api/v1/admin', adminRouter);
+router.use('/api/v1/loyalty', loyaltyRouter);
+router.use('/api/v1/subscriptions', subscriptionsRouter);
+router.use('/api/v1/events', eventsRouter);
+router.use('/api/v1/cities', citiesRouter);
+router.use('/api/v1/recommendations', recommendationsRouter);
 
 export default router;

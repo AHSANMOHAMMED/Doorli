@@ -22,6 +22,21 @@ function validate<T>(schema: { parse: (data: unknown) => T }) {
   };
 }
 
+// Webhooks must be public (no JWT)
+paymentsRouter.post('/webhook/:gateway', async (req, res, next) => {
+  try {
+    const { gateway } = req.params;
+    const signature =
+      (req.headers['stripe-signature'] as string) ||
+      (req.headers['x-signature'] as string) ||
+      '';
+    const result = await paymentsService.handleWebhook(gateway, req.body, signature);
+    res.json({ success: true, data: result });
+  } catch (err) {
+    next(err);
+  }
+});
+
 paymentsRouter.use(authenticateToken);
 
 paymentsRouter.post('/initiate', validate(initiatePaymentSchema), async (req, res, next) => {
@@ -34,12 +49,21 @@ paymentsRouter.post('/initiate', validate(initiatePaymentSchema), async (req, re
   }
 });
 
-paymentsRouter.post('/webhook/:gateway', async (req, res, next) => {
+paymentsRouter.post('/:id/collect-cod', async (req, res, next) => {
   try {
-    const { gateway } = req.params;
-    const signature = req.headers['x-signature'] as string;
-    const result = await paymentsService.handleWebhook(gateway, req.body, signature);
-    res.json({ success: true, data: result });
+    if (!req.user) throw new AppError(401, 'Authentication required');
+    const payment = await paymentsService.collectCodPayment(req.params.id, req.user.role);
+    res.json({ success: true, data: payment });
+  } catch (err) {
+    next(err);
+  }
+});
+
+paymentsRouter.post('/:id/confirm-dev', async (req, res, next) => {
+  try {
+    if (!req.user) throw new AppError(401, 'Authentication required');
+    const payment = await paymentsService.confirmPaymentDev(req.params.id);
+    res.json({ success: true, data: payment });
   } catch (err) {
     next(err);
   }
@@ -51,7 +75,7 @@ paymentsRouter.get('/:id', async (req, res, next) => {
     const payment = await paymentsService.getPaymentById(
       req.params.id as string,
       req.user.id,
-      req.user.role
+      req.user.role,
     );
     res.json({ success: true, data: payment });
   } catch (err) {

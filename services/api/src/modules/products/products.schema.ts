@@ -10,6 +10,11 @@ export const createProductSchema = z.object({
   stockQuantity: z.coerce.number().int().min(0).default(0),
   imageUrl: z.string().url().optional(),
   isAvailable: z.boolean().default(true),
+  prepTimeMins: z.coerce.number().int().min(0).optional(),
+  addons: z
+    .array(z.object({ name: z.string(), price: z.number().nonnegative() }))
+    .optional(),
+  allergens: z.array(z.string()).optional(),
 });
 
 export const updateProductSchema = createProductSchema.partial();

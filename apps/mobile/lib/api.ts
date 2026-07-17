@@ -271,6 +271,56 @@ export async function createOrder(params: {
     throw new Error(res.data?.error || 'Failed to create order');
   }
 
+  const order = res.data.data as Order & { totalAmount: number };
+
+  // Initiate payment (COD stays pending; card returns Stripe clientSecret / PayHere checkout)
+  const method = (paymentMethod ?? 'cod') as 'cod' | 'card' | 'wallet';
+  const gateway = method === 'cod' ? 'manual' : method === 'card' ? 'stripe' : 'manual';
+  try {
+    const payRes = await apiClient.post('/payments/initiate', {
+      referenceId: order.id,
+      referenceType: 'order',
+      amount: Number(order.totalAmount),
+      method,
+      gateway,
+    });
+    if (payRes.data?.success) {
+      return { ...order, payment: payRes.data.data };
+    }
+  } catch {
+    // Order created; payment can be retried from order screen
+  }
+
+  return order;
+}
+
+export async function initiatePayment(params: {
+  referenceId: string;
+  referenceType: 'order' | 'booking';
+  amount: number;
+  method: 'cod' | 'card' | 'wallet';
+  gateway: 'stripe' | 'payhere' | 'manual';
+}) {
+  const res = await apiClient.post('/payments/initiate', params);
+  if (!res.data?.success) {
+    throw new Error(res.data?.error || 'Failed to initiate payment');
+  }
+  return res.data.data;
+}
+
+export async function confirmPaymentDev(paymentId: string) {
+  const res = await apiClient.post(`/payments/${paymentId}/confirm-dev`);
+  if (!res.data?.success) {
+    throw new Error(res.data?.error || 'Failed to confirm payment');
+  }
+  return res.data.data;
+}
+
+export async function collectCodPayment(paymentId: string) {
+  const res = await apiClient.post(`/payments/${paymentId}/collect-cod`);
+  if (!res.data?.success) {
+    throw new Error(res.data?.error || 'Failed to collect COD');
+  }
   return res.data.data;
 }
 

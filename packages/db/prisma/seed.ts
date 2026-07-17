@@ -138,17 +138,22 @@ async function main() {
   ];
 
   for (const p of groceryProducts) {
-    await prisma.product.create({
-      data: {
-        vendorId: groceryVendor.id,
-        name: p.name,
-        price: p.price,
-        unit: p.unit,
-        category: p.category,
-        stockQuantity: p.stock,
-        isAvailable: true,
-      },
+    const existing = await prisma.product.findFirst({
+      where: { vendorId: groceryVendor.id, name: p.name },
     });
+    if (!existing) {
+      await prisma.product.create({
+        data: {
+          vendorId: groceryVendor.id,
+          name: p.name,
+          price: p.price,
+          unit: p.unit,
+          category: p.category,
+          stockQuantity: p.stock,
+          isAvailable: true,
+        },
+      });
+    }
   }
 
   const restaurantProducts = [
@@ -160,20 +165,70 @@ async function main() {
   ];
 
   for (const p of restaurantProducts) {
-    await prisma.product.create({
-      data: {
-        vendorId: restaurantVendor.id,
-        name: p.name,
-        price: p.price,
-        unit: p.unit,
-        category: p.category,
-        stockQuantity: p.stock,
-        isAvailable: true,
-      },
+    const existing = await prisma.product.findFirst({
+      where: { vendorId: restaurantVendor.id, name: p.name },
     });
+    if (!existing) {
+      await prisma.product.create({
+        data: {
+          vendorId: restaurantVendor.id,
+          name: p.name,
+          price: p.price,
+          unit: p.unit,
+          category: p.category,
+          stockQuantity: p.stock,
+          isAvailable: true,
+          prepTimeMins: 20,
+        },
+      });
+    }
   }
 
-  console.log('Seed complete: 4 users, 2 vendors, 10 products, 1 driver');
+  const admin = await prisma.user.upsert({
+    where: { phone: '+94770000000' },
+    update: {},
+    create: {
+      fullName: 'Doorli Admin',
+      phone: '+94770000000',
+      email: 'admin@doorli.test',
+      role: UserRole.admin,
+      isVerified: true,
+    },
+  });
+
+  const zones = [
+    { name: 'Colombo Central', city: 'Colombo', demandLevel: 3 },
+    { name: 'Kandy City', city: 'Kandy', demandLevel: 2 },
+    { name: 'Galle Fort', city: 'Galle', demandLevel: 2 },
+  ];
+  for (const z of zones) {
+    const exists = await prisma.geographicZone.findFirst({ where: { name: z.name } });
+    if (!exists) await prisma.geographicZone.create({ data: z });
+  }
+
+  await prisma.promoCode.upsert({
+    where: { code: 'WELCOME50' },
+    update: {},
+    create: {
+      code: 'WELCOME50',
+      description: 'Welcome discount LKR 50 off',
+      discountType: 'fixed',
+      discountValue: 50,
+      minOrderAmount: 500,
+      maxUses: 1000,
+      isActive: true,
+    },
+  });
+
+  await prisma.loyaltyPoint.upsert({
+    where: { userId: customer.id },
+    update: {},
+    create: { userId: customer.id, points: 100, earned: 100, redeemed: 0 },
+  });
+
+  console.log(
+    `Seed complete: admin=${admin.phone}, customer=${customer.phone}, vendor=${vendorUser.phone}, driver=${driverUser.phone}`,
+  );
 }
 
 main()

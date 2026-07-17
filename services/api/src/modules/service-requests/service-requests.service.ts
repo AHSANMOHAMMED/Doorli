@@ -1,5 +1,7 @@
 import { prisma, ServiceRequestStatus } from '@doorli/db';
 import { AppError } from '../../middleware/errorHandler.js';
+import { getSocketServer } from '../../lib/socket.js';
+import { enqueueNotification } from '../../lib/notifications.js';
 import type { CreateServiceRequestInput } from './service-requests.schema.js';
 
 export async function createServiceRequest(userId: string, input: CreateServiceRequestInput) {
@@ -22,8 +24,30 @@ export async function createServiceRequest(userId: string, input: CreateServiceR
     },
   });
 
-  // Emit notification to nearby providers
-  // TODO: Implement Socket.io event emission for provider matching
+  const io = getSocketServer();
+  io?.to(`providers:${input.serviceType}`).emit('service_request:new', {
+    requestId: serviceRequest.id,
+    title: serviceRequest.title,
+    isUrgent: serviceRequest.isUrgent,
+    latitude: serviceRequest.latitude,
+    longitude: serviceRequest.longitude,
+  });
+
+  // Notify nearby service vendors (category=service)
+  const providers = await prisma.vendor.findMany({
+    where: { category: 'service', isOpen: true },
+    select: { userId: true },
+    take: 20,
+  });
+  for (const p of providers) {
+    await enqueueNotification({
+      userId: p.userId,
+      title: input.isUrgent ? 'Urgent job nearby' : 'New service request',
+      body: serviceRequest.title,
+      type: 'service_request_new',
+      data: { requestId: serviceRequest.id },
+    });
+  }
 
   return serviceRequest;
 }
@@ -140,7 +164,18 @@ export async function acceptServiceRequest(requestId: string, providerId: string
   });
 
   // Emit notification to customer
-  // TODO: Implement Socket.io event emission
+  const io = getSocketServer();
+  io?.to(`customer:${serviceRequest.customerId}`).emit('service_request:assigned', {
+    requestId: updated.id,
+    providerId,
+  });
+  await enqueueNotification({
+    userId: serviceRequest.customerId,
+    title: 'Provider assigned',
+    body: 'A professional accepted your service request',
+    type: 'service_request_assigned',
+    data: { requestId: updated.id },
+  });
 
   return updated;
 }
@@ -173,8 +208,17 @@ export async function completeServiceRequest(requestId: string, providerId: stri
     },
   });
 
-  // Emit notification to customer
-  // TODO: Implement Socket.io event emission
+  const io = getSocketServer();
+  io?.to(`customer:${serviceRequest.customerId}`).emit('service_request:completed', {
+    requestId: updated.id,
+  });
+  await enqueueNotification({
+    userId: serviceRequest.customerId,
+    title: 'Job completed',
+    body: 'Please rate your service experience',
+    type: 'service_request_completed',
+    data: { requestId: updated.id },
+  });
 
   return updated;
 }

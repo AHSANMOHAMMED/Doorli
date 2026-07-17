@@ -1,9 +1,10 @@
 import { prisma, BookingType, BookingStatus } from '@doorli/db';
 import { AppError } from '../../middleware/errorHandler.js';
+import { getSocketServer } from '../../lib/socket.js';
+import { enqueueNotification } from '../../lib/notifications.js';
 import type { CreateBookingInput, UpdateBookingStatusInput } from './bookings.schema.js';
 
 export async function createBooking(userId: string, input: CreateBookingInput) {
-  // Verify vendor exists
   const vendor = await prisma.vendor.findUnique({
     where: { id: input.vendorId },
   });
@@ -12,7 +13,39 @@ export async function createBooking(userId: string, input: CreateBookingInput) {
     throw new AppError(404, 'Vendor not found');
   }
 
-  // Generate booking number
+  // Beauty / hall slot conflict check
+  if (input.startTime && input.endTime && input.eventDate) {
+    const day = new Date(input.eventDate);
+    const conflict = await prisma.booking.findFirst({
+      where: {
+        vendorId: input.vendorId,
+        status: { in: [BookingStatus.pending, BookingStatus.confirmed] },
+        eventDate: day,
+        startTime: { lt: new Date(input.endTime) },
+        endTime: { gt: new Date(input.startTime) },
+      },
+    });
+    if (conflict) {
+      throw new AppError(409, 'Time slot unavailable');
+    }
+  }
+
+  // Hotel date overlap
+  if (input.checkInDate && input.checkOutDate) {
+    const conflict = await prisma.booking.findFirst({
+      where: {
+        vendorId: input.vendorId,
+        bookingType: BookingType.hotel,
+        status: { in: [BookingStatus.pending, BookingStatus.confirmed] },
+        checkInDate: { lt: new Date(input.checkOutDate) },
+        checkOutDate: { gt: new Date(input.checkInDate) },
+      },
+    });
+    if (conflict) {
+      throw new AppError(409, 'Dates unavailable');
+    }
+  }
+
   const bookingNumber = `BK${Date.now().toString().slice(-8)}`;
 
   const booking = await prisma.booking.create({
@@ -30,6 +63,8 @@ export async function createBooking(userId: string, input: CreateBookingInput) {
       totalAmount: input.totalAmount,
       depositAmount: input.depositAmount,
       requirements: input.requirements,
+      durationMins: (input as { durationMins?: number }).durationMins,
+      roomType: (input as { roomType?: string }).roomType,
       status: BookingStatus.pending,
     },
     include: {
@@ -38,10 +73,50 @@ export async function createBooking(userId: string, input: CreateBookingInput) {
     },
   });
 
-  // Emit notification to vendor
-  // TODO: Implement Socket.io event emission
+  const io = getSocketServer();
+  io?.to(`vendor:${vendor.id}`).emit('booking:new', {
+    bookingId: booking.id,
+    bookingNumber: booking.bookingNumber,
+  });
+
+  await enqueueNotification({
+    userId: vendor.userId,
+    title: 'New booking',
+    body: `Booking ${booking.bookingNumber} received`,
+    type: 'booking_new',
+    data: { bookingId: booking.id },
+  });
 
   return booking;
+}
+
+export async function getAvailability(vendorId: string, from: string, to: string) {
+  const bookings = await prisma.booking.findMany({
+    where: {
+      vendorId,
+      status: { in: [BookingStatus.pending, BookingStatus.confirmed] },
+      OR: [
+        {
+          checkInDate: { lte: new Date(to) },
+          checkOutDate: { gte: new Date(from) },
+        },
+        {
+          eventDate: { gte: new Date(from), lte: new Date(to) },
+        },
+      ],
+    },
+    select: {
+      id: true,
+      checkInDate: true,
+      checkOutDate: true,
+      eventDate: true,
+      startTime: true,
+      endTime: true,
+      status: true,
+      bookingType: true,
+    },
+  });
+  return bookings;
 }
 
 export async function getBookingById(bookingId: string, userId: string, userRole: string) {
@@ -117,8 +192,19 @@ export async function updateBookingStatus(
     },
   });
 
-  // Emit notification to customer
-  // TODO: Implement Socket.io event emission
+  const io = getSocketServer();
+  io?.to(`customer:${booking.customerId}`).emit('booking:status_update', {
+    bookingId: updated.id,
+    status: updated.status,
+  });
+
+  await enqueueNotification({
+    userId: booking.customerId,
+    title: 'Booking update',
+    body: `Booking ${booking.bookingNumber} is now ${input.status}`,
+    type: 'booking_status',
+    data: { bookingId: booking.id, status: input.status },
+  });
 
   return updated;
 }
@@ -150,8 +236,15 @@ export async function cancelBooking(bookingId: string, userId: string, userRole:
     },
   });
 
-  // Emit notifications
-  // TODO: Implement Socket.io event emission
+  const io = getSocketServer();
+  io?.to(`vendor:${booking.vendorId}`).emit('booking:cancelled', { bookingId: booking.id });
+  await enqueueNotification({
+    userId: booking.customerId,
+    title: 'Booking cancelled',
+    body: `Booking ${booking.bookingNumber} was cancelled`,
+    type: 'booking_cancelled',
+    data: { bookingId: booking.id },
+  });
 
   return updated;
 }

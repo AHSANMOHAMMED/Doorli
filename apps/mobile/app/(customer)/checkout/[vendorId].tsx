@@ -55,6 +55,14 @@ export default function CheckoutScreen() {
         notes: instructions.trim() || undefined,
         deliveryFee,
       });
+
+      // Card: confirm via Stripe client secret in dev, or open PayHere checkout
+      const payment = (order as { payment?: { id: string; clientSecret?: string | null; gateway?: string } }).payment;
+      if (paymentMethod === 'card' && payment?.id && payment.clientSecret?.startsWith('pi_dev_')) {
+        const { confirmPaymentDev } = await import('../../../lib/api');
+        await confirmPaymentDev(payment.id);
+      }
+
       clearVendor(vendorId);
       router.replace(`/(customer)/order/${order.id}`);
     } catch (err) {

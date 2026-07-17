@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { createOrder, getOrdersByCustomer, getOrderById, updateOrderStatus } from './orders.service.js';
+import { createOrder, getOrdersByCustomer, getOrderById, updateOrderStatus, getOrdersForVendorUser } from './orders.service.js';
 import { authenticateToken } from '../../middleware/authenticateToken.js';
 import { OrderStatus } from '@prisma/client';
 
@@ -14,6 +14,20 @@ router.get('/my', authenticateToken, async (req: Request, res: Response, next: N
       return;
     }
     const orders = await getOrdersByCustomer(userId);
+    res.json({ success: true, data: { items: orders } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Vendor kitchen / order board
+router.get('/vendor/mine', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user || (req.user.role !== 'vendor' && req.user.role !== 'admin')) {
+      res.status(403).json({ success: false, error: 'Vendor only' });
+      return;
+    }
+    const orders = await getOrdersForVendorUser(req.user.id);
     res.json({ success: true, data: { items: orders } });
   } catch (err) {
     next(err);
@@ -50,7 +64,7 @@ router.post('/', authenticateToken, async (req: Request, res: Response, next: Ne
 // Get order by ID
 router.get('/:id', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const order = await getOrderById(req.params.id);
+    const order = await getOrderById(String(req.params.id));
     if (!order) {
       res.status(404).json({ success: false, error: 'Order not found' });
       return;
@@ -65,7 +79,7 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response, next: 
 router.patch('/:id/status', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { status } = req.body;
-    const order = await updateOrderStatus(req.params.id, status as OrderStatus);
+    const order = await updateOrderStatus(String(req.params.id), status as OrderStatus);
     res.json({ success: true, data: order });
   } catch (err) {
     next(err);

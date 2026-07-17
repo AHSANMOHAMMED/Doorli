@@ -78,7 +78,12 @@ export default function OrderDetailScreen() {
           <ArrowLeft color="#fff" size={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Order #{order.orderNumber}</Text>
-        <View style={styles.headerPlaceholder} />
+        <TouchableOpacity
+          style={styles.backBtn}
+          onPress={() => router.push(`/(customer)/track/${order.id}`)}
+        >
+          <MapPin color="#fff" size={22} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -202,6 +207,14 @@ export default function OrderDetailScreen() {
         )}
 
         <View style={styles.actionsContainer}>
+          {order.status === 'delivered' && order.vendor?.id && (
+            <GlassButton
+              title="Leave a review"
+              onPress={() =>
+                router.push(`/(customer)/review?vendorId=${order.vendor!.id}&orderId=${order.id}`)
+              }
+            />
+          )}
           {canCancel && (
             <TouchableOpacity style={styles.cancelBtn} onPress={handleCancel}>
               <Text style={styles.cancelText}>Cancel Order</Text>

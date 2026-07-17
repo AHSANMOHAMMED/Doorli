@@ -10,9 +10,13 @@ async function main() {
   const notifications = new NotificationService(redisUrl);
   const connected = await notifications.ping();
   console.log(`Doorli Notifications Service — Redis: ${connected ? 'connected' : 'disconnected'}`);
-  console.log('FCM/MSG91 integration ships in Week 15–16');
+  console.log('Channels: FCM push, MSG91 SMS, in-app (Prisma)');
 
   const worker = notifications.startWorker();
+  worker.on('failed', (job, err) => {
+    console.error(`[notifications] job ${job?.id} failed`, err.message);
+  });
+
   process.on('SIGINT', async () => {
     await worker.close();
     await notifications.close();

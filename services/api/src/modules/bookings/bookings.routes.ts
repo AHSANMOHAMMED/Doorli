@@ -25,6 +25,18 @@ function validate<T>(schema: { parse: (data: unknown) => T }) {
   };
 }
 
+// Public availability before auth-gated routes
+bookingsRouter.get('/availability/:vendorId', async (req, res, next) => {
+  try {
+    const from = String(req.query.from || new Date().toISOString());
+    const to = String(req.query.to || new Date(Date.now() + 30 * 86400000).toISOString());
+    const slots = await bookingsService.getAvailability(req.params.vendorId, from, to);
+    res.json({ success: true, data: slots });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // All booking routes require authentication
 bookingsRouter.use(authenticateToken);
 
@@ -105,6 +117,17 @@ bookingsRouter.delete('/:id/cancel', async (req, res, next) => {
       req.user.role
     );
     res.json({ success: true, data: booking });
+  } catch (err) {
+    next(err);
+  }
+});
+
+bookingsRouter.post('/:id/contract', async (req, res, next) => {
+  try {
+    if (!req.user) throw new AppError(401, 'Authentication required');
+    const { generateHallContract } = await import('./contract.js');
+    const result = await generateHallContract(req.params.id as string);
+    res.json({ success: true, data: result });
   } catch (err) {
     next(err);
   }
