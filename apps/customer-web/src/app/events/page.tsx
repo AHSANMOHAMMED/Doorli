@@ -36,7 +36,9 @@ export default function EventsPage() {
       window.location.assign("/login?next=/events");
       return;
     }
-    void load();
+    queueMicrotask(() => {
+      void load();
+    });
   }, []);
 
   async function create(e: FormEvent) {

@@ -32,11 +32,7 @@ export default function RidePage() {
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [loggedIn, setLoggedIn] = useState(false);
-
-  useEffect(() => {
-    setLoggedIn(!!getCustomerToken());
-  }, []);
+  const [loggedIn] = useState(() => !!getCustomerToken());
 
   useEffect(() => {
     const pickupC = coordsFor(pickup);
