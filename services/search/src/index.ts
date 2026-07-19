@@ -60,7 +60,7 @@ app.post('/api/search/sync', async (_req: Request, res: Response): Promise<any> 
     }
 
     // Prepare bulk operations
-    const operations = products.flatMap(doc => [
+    const operations = products.flatMap((doc: (typeof products)[number]) => [
       { index: { _index: INDEX_NAME, _id: doc.id } },
       {
         id: doc.id,

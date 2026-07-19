@@ -56,7 +56,7 @@ export class DoorliAiAssistant {
         take: 10,
         orderBy: { createdAt: 'desc' },
       });
-      const ids = [...new Set(past.map((p) => p.vendorId))];
+      const ids = [...new Set(past.map((p: (typeof past)[number]) => p.vendorId))];
       if (ids.length) {
         const hist = await prisma.vendor.findMany({
           where: { id: { in: ids }, isOpen: true },
@@ -71,7 +71,9 @@ export class DoorliAiAssistant {
     const reply =
       llmReply ||
       (vendors.length
-        ? `I found ${vendors.length} local options for you: ${vendors.map((v) => v.businessName).join(', ')}.`
+        ? `I found ${vendors.length} local options for you: ${vendors
+            .map((v: (typeof vendors)[number]) => v.businessName)
+            .join(', ')}.`
         : 'I can help you order food, book hotels or halls, hire home pros, or find a ride. What do you need?');
 
     return {
