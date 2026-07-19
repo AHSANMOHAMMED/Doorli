@@ -108,7 +108,7 @@ adminRouter.get('/orders', async (req, res, next) => {
 adminRouter.get('/infra', async (req, res, next) => {
   try {
     requireAdmin(req);
-    async function probe(name: string, port: string, url: string) {
+    const probe = async (name: string, port: string, url: string) => {
       try {
         const controller = new AbortController();
         const t = setTimeout(() => controller.abort(), 2500);
@@ -118,7 +118,7 @@ adminRouter.get('/infra', async (req, res, next) => {
       } catch {
         return { name, port, status: 'down' as const };
       }
-    }
+    };
 
     const services = await Promise.all([
       probe('Marketplace API Gateway', '4000', 'http://127.0.0.1:4000/health'),

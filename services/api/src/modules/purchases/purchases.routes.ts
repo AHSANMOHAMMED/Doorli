@@ -269,7 +269,7 @@ purchasesRouter.patch('/:id/items', async (req: Request, res: Response, next: Ne
 
     await prisma.$transaction(
       body.items.map((item) => {
-        let action = item.action;
+        const action = item.action;
         let confidence: number | undefined;
         let method: string | undefined;
 

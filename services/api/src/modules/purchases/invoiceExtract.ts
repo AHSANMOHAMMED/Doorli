@@ -4,6 +4,8 @@
  * PDF/text uses heuristics and always surfaces lines for human review.
  */
 
+import * as XLSX from 'xlsx';
+
 export type RawInvoiceLine = {
   lineNo: number;
   invoiceName: string;
@@ -144,8 +146,6 @@ export function parseDelimitedTable(text: string, sourceType: 'csv' | 'text' = '
 }
 
 export function parseSpreadsheetBuffer(buf: Buffer): ParsedInvoice {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const XLSX = require('xlsx') as typeof import('xlsx');
   const wb = XLSX.read(buf, { type: 'buffer', cellDates: true });
   const sheet = wb.Sheets[wb.SheetNames[0]];
   const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' });
@@ -194,13 +194,13 @@ export function parseSpreadsheetBuffer(buf: Buffer): ParsedInvoice {
 
 export function extractMetaFromText(text: string): Pick<ParsedInvoice, 'supplierName' | 'invoiceNumber' | 'invoiceDate'> {
   const invoiceNumber =
-    text.match(/invoice\s*(?:no|number|#)\s*[:.]?\s*([A-Za-z0-9\-\/]+)/i)?.[1] ??
-    text.match(/inv\s*#?\s*[:.]?\s*([A-Za-z0-9\-\/]+)/i)?.[1];
+    text.match(/invoice\s*(?:no|number|#)\s*[:.]?\s*([A-Za-z0-9/-]+)/i)?.[1] ??
+    text.match(/inv\s*#?\s*[:.]?\s*([A-Za-z0-9/-]+)/i)?.[1];
   const supplierName =
     text.match(/supplier\s*[:.]?\s*(.+)/i)?.[1]?.split(/\n/)[0]?.trim().slice(0, 200) ??
     text.match(/from\s*[:.]?\s*(.+)/i)?.[1]?.split(/\n/)[0]?.trim().slice(0, 200);
   const invoiceDate =
-    text.match(/date\s*[:.]?\s*(\d{1,4}[\/\-.]\d{1,2}[\/\-.]\d{1,4})/i)?.[1];
+    text.match(/date\s*[:.]?\s*(\d{1,4}[/\-.]\d{1,2}[/\-.]\d{1,4})/i)?.[1];
   return { invoiceNumber, supplierName, invoiceDate };
 }
 
@@ -283,17 +283,37 @@ export async function parseInvoiceFile(
   return parseInvoiceText(buffer.toString('utf8'), 'text');
 }
 
+type PdfParseModule = {
+  default?: unknown;
+  PDFParse?: new (opts: { data: Buffer }) => {
+    getText: () => Promise<{ text?: string }>;
+    destroy?: () => Promise<void>;
+  };
+};
+
 async function extractPdfText(buffer: Buffer): Promise<string> {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const mod = require('pdf-parse');
-  // v1: default export is a function(buffer) => { text }
-  if (typeof mod === 'function') {
-    const parsed = await mod(buffer);
+  const imported = (await import('pdf-parse')) as unknown as PdfParseModule | ((b: Buffer) => Promise<{ text?: string }>);
+
+  // v1: module itself or default is a function(buffer) => { text }
+  if (typeof imported === 'function') {
+    const parsed = await imported(buffer);
     return String(parsed?.text || '');
   }
+
+  if (typeof imported.default === 'function') {
+    const parsed = await (imported.default as (b: Buffer) => Promise<{ text?: string }>)(buffer);
+    return String(parsed?.text || '');
+  }
+
   // v2: PDFParse class
-  if (mod?.PDFParse) {
-    const parser = new mod.PDFParse({ data: buffer });
+  const PDFParse =
+    imported.PDFParse ??
+    (imported.default && typeof imported.default === 'object'
+      ? (imported.default as PdfParseModule).PDFParse
+      : undefined);
+
+  if (PDFParse) {
+    const parser = new PDFParse({ data: buffer });
     const result = await parser.getText();
     await parser.destroy?.();
     return String(result?.text || '');

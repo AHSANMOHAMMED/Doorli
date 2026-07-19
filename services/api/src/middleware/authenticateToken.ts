@@ -5,22 +5,6 @@ import { AppError } from './errorHandler.js';
 import { getRedis } from '../lib/redis.js';
 import { env } from '../config/env.js';
 
-declare global {
-  namespace Express {
-    interface Request {
-      user?: {
-        id: string;
-        phone?: string;
-        email?: string;
-        accountId?: string;
-        tenantId?: string;
-        isOwner?: boolean;
-        role: UserRole | string;
-      };
-    }
-  }
-}
-
 export async function authenticateToken(req: Request, _res: Response, next: NextFunction): Promise<void> {
   const authHeader = req.headers.authorization;
   const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
