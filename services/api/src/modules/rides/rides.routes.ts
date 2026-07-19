@@ -1,9 +1,12 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { prisma, RideStatus } from '@doorli/db';
+import { prisma, $Enums } from '@doorli/db';
 import { authenticateToken } from '../../middleware/authenticateToken.js';
 import { AppError } from '../../middleware/errorHandler.js';
 import { getSocketServer } from '../../lib/socket.js';
+
+type RideStatus = $Enums.RideStatus;
+const RideStatus = $Enums.RideStatus;
 
 const ridesRouter = Router();
 

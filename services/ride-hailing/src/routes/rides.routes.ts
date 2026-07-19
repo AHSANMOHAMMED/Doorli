@@ -1,7 +1,10 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { prisma, RideStatus } from '@doorli/db';
+import { prisma, $Enums } from '@doorli/db';
 import { calculateFare } from '../pricingEngine.js';
+
+type RideStatus = $Enums.RideStatus;
+const RideStatus = $Enums.RideStatus;
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'doorli-dev-access-secret-change-in-prod';
