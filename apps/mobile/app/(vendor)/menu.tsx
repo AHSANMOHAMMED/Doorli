@@ -12,19 +12,22 @@ import {
 } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { supabase } from '../../lib/supabase';
+import { apiClient } from '../../lib/axios';
 import { formatPrice } from '../../lib/api';
 
 interface Product {
   id: string;
+  vendorId: string;
   name: string;
   description?: string | null;
   price: number;
-  discount_price?: number | null;
+  discountPrice?: number | null;
   unit?: string | null;
-  stock_quantity: number;
-  image_url?: string | null;
-  is_available: boolean;
+  stockQuantity: number;
+  barcode?: string | null;
+  sku?: string | null;
+  imageUrl?: string | null;
+  isAvailable: boolean;
   category?: string | null;
 }
 
@@ -32,14 +35,22 @@ export default function VendorMenu() {
   const queryClient = useQueryClient();
   const [modal, setModal] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
-  const [form, setForm] = useState({ name: '', description: '', price: '', unit: '', stock: '', category: '' });
+  const [form, setForm] = useState({
+    name: '',
+    description: '',
+    price: '',
+    unit: '',
+    stock: '',
+    category: '',
+    barcode: '',
+    sku: '',
+  });
   const [saving, setSaving] = useState(false);
 
   async function getVendorId() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return null;
-    const { data } = await supabase.from('vendors').select('id').eq('user_id', user.id).maybeSingle();
-    return data?.id ?? null;
+    const res = await apiClient.get('/vendors/me');
+    if (!res.data?.success) return null;
+    return res.data.data.id as string;
   }
 
   const { data: products, isLoading } = useQuery({
@@ -47,25 +58,19 @@ export default function VendorMenu() {
     queryFn: async () => {
       const vendorId = await getVendorId();
       if (!vendorId) return [];
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('vendor_id', vendorId)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data as Product[];
+      const res = await apiClient.get(`/products/vendor/${vendorId}`);
+      return (res.data?.data?.items ?? []) as Product[];
     },
   });
 
   async function toggleAvailability(product: Product) {
-    const { error } = await supabase
-      .from('products')
-      .update({ is_available: !product.is_available })
-      .eq('id', product.id);
-    if (error) {
-      Alert.alert('Error', error.message);
-    } else {
+    try {
+      await apiClient.patch(`/products/${product.id}`, {
+        isAvailable: !product.isAvailable,
+      });
       queryClient.invalidateQueries({ queryKey: ['vendor-products'] });
+    } catch (err) {
+      Alert.alert('Error', err instanceof Error ? err.message : 'Update failed');
     }
   }
 
@@ -76,11 +81,11 @@ export default function VendorMenu() {
         text: 'Delete',
         style: 'destructive',
         onPress: async () => {
-          const { error } = await supabase.from('products').delete().eq('id', product.id);
-          if (error) {
-            Alert.alert('Error', error.message);
-          } else {
+          try {
+            await apiClient.delete(`/products/${product.id}`);
             queryClient.invalidateQueries({ queryKey: ['vendor-products'] });
+          } catch (err) {
+            Alert.alert('Error', err instanceof Error ? err.message : 'Delete failed');
           }
         },
       },
@@ -89,7 +94,16 @@ export default function VendorMenu() {
 
   function openAdd() {
     setEditing(null);
-    setForm({ name: '', description: '', price: '', unit: '', stock: '', category: '' });
+    setForm({
+      name: '',
+      description: '',
+      price: '',
+      unit: '',
+      stock: '',
+      category: '',
+      barcode: '',
+      sku: '',
+    });
     setModal(true);
   }
 
@@ -100,8 +114,10 @@ export default function VendorMenu() {
       description: product.description ?? '',
       price: String(product.price),
       unit: product.unit ?? '',
-      stock: String(product.stock_quantity),
+      stock: String(product.stockQuantity),
       category: product.category ?? '',
+      barcode: product.barcode ?? '',
+      sku: product.sku ?? '',
     });
     setModal(true);
   }
@@ -117,22 +133,22 @@ export default function VendorMenu() {
       if (!vendorId) throw new Error('No vendor profile');
 
       const payload = {
-        vendor_id: vendorId,
+        vendorId,
         name: form.name,
-        description: form.description || null,
+        description: form.description || undefined,
         price: parseFloat(form.price),
-        unit: form.unit || null,
-        stock_quantity: parseInt(form.stock, 10) || 0,
-        category: form.category || null,
-        is_available: true,
+        unit: form.unit || undefined,
+        stockQuantity: parseInt(form.stock, 10) || 0,
+        category: form.category || undefined,
+        barcode: form.barcode.trim() || null,
+        sku: form.sku.trim() || null,
+        isAvailable: true,
       };
 
       if (editing) {
-        const { error } = await supabase.from('products').update(payload).eq('id', editing.id);
-        if (error) throw error;
+        await apiClient.patch(`/products/${editing.id}`, payload);
       } else {
-        const { error } = await supabase.from('products').insert(payload);
-        if (error) throw error;
+        await apiClient.post('/products', payload);
       }
 
       queryClient.invalidateQueries({ queryKey: ['vendor-products'] });
@@ -176,13 +192,16 @@ export default function VendorMenu() {
               <Text style={styles.price}>{formatPrice(Number(item.price))}</Text>
             </View>
             {item.description ? <Text style={styles.desc}>{item.description}</Text> : null}
-            <Text style={styles.stock}>Stock: {item.stock_quantity} {item.unit ?? ''}</Text>
+            <Text style={styles.stock}>
+              Stock: {item.stockQuantity} {item.unit ?? ''}
+              {item.barcode ? ` · ⌗ ${item.barcode}` : ''}
+            </Text>
             <View style={styles.actions}>
               <TouchableOpacity
-                style={[styles.chip, item.is_available ? styles.chipOn : styles.chipOff]}
+                style={[styles.chip, item.isAvailable ? styles.chipOn : styles.chipOff]}
                 onPress={() => toggleAvailability(item)}
               >
-                <Text style={styles.chipText}>{item.is_available ? 'Available' : 'Hidden'}</Text>
+                <Text style={styles.chipText}>{item.isAvailable ? 'Available' : 'Hidden'}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.chip} onPress={() => openEdit(item)}>
                 <Text style={styles.chipText}>Edit</Text>
@@ -207,6 +226,21 @@ export default function VendorMenu() {
               <TextInput style={[styles.input, { flex: 1 }]} placeholder="Stock" keyboardType="numeric" value={form.stock} onChangeText={(v) => setForm({ ...form, stock: v })} />
             </View>
             <TextInput style={styles.input} placeholder="Category" value={form.category} onChangeText={(v) => setForm({ ...form, category: v })} />
+            <TextInput
+              style={styles.input}
+              placeholder="Barcode (for camera scan)"
+              value={form.barcode}
+              onChangeText={(v) => setForm({ ...form, barcode: v })}
+              autoCapitalize="none"
+              keyboardType="number-pad"
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="SKU"
+              value={form.sku}
+              onChangeText={(v) => setForm({ ...form, sku: v })}
+              autoCapitalize="characters"
+            />
             <View style={styles.modalActions}>
               <TouchableOpacity style={styles.cancelBtn} onPress={() => setModal(false)}>
                 <Text style={styles.cancelText}>Cancel</Text>

@@ -7,17 +7,25 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { fetchDriverDeliveries, updateDeliveryStatus, formatPrice } from '../../lib/api';
+import {
+  fetchDriverJobs,
+  acceptDelivery,
+  declineDelivery,
+  updateOrderStatus,
+  formatPrice,
+  type Order,
+} from '../../lib/api';
 import { useAuthStore } from '../../store/auth';
+import { apiClient } from '../../lib/axios';
 
-const DELIVERY_ACTIONS: Record<string, { label: string; next: string }[]> = {
-  assigned: [{ label: 'Picked up', next: 'picked_up' }],
-  picked_up: [{ label: 'Start delivery', next: 'in_transit' }],
-  in_transit: [{ label: 'Delivered', next: 'delivered' }],
+const ACTIVE_ACTIONS: Record<string, { label: string; next: string }[]> = {
+  ready: [{ label: 'Picked up', next: 'picked_up' }],
+  picked_up: [{ label: 'Delivered', next: 'delivered' }],
 };
 
 export default function DriverJobs() {
@@ -27,22 +35,104 @@ export default function DriverJobs() {
   const [isOnline, setIsOnline] = useState(true);
 
   const { data, isLoading, refetch, isRefetching } = useQuery({
-    queryKey: ['driver-deliveries'],
-    queryFn: fetchDriverDeliveries,
+    queryKey: ['driver-jobs'],
+    queryFn: fetchDriverJobs,
     refetchInterval: isOnline ? 10000 : false,
     enabled: !!user,
   });
 
-  const deliveries = data ?? [];
+  const available = data?.available ?? [];
+  const active = data?.active ?? [];
 
-  async function advanceStatus(deliveryId: string, status: string) {
+  async function toggleOnline(next: boolean) {
     try {
-      await updateDeliveryStatus(deliveryId, status);
-      queryClient.invalidateQueries({ queryKey: ['driver-deliveries'] });
-    } catch (err) {
-      console.error('Failed to update delivery status:', err);
+      await apiClient.patch('/drivers/me/online', { isOnline: next });
+      setIsOnline(next);
+    } catch {
+      Alert.alert('Error', 'Could not update online status');
     }
   }
+
+  async function onAccept(orderId: string) {
+    try {
+      await acceptDelivery(orderId);
+      queryClient.invalidateQueries({ queryKey: ['driver-jobs'] });
+      router.push(`/(driver)/navigate/${orderId}`);
+    } catch (err) {
+      Alert.alert('Accept failed', err instanceof Error ? err.message : 'Try again');
+    }
+  }
+
+  async function onDecline(orderId: string) {
+    try {
+      await declineDelivery(orderId);
+      queryClient.invalidateQueries({ queryKey: ['driver-jobs'] });
+    } catch (err) {
+      Alert.alert('Decline failed', err instanceof Error ? err.message : 'Try again');
+    }
+  }
+
+  async function advanceStatus(orderId: string, status: string) {
+    try {
+      await updateOrderStatus(orderId, status);
+      queryClient.invalidateQueries({ queryKey: ['driver-jobs'] });
+    } catch (err) {
+      Alert.alert('Update failed', err instanceof Error ? err.message : 'Try again');
+    }
+  }
+
+  function renderOrder(item: Order, mode: 'available' | 'active') {
+    const actions = mode === 'active' ? ACTIVE_ACTIONS[item.status] ?? [] : [];
+    return (
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.orderNumber}>{item.orderNumber}</Text>
+          <Text style={styles.status}>{item.status.replace(/_/g, ' ')}</Text>
+        </View>
+        <Text style={styles.vendor}>{item.vendor?.businessName ?? 'Shop'}</Text>
+        {item.deliveryAddress?.addressLine && (
+          <Text style={styles.address}>📍 {item.deliveryAddress.addressLine}</Text>
+        )}
+        <Text style={styles.total}>{formatPrice(Number(item.totalAmount))}</Text>
+        <Text style={styles.fee}>Delivery fee {formatPrice(Number(item.deliveryFee))}</Text>
+        <View style={styles.actions}>
+          {mode === 'available' ? (
+            <>
+              <TouchableOpacity style={styles.actionBtn} onPress={() => onAccept(item.id)}>
+                <Text style={styles.actionText}>Accept</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.navBtn} onPress={() => onDecline(item.id)}>
+                <Text style={styles.navText}>Decline</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              {actions.map((action) => (
+                <TouchableOpacity
+                  key={action.next}
+                  style={styles.actionBtn}
+                  onPress={() => advanceStatus(item.id, action.next)}
+                >
+                  <Text style={styles.actionText}>{action.label}</Text>
+                </TouchableOpacity>
+              ))}
+              <TouchableOpacity
+                style={styles.navBtn}
+                onPress={() => router.push(`/(driver)/navigate/${item.id}`)}
+              >
+                <Text style={styles.navText}>Navigate</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+      </View>
+    );
+  }
+
+  const listData = [
+    ...active.map((o) => ({ ...o, _mode: 'active' as const })),
+    ...available.map((o) => ({ ...o, _mode: 'available' as const })),
+  ];
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -53,7 +143,7 @@ export default function DriverJobs() {
         </View>
         <TouchableOpacity
           style={[styles.onlineToggle, isOnline ? styles.onlineOn : styles.onlineOff]}
-          onPress={() => setIsOnline(!isOnline)}
+          onPress={() => toggleOnline(!isOnline)}
         >
           <Text style={styles.onlineToggleText}>{isOnline ? 'Go Offline' : 'Go Online'}</Text>
         </TouchableOpacity>
@@ -63,63 +153,20 @@ export default function DriverJobs() {
         <ActivityIndicator color="#2563eb" style={{ marginTop: 48 }} />
       ) : !isOnline ? (
         <View style={styles.center}>
-          <Text style={styles.offlineIcon}>🛵</Text>
           <Text style={styles.offlineTitle}>You are offline</Text>
           <Text style={styles.offlineText}>Go online to receive delivery jobs</Text>
         </View>
-      ) : deliveries.length === 0 ? (
+      ) : listData.length === 0 ? (
         <View style={styles.center}>
-          <Text style={styles.emptyIcon}>📦</Text>
           <Text style={styles.emptyTitle}>No active deliveries</Text>
           <Text style={styles.emptyText}>Waiting for delivery assignments...</Text>
         </View>
       ) : (
         <FlatList
-          data={deliveries}
-          keyExtractor={(d) => d.id}
+          data={listData}
+          keyExtractor={(d) => `${d._mode}-${d.id}`}
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
-          renderItem={({ item }) => {
-            const actions = DELIVERY_ACTIONS[item.status] ?? [];
-            const order = item.orders;
-            return (
-              <View style={styles.card}>
-                <View style={styles.cardHeader}>
-                  <Text style={styles.orderNumber}>{order?.order_number ?? 'Order'}</Text>
-                  <Text style={styles.status}>{item.status.replace(/_/g, ' ')}</Text>
-                </View>
-                <Text style={styles.vendor}>{order?.vendor?.business_name ?? 'Shop'}</Text>
-                {order?.delivery_address && (
-                  <Text style={styles.address}>📍 {order.delivery_address}</Text>
-                )}
-                {order && (
-                  <Text style={styles.total}>{formatPrice(Number(order.total_amount))}</Text>
-                )}
-                {item.otp && (
-                  <View style={styles.otpBox}>
-                    <Text style={styles.otpLabel}>OTP</Text>
-                    <Text style={styles.otpValue}>{item.otp}</Text>
-                  </View>
-                )}
-                <View style={styles.actions}>
-                  {actions.map((action) => (
-                    <TouchableOpacity
-                      key={action.next}
-                      style={styles.actionBtn}
-                      onPress={() => advanceStatus(item.id, action.next)}
-                    >
-                      <Text style={styles.actionText}>{action.label}</Text>
-                    </TouchableOpacity>
-                  ))}
-                  <TouchableOpacity
-                    style={styles.navBtn}
-                    onPress={() => router.push(`/(driver)/navigate/${item.order_id}`)}
-                  >
-                    <Text style={styles.navText}>Navigate</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            );
-          }}
+          renderItem={({ item }) => renderOrder(item, item._mode)}
         />
       )}
     </SafeAreaView>
@@ -129,9 +176,14 @@ export default function DriverJobs() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8fafc' },
   header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#fff',
-    borderBottomWidth: 1, borderBottomColor: '#e2e8f0',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
   },
   greeting: { fontSize: 18, fontWeight: '700', color: '#0f172a' },
   subtitle: { fontSize: 13, color: '#64748b', marginTop: 4 },
@@ -140,15 +192,18 @@ const styles = StyleSheet.create({
   onlineOff: { backgroundColor: '#f1f5f9' },
   onlineToggleText: { fontSize: 14, fontWeight: '600', color: '#334155' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
-  offlineIcon: { fontSize: 48, marginBottom: 12 },
   offlineTitle: { fontSize: 18, fontWeight: '600', color: '#0f172a' },
   offlineText: { fontSize: 14, color: '#64748b', marginTop: 8, textAlign: 'center' },
-  emptyIcon: { fontSize: 48, marginBottom: 12 },
   emptyTitle: { fontSize: 18, fontWeight: '600', color: '#0f172a' },
   emptyText: { fontSize: 14, color: '#64748b', marginTop: 8 },
   card: {
-    backgroundColor: '#fff', marginHorizontal: 12, marginTop: 8, padding: 16, borderRadius: 12,
-    borderWidth: 1, borderColor: '#e2e8f0',
+    backgroundColor: '#fff',
+    marginHorizontal: 12,
+    marginTop: 8,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between' },
   orderNumber: { fontWeight: '700', color: '#0f172a' },
@@ -156,9 +211,7 @@ const styles = StyleSheet.create({
   vendor: { marginTop: 6, color: '#64748b' },
   address: { marginTop: 4, color: '#94a3b8', fontSize: 13 },
   total: { marginTop: 4, fontWeight: '600' },
-  otpBox: { marginTop: 8, padding: 8, backgroundColor: '#fef3c7', borderRadius: 8, flexDirection: 'row', gap: 8, alignItems: 'center' },
-  otpLabel: { fontSize: 12, fontWeight: '600', color: '#92400e' },
-  otpValue: { fontSize: 18, fontWeight: 'bold', color: '#92400e' },
+  fee: { marginTop: 2, fontSize: 12, color: '#64748b' },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
   actionBtn: { backgroundColor: '#2563eb', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10 },
   actionText: { color: '#fff', fontWeight: '600', fontSize: 13 },

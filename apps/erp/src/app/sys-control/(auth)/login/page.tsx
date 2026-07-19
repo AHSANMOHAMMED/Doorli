@@ -71,6 +71,7 @@ export default function AdminLoginPage() {
                 required
                 autoComplete="email"
                 placeholder="admin@example.com"
+                suppressHydrationWarning
                 className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               />
             </div>
@@ -86,6 +87,7 @@ export default function AdminLoginPage() {
                 required
                 autoComplete="current-password"
                 placeholder="••••••••"
+                suppressHydrationWarning
                 className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               />
             </div>

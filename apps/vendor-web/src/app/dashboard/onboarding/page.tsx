@@ -25,7 +25,7 @@ export default function OnboardingPage() {
     setLoading(true);
     setError('');
 
-    const res = await apiFetch('/api/v1/vendors', {
+    const res = await apiFetch('/vendors', {
       method: 'POST',
       body: JSON.stringify({
         ...form,

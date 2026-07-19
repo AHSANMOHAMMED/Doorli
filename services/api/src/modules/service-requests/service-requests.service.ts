@@ -180,6 +180,48 @@ export async function acceptServiceRequest(requestId: string, providerId: string
   return updated;
 }
 
+export async function startServiceRequest(requestId: string, providerId: string) {
+  const serviceRequest = await prisma.serviceRequest.findUnique({
+    where: { id: requestId },
+  });
+
+  if (!serviceRequest) {
+    throw new AppError(404, 'Service request not found');
+  }
+
+  if (serviceRequest.assignedProviderId !== providerId) {
+    throw new AppError(403, 'Access denied');
+  }
+
+  if (serviceRequest.status !== ServiceRequestStatus.assigned) {
+    throw new AppError(400, `Cannot start job in status ${serviceRequest.status}`);
+  }
+
+  const updated = await prisma.serviceRequest.update({
+    where: { id: requestId },
+    data: { status: ServiceRequestStatus.in_progress },
+    include: {
+      customer: true,
+      assignedProvider: true,
+    },
+  });
+
+  const io = getSocketServer();
+  io?.to(`customer:${serviceRequest.customerId}`).emit('service_request:status_update', {
+    requestId: updated.id,
+    status: updated.status,
+  });
+  await enqueueNotification({
+    userId: serviceRequest.customerId,
+    title: 'Provider en route',
+    body: 'Your service professional has started the job',
+    type: 'service_request_in_progress',
+    data: { requestId: updated.id },
+  });
+
+  return updated;
+}
+
 export async function completeServiceRequest(requestId: string, providerId: string) {
   const serviceRequest = await prisma.serviceRequest.findUnique({
     where: { id: requestId },
@@ -193,8 +235,11 @@ export async function completeServiceRequest(requestId: string, providerId: stri
     throw new AppError(403, 'Access denied');
   }
 
-  if (serviceRequest.status === ServiceRequestStatus.completed) {
-    throw new AppError(400, 'Service request already completed');
+  if (
+    serviceRequest.status !== ServiceRequestStatus.assigned &&
+    serviceRequest.status !== ServiceRequestStatus.in_progress
+  ) {
+    throw new AppError(400, `Cannot complete job in status ${serviceRequest.status}`);
   }
 
   const updated = await prisma.serviceRequest.update({
@@ -217,6 +262,54 @@ export async function completeServiceRequest(requestId: string, providerId: stri
     title: 'Job completed',
     body: 'Please rate your service experience',
     type: 'service_request_completed',
+    data: { requestId: updated.id },
+  });
+
+  return updated;
+}
+
+export async function cancelServiceRequest(requestId: string, userId: string, userRole: string) {
+  const serviceRequest = await prisma.serviceRequest.findUnique({
+    where: { id: requestId },
+  });
+
+  if (!serviceRequest) {
+    throw new AppError(404, 'Service request not found');
+  }
+
+  const isCustomer = serviceRequest.customerId === userId;
+  const isProvider = serviceRequest.assignedProviderId === userId;
+  const isAdmin = userRole === 'admin';
+
+  if (!isCustomer && !isProvider && !isAdmin) {
+    throw new AppError(403, 'Access denied');
+  }
+
+  if (
+    serviceRequest.status === ServiceRequestStatus.completed ||
+    serviceRequest.status === ServiceRequestStatus.cancelled
+  ) {
+    throw new AppError(400, `Cannot cancel job in status ${serviceRequest.status}`);
+  }
+
+  const updated = await prisma.serviceRequest.update({
+    where: { id: requestId },
+    data: { status: ServiceRequestStatus.cancelled },
+    include: {
+      customer: true,
+      assignedProvider: true,
+    },
+  });
+
+  const io = getSocketServer();
+  io?.to(`customer:${serviceRequest.customerId}`).emit('service_request:cancelled', {
+    requestId: updated.id,
+  });
+  await enqueueNotification({
+    userId: serviceRequest.customerId,
+    title: 'Request cancelled',
+    body: 'Your service request was cancelled',
+    type: 'service_request_cancelled',
     data: { requestId: updated.id },
   });
 

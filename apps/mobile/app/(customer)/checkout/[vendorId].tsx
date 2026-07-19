@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,9 +15,10 @@ import { BlurView } from 'expo-blur';
 import { GlassCard } from '../../../components/GlassCard';
 import { GlassInput } from '../../../components/GlassInput';
 import { GlassButton } from '../../../components/GlassButton';
-import { createOrder, formatPrice } from '../../../lib/api';
+import { createOrder, formatPrice, DEFAULT_LOCATION } from '../../../lib/api';
 import { useCartStore } from '../../../store/cart';
-import { MapPin, Banknote, CreditCard, Wallet, FileText, ShoppingBag, ArrowLeft } from 'lucide-react-native';
+import { MapPin, Banknote, CreditCard, FileText, ShoppingBag, ArrowLeft } from 'lucide-react-native';
+import { apiClient } from '../../../lib/axios';
 
 export default function CheckoutScreen() {
   const { vendorId } = useLocalSearchParams<{ vendorId: string }>();
@@ -26,13 +27,31 @@ export default function CheckoutScreen() {
   const clearVendor = useCartStore((s) => s.clearVendor);
   const [address, setAddress] = useState('');
   const [instructions, setInstructions] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'cod' | 'card' | 'wallet'>('cod');
+  const [paymentMethod, setPaymentMethod] = useState<'cod' | 'card'>('cod');
   const [placing, setPlacing] = useState(false);
+  const [estimatedDeliveryFee, setEstimatedDeliveryFee] = useState(125);
+
+  useEffect(() => {
+    if (!vendorId) return;
+    void apiClient
+      .get('/orders/estimate-fee', {
+        params: {
+          vendorId,
+          lat: DEFAULT_LOCATION.lat,
+          lng: DEFAULT_LOCATION.lng,
+        },
+      })
+      .then((res) => {
+        if (res.data?.success && res.data.data?.deliveryFee != null) {
+          setEstimatedDeliveryFee(Number(res.data.data.deliveryFee));
+        }
+      })
+      .catch(() => undefined);
+  }, [vendorId]);
 
   const vendorName = items[0]?.vendorName ?? 'Shop';
   const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-  const deliveryFee = 30;
-  const total = subtotal + deliveryFee;
+  const total = subtotal + estimatedDeliveryFee;
 
   async function placeOrder() {
     if (!items.length) return;
@@ -53,7 +72,6 @@ export default function CheckoutScreen() {
         deliveryAddress: address.trim(),
         paymentMethod,
         notes: instructions.trim() || undefined,
-        deliveryFee,
       });
 
       // Card: confirm via Stripe client secret in dev, or open PayHere checkout
@@ -135,10 +153,9 @@ export default function CheckoutScreen() {
           </View>
           <View style={styles.row}>
             {([
-              { key: 'cod', label: 'Cash', icon: Banknote },
-              { key: 'card', label: 'Card', icon: CreditCard },
-              { key: 'wallet', label: 'Wallet', icon: Wallet },
-            ] as const).map((m) => {
+              { key: 'cod' as const, label: 'Cash', icon: Banknote },
+              { key: 'card' as const, label: 'Card', icon: CreditCard },
+            ]).map((m) => {
               const Icon = m.icon;
               const isActive = paymentMethod === m.key;
               return (
@@ -181,7 +198,7 @@ export default function CheckoutScreen() {
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Delivery fee</Text>
-            <Text style={styles.summaryValue}>{formatPrice(deliveryFee)}</Text>
+            <Text style={styles.summaryValue}>{formatPrice(estimatedDeliveryFee)}</Text>
           </View>
           <View style={[styles.summaryRow, styles.totalRow]}>
             <Text style={styles.totalLabel}>Total to Pay</Text>

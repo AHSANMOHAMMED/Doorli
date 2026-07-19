@@ -186,58 +186,59 @@ export default async function AdminDashboard() {
       label: 'Send Notification',
       href: '/sys-control/notifications',
       icon: Bell,
-      color: 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50',
-      iconBg: 'bg-blue-100 dark:bg-blue-800',
+      iconClass: 'bg-blue-100 text-blue-600',
     },
     {
       label: 'View Subscriptions',
       href: '/sys-control/subscriptions',
       icon: Clock,
-      color: 'bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/50',
-      iconBg: 'bg-amber-100 dark:bg-amber-800',
+      iconClass: 'bg-amber-100 text-amber-600',
     },
     {
       label: 'Review Payments',
       href: '/sys-control/payments',
       icon: CreditCard,
-      color: 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50',
-      iconBg: 'bg-emerald-100 dark:bg-emerald-800',
+      iconClass: 'bg-emerald-100 text-emerald-600',
     },
     {
       label: 'Manage Settings',
       href: '/sys-control/settings',
       icon: Settings,
-      color: 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/50',
-      iconBg: 'bg-purple-100 dark:bg-purple-800',
+      iconClass: 'bg-violet-100 text-violet-600',
     },
   ]
 
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Admin Dashboard</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">Platform overview and key metrics</p>
+        <h1 className="text-2xl font-bold text-slate-900">Admin Dashboard</h1>
+        <p className="mt-1 text-slate-500">Platform overview and key metrics</p>
       </div>
 
       {/* Quick Actions Bar */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {quickActions.map((action) => (
           <Link
             key={action.href}
             href={action.href}
-            className={`flex items-center gap-3 px-4 py-3 rounded-md border border-transparent transition-all ${action.color}`}
+            className="admin-quick-action flex items-center gap-3 rounded-xl px-4 py-3 shadow-sm transition hover:shadow-md"
+            style={{ backgroundColor: '#ffffff', color: '#0f172a' }}
           >
-            <div className={`w-9 h-9 rounded flex items-center justify-center ${action.iconBg}`}>
-              <action.icon className="w-4.5 h-4.5" />
+            <div
+              className={`flex h-9 w-9 items-center justify-center rounded-lg ${action.iconClass}`}
+            >
+              <action.icon className="h-4 w-4" />
             </div>
-            <span className="text-sm font-medium">{action.label}</span>
-            <ArrowRight className="w-4 h-4 ml-auto opacity-50" />
+            <span className="text-sm font-medium" style={{ color: '#1e293b' }}>
+              {action.label}
+            </span>
+            <ArrowRight className="ml-auto h-4 w-4" style={{ color: '#94a3b8' }} />
           </Link>
         ))}
       </div>
 
       {/* Revenue Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
         <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-md p-6 text-white">
           <div className="flex items-center justify-between">
             <div>
@@ -307,7 +308,7 @@ export default async function AdminDashboard() {
 
       {/* Platform Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-4">
-        <div className="bg-white dark:bg-gray-800 rounded-md shadow-sm border border-gray-200 dark:border-gray-700 p-5">
+        <div className="admin-stat-card rounded-xl shadow-sm p-5">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total Users</p>
@@ -327,7 +328,7 @@ export default async function AdminDashboard() {
           </Link>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-md shadow-sm border border-gray-200 dark:border-gray-700 p-5">
+        <div className="admin-stat-card rounded-xl shadow-sm p-5">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Companies</p>
@@ -341,7 +342,7 @@ export default async function AdminDashboard() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-md shadow-sm border border-gray-200 dark:border-gray-700 p-5">
+        <div className="admin-stat-card rounded-xl shadow-sm p-5">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Active</p>
@@ -361,7 +362,7 @@ export default async function AdminDashboard() {
           </Link>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-md shadow-sm border border-gray-200 dark:border-gray-700 p-5">
+        <div className="admin-stat-card rounded-xl shadow-sm p-5">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Free Plans</p>
@@ -375,7 +376,7 @@ export default async function AdminDashboard() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-md shadow-sm border border-gray-200 dark:border-gray-700 p-5">
+        <div className="admin-stat-card rounded-xl shadow-sm p-5">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Locked</p>
@@ -389,7 +390,7 @@ export default async function AdminDashboard() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-md shadow-sm border border-gray-200 dark:border-gray-700 p-5">
+        <div className="admin-stat-card rounded-xl shadow-sm p-5">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Past Due</p>
@@ -403,7 +404,7 @@ export default async function AdminDashboard() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-md shadow-sm border border-gray-200 dark:border-gray-700 p-5">
+        <div className="admin-stat-card rounded-xl shadow-sm p-5">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Active Coupons</p>
@@ -423,7 +424,7 @@ export default async function AdminDashboard() {
           </Link>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-md shadow-sm border border-gray-200 dark:border-gray-700 p-5">
+        <div className="admin-stat-card rounded-xl shadow-sm p-5">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Seasonal Offer</p>

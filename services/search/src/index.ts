@@ -17,8 +17,12 @@ const esClient = new Client({
 
 const INDEX_NAME = 'products';
 
+app.get('/health', (_req, res) => {
+  res.json({ status: 'ok', service: 'search' });
+});
+
 // Endpoint to sync Postgres products to Elasticsearch
-app.post('/api/search/sync', async (req: Request, res: Response): Promise<any> => {
+app.post('/api/search/sync', async (_req: Request, res: Response): Promise<any> => {
   try {
     const products = await prisma.product.findMany({
       where: {
@@ -127,4 +131,5 @@ app.get('/api/search/products', async (req: Request, res: Response): Promise<any
 app.listen(PORT, () => {
   console.log(`[Search Service] running on port ${PORT}`);
   console.log(`[Search Service] connected to Elasticsearch at ${ES_URL}`);
+  void import('./events-consumer.js').then((m) => m.startSearchEventConsumer()).catch(() => undefined);
 });

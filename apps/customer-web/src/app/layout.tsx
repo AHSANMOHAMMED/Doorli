@@ -1,21 +1,39 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Syne, Manrope } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/lib/cart-context";
+import { MobileTabBar } from "@/components/MobileTabBar";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const syne = Syne({
   subsets: ["latin"],
+  variable: "--font-doorli-display",
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const manrope = Manrope({
   subsets: ["latin"],
+  variable: "--font-doorli-body",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Doorli | Everything Local. Delivered.",
-  description: "Connect with every business, service, and venue in your community. One app for groceries, food, home repairs, and emergency alerts.",
+  title: "Doorli | Everything local. Delivered.",
+  description:
+    "Connect with every business, service, and venue in your community. Groceries, food, home repairs, and more.",
+  appleWebApp: {
+    capable: true,
+    title: "Doorli",
+    statusBarStyle: "black-translucent",
+  },
+  manifest: "/manifest.webmanifest",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: "cover",
+  themeColor: "#0a0f2e",
 };
 
 export default function RootLayout({
@@ -24,13 +42,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col bg-neutral-950 text-white">
+    <html lang="en" className={`${syne.variable} ${manrope.variable} h-full antialiased`}>
+      <body className="min-h-full flex flex-col bg-[var(--doorli-navy)] text-[var(--doorli-text)] pb-tab-bar">
         <CartProvider>
-          {children}
+          <div className="flex-1 flex flex-col min-h-0">{children}</div>
+          <MobileTabBar />
         </CartProvider>
       </body>
     </html>

@@ -23,7 +23,11 @@ export const createVendorSchema = z.object({
   openingHours: z.record(z.object({ open: z.string(), close: z.string() })).optional(),
 });
 
-export const updateVendorSchema = createVendorSchema.partial();
+export const updateVendorSchema = createVendorSchema.partial().extend({
+  isOpen: z.boolean().optional(),
+  logoUrl: z.string().url().optional(),
+  bannerUrl: z.string().url().optional(),
+});
 
 export const nearbyVendorsSchema = z.object({
   lat: z.coerce.number().min(-90).max(90),

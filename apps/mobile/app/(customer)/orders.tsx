@@ -26,9 +26,23 @@ export default function OrdersScreen() {
   const orders = data ?? [];
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <Text style={styles.title}>My Orders</Text>
-      
+      <View style={styles.quickLinks}>
+        <TouchableOpacity
+          style={styles.quickLink}
+          onPress={() => router.push('/(customer)/bookings')}
+        >
+          <Text style={styles.quickLinkText}>Bookings</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.quickLink}
+          onPress={() => router.push('/(customer)/subscriptions')}
+        >
+          <Text style={styles.quickLinkText}>Subscriptions</Text>
+        </TouchableOpacity>
+      </View>
+
       {isLoading ? (
         <ActivityIndicator style={styles.loader} color="#0ea5e9" />
       ) : orders.length === 0 ? (
@@ -83,8 +97,22 @@ export default function OrdersScreen() {
                 </View>
                 
                 <View style={styles.cardFooter}>
-                  <Text style={styles.viewDetailsText}>View Details</Text>
-                  <ChevronRight color="#0ea5e9" size={16} />
+                  <TouchableOpacity
+                    style={styles.footerBtn}
+                    onPress={() => router.push(`/(customer)/order/${item.id}`)}
+                  >
+                    <Text style={styles.viewDetailsText}>Details</Text>
+                    <ChevronRight color="#0ea5e9" size={16} />
+                  </TouchableOpacity>
+                  {!['delivered', 'cancelled'].includes(item.status) && (
+                    <TouchableOpacity
+                      style={styles.footerBtn}
+                      onPress={() => router.push(`/(customer)/track/${item.id}`)}
+                    >
+                      <Truck color="#5DCAA5" size={16} />
+                      <Text style={[styles.viewDetailsText, { color: '#5DCAA5' }]}>Track</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
                 </GlassCard>
               </TouchableOpacity>
@@ -99,6 +127,21 @@ export default function OrdersScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: 'transparent' },
   title: { fontSize: 28, fontWeight: '800', color: '#fff', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
+  quickLinks: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 16,
+    marginBottom: 8,
+  },
+  quickLink: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  quickLinkText: { color: 'rgba(255,255,255,0.85)', fontWeight: '600', fontSize: 13 },
   loader: { marginTop: 48 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
   emptyIconCircle: {
@@ -114,7 +157,8 @@ const styles = StyleSheet.create({
   },
   emptyTitle: { fontSize: 20, fontWeight: '700', color: '#fff', marginBottom: 8 },
   emptyText: { fontSize: 15, color: 'rgba(255,255,255,0.7)', textAlign: 'center' },
-  listContent: { padding: 16, paddingBottom: 32 },
+  listContent: { padding: 16, paddingBottom: 100 },
+  footerBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12 },
   card: {
     marginBottom: 16,
     padding: 0,
@@ -154,8 +198,8 @@ const styles = StyleSheet.create({
   cardFooter: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
+    justifyContent: 'space-around',
+    gap: 8,
     padding: 12,
     backgroundColor: 'rgba(255,255,255,0.03)',
     borderTopWidth: 1,

@@ -2,7 +2,7 @@ import http from 'http';
 import { Server } from 'socket.io';
 import { createApp } from './app.js';
 import { env } from './config/env.js';
-import { setSocketServer } from './lib/socket.js';
+import { setSocketServer, registerSocketAuth } from './lib/socket.js';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 
 const app = createApp();
@@ -12,18 +12,8 @@ const io = new Server(server, {
   cors: { origin: '*', methods: ['GET', 'POST'] },
 });
 
-io.on('connection', (socket) => {
-  socket.on('join', (rooms: string | string[]) => {
-    const list = Array.isArray(rooms) ? rooms : [rooms];
-    for (const room of list) {
-      if (typeof room === 'string' && room.length > 0) {
-        socket.join(room);
-      }
-    }
-  });
-});
-
 setSocketServer(io);
+registerSocketAuth(io);
 
 // Delivery/Dispatch service proxy
 app.use(
@@ -31,17 +21,21 @@ app.use(
   createProxyMiddleware({
     target: process.env.DELIVERY_SERVICE_URL || 'http://localhost:8086',
     changeOrigin: true,
+    pathRewrite: (path) => `/api/delivery${path}`,
   })
 );
 
-// Ride-Hailing service proxy
-app.use(
-  '/api/v1/rides',
-  createProxyMiddleware({
-    target: process.env.RIDE_HAILING_SERVICE_URL || 'http://localhost:8085',
-    changeOrigin: true,
-  })
-);
+// Ride-hailing: use in-process /api/v1/rides (routes/index). Optional external service:
+if (process.env.RIDE_HAILING_SERVICE_URL) {
+  app.use(
+    '/api/v1/rides-proxy',
+    createProxyMiddleware({
+      target: process.env.RIDE_HAILING_SERVICE_URL,
+      changeOrigin: true,
+      pathRewrite: (path) => `/api/rides${path}`,
+    }),
+  );
+}
 
 // Storage service proxy
 app.use(
@@ -49,7 +43,7 @@ app.use(
   createProxyMiddleware({
     target: process.env.STORAGE_SERVICE_URL || 'http://localhost:4005',
     changeOrigin: true,
-    pathRewrite: { '^/api/v1/storage': '/api/storage' },
+    pathRewrite: (path) => `/api/storage${path}`,
   })
 );
 
@@ -59,7 +53,7 @@ app.use(
   createProxyMiddleware({
     target: process.env.SEARCH_SERVICE_URL || 'http://localhost:4004',
     changeOrigin: true,
-    pathRewrite: { '^/api/v1/search': '/api/search' },
+    pathRewrite: (path) => `/api/search${path}`,
   })
 );
 
@@ -69,7 +63,7 @@ app.use(
   createProxyMiddleware({
     target: process.env.AI_SERVICE_URL || 'http://localhost:4006',
     changeOrigin: true,
-    pathRewrite: { '^/api/v1/ai': '/api/ai' },
+    pathRewrite: (path) => `/api/ai${path}`,
   })
 );
 

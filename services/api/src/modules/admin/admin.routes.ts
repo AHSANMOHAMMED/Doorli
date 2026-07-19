@@ -105,6 +105,37 @@ adminRouter.get('/orders', async (req, res, next) => {
   }
 });
 
+adminRouter.get('/infra', async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    async function probe(name: string, port: string, url: string) {
+      try {
+        const controller = new AbortController();
+        const t = setTimeout(() => controller.abort(), 2500);
+        const res = await fetch(url, { signal: controller.signal });
+        clearTimeout(t);
+        return { name, port, status: res.ok ? 'healthy' : 'degraded' as const };
+      } catch {
+        return { name, port, status: 'down' as const };
+      }
+    }
+
+    const services = await Promise.all([
+      probe('Marketplace API Gateway', '4000', 'http://127.0.0.1:4000/health'),
+      probe('Delivery', '8086', 'http://127.0.0.1:8086/health'),
+      probe('Search', '4004', 'http://127.0.0.1:4004/health'),
+      probe('Storage', '4005', 'http://127.0.0.1:4005/health'),
+      probe('AI', '4006', 'http://127.0.0.1:4006/health'),
+      probe('Notifications', '4007', 'http://127.0.0.1:4007/health'),
+      probe('Ride-Hailing', '8085', 'http://127.0.0.1:8085/health'),
+    ]);
+
+    res.json({ success: true, data: { services } });
+  } catch (err) {
+    next(err);
+  }
+});
+
 adminRouter.get('/users', async (req, res, next) => {
   try {
     requireAdmin(req);

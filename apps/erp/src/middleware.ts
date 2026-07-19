@@ -64,7 +64,10 @@ export async function middleware(request: NextRequest) {
     const clean = host.split(':')[0].toLowerCase()
 
     // Always allow localhost (development)
-    if (clean === 'localhost' || clean === '127.0.0.1') return true
+    if (clean === 'localhost' || clean === '127.0.0.1' || clean === '0.0.0.0') return true
+
+    // Allow bare IPs (Oracle Cloud / VPS / LAN) so nginx Host headers work
+    if (/^\d{1,3}(?:\.\d{1,3}){3}$/.test(clean)) return true
 
     // Allow only our specific Railway deployment URLs
     if (clean === 'retail-smart-pos-web-production.up.railway.app' || clean.endsWith('.up.railway.app')) return true
@@ -292,9 +295,22 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // 4. RAILWAY URL / LOCALHOST (Development)
+  // 4. RAILWAY URL / LOCALHOST / IP HOST (Development & cloud VM)
   const isRailwayUrl = normalizedHostname.includes('.railway.app')
-  const isLocalhost = normalizedHostname === 'localhost' || normalizedHostname.startsWith('localhost:')
+  const isIpHost = /^\d{1,3}(?:\.\d{1,3}){3}$/.test(normalizedHostname)
+  const isExplicitAllowed =
+    !!allowedHostsEnv &&
+    allowedHostsEnv
+      .split(',')
+      .map((h) => h.trim().toLowerCase())
+      .includes(normalizedHostname)
+  const isLocalhost =
+    normalizedHostname === 'localhost' ||
+    normalizedHostname.startsWith('localhost:') ||
+    normalizedHostname === '127.0.0.1' ||
+    normalizedHostname === '0.0.0.0' ||
+    isIpHost ||
+    isExplicitAllowed
 
   if (isRailwayUrl) {
     // In production, redirect Railway URL to the main app domain

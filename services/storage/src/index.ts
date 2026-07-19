@@ -26,14 +26,15 @@ const s3Client = new S3Client({
 
 const upload = multer({ storage: multer.memoryStorage() });
 
-app.get('/health', (req, res) => {
+app.get('/health', (_req, res) => {
   res.json({ status: 'healthy', service: 'doorli-storage' });
 });
 
-app.post('/api/storage/upload', upload.single('file'), async (req: Request, res: Response) => {
+app.post('/api/storage/upload', upload.single('file') as any, async (req: Request, res: Response): Promise<void> => {
   try {
     if (!req.file) {
-      return res.status(400).json({ error: 'No file provided' });
+      res.status(400).json({ error: 'No file provided' });
+      return;
     }
 
     const { originalname, buffer, mimetype } = req.file;

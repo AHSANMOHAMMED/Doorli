@@ -17,10 +17,25 @@ async function syncReferencePaymentStatus(
   status: PaymentStatus,
 ) {
   if (referenceType === PaymentReferenceType.order) {
-    await prisma.order.update({
-      where: { id: referenceId },
-      data: { paymentStatus: status },
-    });
+    if (status === PaymentStatus.paid) {
+      const { markOrderPaid } = await import('../orders/orders.service.js');
+      await markOrderPaid(referenceId).catch((err) =>
+        console.error('[payments] markOrderPaid side-effects failed', err),
+      );
+    } else {
+      await prisma.order.update({
+        where: { id: referenceId },
+        data: { paymentStatus: status },
+      });
+    }
+  } else if (referenceType === PaymentReferenceType.booking) {
+    // Payment row is source of truth; confirm booking when deposit is paid
+    if (status === PaymentStatus.paid) {
+      await prisma.booking.update({
+        where: { id: referenceId },
+        data: { status: 'confirmed' },
+      }).catch(() => undefined);
+    }
   }
 }
 

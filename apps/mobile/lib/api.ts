@@ -1,4 +1,3 @@
-import { supabase } from './supabase';
 import { apiClient } from './axios';
 import type { VendorCategory } from '@doorli/types';
 
@@ -49,12 +48,19 @@ export interface Order {
   subtotal: number;
   deliveryFee: number;
   totalAmount: number;
+  customerId?: string;
   deliveryAddressId?: string | null;
-  deliveryAddress?: { addressLine: string } | null;
+  deliveryAddress?: { addressLine: string; latitude?: number | null; longitude?: number | null } | null;
   specialInstructions?: string | null;
   createdAt: string;
   updatedAt?: string | null;
-  vendor?: { id: string; businessName: string; phone?: string | null };
+  vendor?: {
+    id: string;
+    businessName: string;
+    phone?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+  };
   items?: Array<{
     id: string;
     product: {
@@ -69,56 +75,40 @@ export interface Order {
 
 export interface Booking {
   id: string;
-  booking_number: string;
-  booking_type: string;
-  service_name: string;
-  booking_date: string;
-  start_time: string;
-  end_time?: string | null;
-  party_size: number;
-  total_amount: number;
+  bookingNumber: string;
+  bookingType: string;
+  totalAmount: number;
   status: string;
-  special_requests?: string | null;
-  contact_name?: string | null;
-  contact_phone?: string | null;
-  created_at: string;
-  vendor?: { id: string; business_name: string };
+  createdAt: string;
+  vendor?: { id: string; businessName: string };
 }
 
 export interface ServiceRequest {
   id: string;
-  request_number: string;
-  service_type: string;
+  serviceType: string;
   title: string;
-  description: string;
-  address: string;
-  city?: string | null;
-  preferred_date?: string | null;
-  preferred_time?: string | null;
-  urgency: string;
-  estimated_cost?: number | null;
-  final_cost?: number | null;
+  description?: string | null;
+  addressLine?: string | null;
   status: string;
-  created_at: string;
-  vendor?: { id: string; business_name: string };
+  createdAt: string;
 }
 
 export interface Review {
   id: string;
   rating: number;
   comment?: string | null;
-  created_at: string;
-  vendor_id?: string | null;
+  createdAt: string;
+  vendorId?: string | null;
 }
 
 export interface Profile {
   id: string;
-  full_name: string;
+  fullName: string;
   phone?: string | null;
   email?: string | null;
   role: string;
-  avatar_url?: string | null;
-  is_verified: boolean;
+  profilePhotoUrl?: string | null;
+  isVerified: boolean;
 }
 
 export function formatPrice(amount: number): string {
@@ -129,15 +119,34 @@ export function formatStatus(status: string): string {
   return status.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-// --- Vendor queries ---
-
 export async function fetchVendors(category?: VendorCategory | 'all') {
   let url = '/vendors';
   if (category && category !== 'all') {
     url += `?category=${category}`;
   }
   const res = await apiClient.get(url);
-  return res.data?.data?.items ?? [];
+  return (res.data?.data?.items ?? []) as Vendor[];
+}
+
+export async function fetchNearbyVendors(opts?: {
+  lat?: number;
+  lng?: number;
+  radius?: number;
+  category?: VendorCategory | 'all';
+}) {
+  const lat = opts?.lat ?? DEFAULT_LOCATION.lat;
+  const lng = opts?.lng ?? DEFAULT_LOCATION.lng;
+  const radius = opts?.radius ?? 10;
+  const params = new URLSearchParams({
+    lat: String(lat),
+    lng: String(lng),
+    radius: String(radius),
+  });
+  if (opts?.category && opts.category !== 'all') {
+    params.set('category', opts.category);
+  }
+  const res = await apiClient.get(`/vendors/nearby?${params.toString()}`);
+  return (res.data?.data?.items ?? []) as Vendor[];
 }
 
 export async function fetchVendor(id: string): Promise<VendorDetail> {
@@ -145,102 +154,13 @@ export async function fetchVendor(id: string): Promise<VendorDetail> {
   if (!res.data?.success) {
     throw new Error('Vendor not found');
   }
-  const vendor = res.data.data;
-  return vendor as VendorDetail;
+  return res.data.data as VendorDetail;
 }
 
 export async function fetchVendorReviews(vendorId: string) {
-  const { data, error } = await supabase
-    .from('reviews')
-    .select('id, rating, comment, created_at, vendor_id, user_id')
-    .eq('vendor_id', vendorId)
-    .order('created_at', { ascending: false });
-  if (error) throw error;
-  return data as Review[];
+  const res = await apiClient.get(`/reviews/vendor/${vendorId}`);
+  return (res.data?.data?.items ?? res.data?.data ?? []) as Review[];
 }
-
-// --- Cart operations ---
-
-export async function getOrCreateCart(vendorId: string): Promise<string> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
-
-  const { data: existing } = await supabase
-    .from('carts')
-    .select('id')
-    .eq('user_id', user.id)
-    .eq('vendor_id', vendorId)
-    .maybeSingle();
-
-  if (existing) return existing.id;
-
-  const { data: newCart, error } = await supabase
-    .from('carts')
-    .insert({ user_id: user.id, vendor_id: vendorId })
-    .select('id')
-    .single();
-  if (error) throw error;
-  return newCart.id;
-}
-
-export async function addToCart(vendorId: string, productId: string, quantity: number = 1) {
-  const cartId = await getOrCreateCart(vendorId);
-
-  const { data: existing } = await supabase
-    .from('cart_items')
-    .select('id, quantity')
-    .eq('cart_id', cartId)
-    .eq('product_id', productId)
-    .maybeSingle();
-
-  if (existing) {
-    const { error } = await supabase
-      .from('cart_items')
-      .update({ quantity: existing.quantity + quantity })
-      .eq('id', existing.id);
-    if (error) throw error;
-  } else {
-    const { error } = await supabase
-      .from('cart_items')
-      .insert({ cart_id: cartId, product_id: productId, quantity });
-    if (error) throw error;
-  }
-}
-
-export async function fetchCart() {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return [];
-
-  const { data, error } = await supabase
-    .from('carts')
-    .select('id, vendor_id, vendor:vendors(id, business_name, delivery_radius_km), cart_items(id, product_id, quantity, product:products(*))')
-    .eq('user_id', user.id);
-  if (error) throw error;
-  return data ?? [];
-}
-
-export async function updateCartItemQuantity(itemId: string, quantity: number) {
-  if (quantity <= 0) {
-    const { error } = await supabase.from('cart_items').delete().eq('id', itemId);
-    if (error) throw error;
-  } else {
-    const { error } = await supabase.from('cart_items').update({ quantity }).eq('id', itemId);
-    if (error) throw error;
-  }
-}
-
-export async function clearCart(cartId: string) {
-  const { error: itemsError } = await supabase.from('cart_items').delete().eq('cart_id', cartId);
-  if (itemsError) throw itemsError;
-  const { error } = await supabase.from('carts').delete().eq('id', cartId);
-  if (error) throw error;
-}
-
-// --- Order operations ---
 
 export async function createOrder(params: {
   vendorId: string;
@@ -249,18 +169,17 @@ export async function createOrder(params: {
   paymentMethod?: string;
   notes?: string;
   deliveryFee?: number;
+  deliveryAddressId?: string;
 }) {
-  const { vendorId, items, deliveryAddress, paymentMethod, notes } = params;
+  const { vendorId, items, deliveryAddress, paymentMethod, notes, deliveryAddressId } = params;
 
-  // Clear local cart for this vendor immediately, even before the network request
-  // (Assuming caller does it or we rely on the state here, but `useCartStore.getState().clearVendor` is better done in UI)
-  
   const res = await apiClient.post('/orders', {
     vendorId,
     deliveryAddress,
+    deliveryAddressId,
     paymentMethod: paymentMethod ?? 'cod',
     specialInstructions: notes,
-    items: items.map(i => ({
+    items: items.map((i) => ({
       productId: i.productId,
       quantity: i.quantity,
       unitPrice: i.price,
@@ -273,9 +192,8 @@ export async function createOrder(params: {
 
   const order = res.data.data as Order & { totalAmount: number };
 
-  // Initiate payment (COD stays pending; card returns Stripe clientSecret / PayHere checkout)
-  const method = (paymentMethod ?? 'cod') as 'cod' | 'card' | 'wallet';
-  const gateway = method === 'cod' ? 'manual' : method === 'card' ? 'stripe' : 'manual';
+  const method = (paymentMethod ?? 'cod') as 'cod' | 'card';
+  const gateway = method === 'cod' ? 'manual' : 'stripe';
   try {
     const payRes = await apiClient.post('/payments/initiate', {
       referenceId: order.id,
@@ -288,7 +206,7 @@ export async function createOrder(params: {
       return { ...order, payment: payRes.data.data };
     }
   } catch {
-    // Order created; payment can be retried from order screen
+    // Order created; payment can be retried
   }
 
   return order;
@@ -298,7 +216,7 @@ export async function initiatePayment(params: {
   referenceId: string;
   referenceType: 'order' | 'booking';
   amount: number;
-  method: 'cod' | 'card' | 'wallet';
+  method: 'cod' | 'card';
   gateway: 'stripe' | 'payhere' | 'manual';
 }) {
   const res = await apiClient.post('/payments/initiate', params);
@@ -329,7 +247,7 @@ export async function fetchMyOrders() {
   if (!res.data?.success) {
     throw new Error('Failed to fetch orders');
   }
-  return res.data.data.items;
+  return res.data.data.items as Order[];
 }
 
 export async function fetchOrder(id: string) {
@@ -337,128 +255,144 @@ export async function fetchOrder(id: string) {
   if (!res.data?.success) {
     throw new Error('Failed to fetch order');
   }
-  return res.data.data;
+  return res.data.data as Order;
 }
 
 export async function cancelOrder(id: string) {
-  const res = await apiClient.patch(`/orders/${id}/status`, { status: 'cancelled' });
+  const res = await apiClient.post(`/orders/${id}/cancel`);
   if (!res.data?.success) {
-    throw new Error('Failed to cancel order');
+    throw new Error(res.data?.error || 'Failed to cancel order');
   }
   return res.data.data;
 }
 
-// --- Booking operations ---
-
 export async function createBooking(params: {
   vendorId: string;
-  bookingType: string;
-  serviceName: string;
-  bookingDate: string;
-  startTime: string;
-  endTime?: string | null;
-  partySize: number;
+  bookingType: 'hotel' | 'hall' | 'beauty' | 'service' | string;
+  checkInDate?: string;
+  checkOutDate?: string;
+  eventDate?: string;
+  startTime?: string;
+  endTime?: string;
+  guestCount?: number;
   totalAmount: number;
+  depositAmount?: number;
+  requirements?: string;
+  /** @deprecated mapped to requirements */
   specialRequests?: string;
-  contactName: string;
-  contactPhone: string;
+  /** @deprecated mapped into requirements */
+  serviceName?: string;
+  /** @deprecated use eventDate / checkInDate */
+  bookingDate?: string;
+  /** @deprecated use guestCount */
+  partySize?: number;
 }) {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
+  const bookingTypeMap: Record<string, 'hotel' | 'hall' | 'beauty' | 'service'> = {
+    hotel: 'hotel',
+    hotel_room: 'hotel',
+    hall: 'hall',
+    hall_booking: 'hall',
+    beauty: 'beauty',
+    beauty_appointment: 'beauty',
+    service: 'service',
+    restaurant_table: 'service',
+  };
+  const bookingType = bookingTypeMap[params.bookingType] ?? 'service';
+  const eventDate = params.eventDate ?? params.bookingDate;
+  const requirements = [params.requirements, params.specialRequests, params.serviceName]
+    .filter(Boolean)
+    .join(' | ') || undefined;
 
-  const { data, error } = await supabase.from('bookings').insert({
-    user_id: user.id,
-    vendor_id: params.vendorId,
-    booking_type: params.bookingType,
-    service_name: params.serviceName,
-    booking_date: params.bookingDate,
-    start_time: params.startTime,
-    end_time: params.endTime ?? null,
-    party_size: params.partySize,
-    total_amount: params.totalAmount,
-    status: 'pending',
-    special_requests: params.specialRequests ?? null,
-    contact_name: params.contactName,
-    contact_phone: params.contactPhone,
-    payment_status: 'pending',
-  }).select('id, booking_number').single();
-  if (error) throw error;
-  return data;
+  const body = {
+    vendorId: params.vendorId,
+    bookingType,
+    checkInDate: params.checkInDate ?? (bookingType === 'hotel' ? eventDate : undefined),
+    checkOutDate: params.checkOutDate,
+    eventDate: bookingType !== 'hotel' ? eventDate : undefined,
+    startTime: params.startTime,
+    endTime: params.endTime,
+    guestCount: params.guestCount ?? params.partySize,
+    totalAmount: params.totalAmount,
+    depositAmount: params.depositAmount,
+    requirements,
+  };
+
+  const res = await apiClient.post('/bookings', body);
+  if (!res.data?.success) {
+    throw new Error(res.data?.error || 'Failed to create booking');
+  }
+  return res.data.data;
 }
 
 export async function fetchMyBookings() {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return [];
-
-  const { data, error } = await supabase
-    .from('bookings')
-    .select('*, vendor:vendors(id, business_name)')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
-  if (error) throw error;
-  return data as Booking[];
+  const res = await apiClient.get('/bookings/my-bookings');
+  if (!res.data?.success) return [];
+  return (res.data.data ?? []) as Booking[];
 }
 
-// --- Service request operations ---
-
 export async function createServiceRequest(params: {
-  vendorId: string;
   serviceType: string;
   title: string;
-  description: string;
-  address: string;
-  city?: string;
+  description?: string;
+  addressLine?: string;
+  /** @deprecated use addressLine */
+  address?: string;
+  latitude?: number;
+  longitude?: number;
+  isUrgent?: boolean;
+  /** @deprecated mapped to isUrgent */
+  urgency?: 'low' | 'medium' | 'high' | string;
+  offeredRate?: number;
+  scheduledAt?: string;
   preferredDate?: string;
   preferredTime?: string;
-  urgency: string;
-  contactName: string;
-  contactPhone: string;
+  vendorId?: string;
+  city?: string;
+  contactName?: string;
+  contactPhone?: string;
 }) {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
+  const addressLine = params.addressLine ?? params.address;
+  if (!addressLine) throw new Error('Address is required');
 
-  const { data, error } = await supabase.from('service_requests').insert({
-    user_id: user.id,
-    vendor_id: params.vendorId,
-    service_type: params.serviceType,
+  const isUrgent =
+    params.isUrgent ?? (params.urgency === 'high' || params.urgency === 'urgent');
+
+  const scheduledAt =
+    params.scheduledAt ??
+    (params.preferredDate
+      ? `${params.preferredDate}${params.preferredTime ? `T${params.preferredTime}` : 'T09:00:00'}`
+      : undefined);
+
+  const descriptionParts = [
+    params.description,
+    params.city ? `City: ${params.city}` : null,
+    params.contactName ? `Contact: ${params.contactName}` : null,
+    params.contactPhone ? `Phone: ${params.contactPhone}` : null,
+    params.vendorId ? `Preferred vendor: ${params.vendorId}` : null,
+  ].filter(Boolean);
+
+  const res = await apiClient.post('/service-requests', {
+    serviceType: params.serviceType,
     title: params.title,
-    description: params.description,
-    address: params.address,
-    city: params.city ?? null,
-    preferred_date: params.preferredDate ?? null,
-    preferred_time: params.preferredTime ?? null,
-    urgency: params.urgency,
-    status: 'pending',
-    contact_name: params.contactName,
-    contact_phone: params.contactPhone,
-    payment_status: 'pending',
-  }).select('id, request_number').single();
-  if (error) throw error;
-  return data;
+    description: descriptionParts.join('\n') || undefined,
+    addressLine,
+    latitude: params.latitude,
+    longitude: params.longitude,
+    isUrgent: Boolean(isUrgent),
+    offeredRate: params.offeredRate,
+    scheduledAt,
+  });
+  if (!res.data?.success) {
+    throw new Error(res.data?.error || 'Failed to create service request');
+  }
+  return res.data.data;
 }
 
 export async function fetchMyServiceRequests() {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return [];
-
-  const { data, error } = await supabase
-    .from('service_requests')
-    .select('*, vendor:vendors(id, business_name)')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
-  if (error) throw error;
-  return data as ServiceRequest[];
+  const res = await apiClient.get('/service-requests/my-jobs');
+  if (!res.data?.success) return [];
+  return (res.data.data ?? []) as ServiceRequest[];
 }
-
-// --- Review operations ---
 
 export async function createReview(params: {
   vendorId: string;
@@ -466,184 +400,291 @@ export async function createReview(params: {
   comment?: string;
   orderId?: string;
 }) {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
-
-  const { data, error } = await supabase.from('reviews').insert({
-    user_id: user.id,
-    vendor_id: params.vendorId,
-    order_id: params.orderId ?? null,
-    rating: params.rating,
-    comment: params.comment ?? null,
-  }).select('id').single();
-  if (error) throw error;
-  return data;
+  const res = await apiClient.post('/reviews', params);
+  if (!res.data?.success) {
+    throw new Error(res.data?.error || 'Failed to create review');
+  }
+  return res.data.data;
 }
-
-// --- Profile operations ---
 
 export async function fetchProfile(): Promise<Profile | null> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
-
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .maybeSingle();
-  if (error) throw error;
-  return data as Profile | null;
+  const res = await apiClient.get('/users/me');
+  if (!res.data?.success) return null;
+  return res.data.data as Profile;
 }
 
-export async function updateProfile(updates: { full_name?: string; phone?: string; avatar_url?: string }) {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
-
-  const { data, error } = await supabase
-    .from('profiles')
-    .update(updates)
-    .eq('id', user.id)
-    .select()
-    .maybeSingle();
-  if (error) throw error;
-  return data;
+export async function updateProfile(updates: {
+  fullName?: string;
+  email?: string;
+  profilePhotoUrl?: string;
+}) {
+  const res = await apiClient.patch('/users/me', updates);
+  if (!res.data?.success) {
+    throw new Error(res.data?.error || 'Failed to update profile');
+  }
+  return res.data.data;
 }
-
-// --- Vendor order management ---
 
 export async function fetchVendorOrders() {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return [];
-
-  const { data: vendor } = await supabase
-    .from('vendors')
-    .select('id')
-    .eq('user_id', user.id)
-    .maybeSingle();
-  if (!vendor) return [];
-
-  const { data, error } = await supabase
-    .from('orders')
-    .select('*, order_items(id, name, price, quantity, image_url)')
-    .eq('vendor_id', vendor.id)
-    .order('created_at', { ascending: false });
-  if (error) throw error;
-  return data as Order[];
+  const res = await apiClient.get('/orders/vendor/mine');
+  if (!res.data?.success) return [];
+  return (res.data.data?.items ?? []) as Order[];
 }
 
 export async function updateOrderStatus(orderId: string, status: string) {
-  const { data, error } = await supabase
-    .from('orders')
-    .update({ status })
-    .eq('id', orderId)
-    .select()
-    .maybeSingle();
-  if (error) throw error;
-  return data;
+  const res = await apiClient.patch(`/orders/${orderId}/status`, { status });
+  if (!res.data?.success) {
+    throw new Error(res.data?.error || 'Failed to update order status');
+  }
+  return res.data.data;
 }
 
-// --- Vendor bookings management ---
-
-export async function fetchVendorBookings() {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return [];
-
-  const { data: vendor } = await supabase
-    .from('vendors')
-    .select('id')
-    .eq('user_id', user.id)
-    .maybeSingle();
-  if (!vendor) return [];
-
-  const { data, error } = await supabase
-    .from('bookings')
-    .select('*')
-    .eq('vendor_id', vendor.id)
-    .order('created_at', { ascending: false });
-  if (error) throw error;
-  return data as Booking[];
+export async function fetchVendorBookings(vendorId: string) {
+  const res = await apiClient.get(`/bookings/vendor/${vendorId}`);
+  if (!res.data?.success) return [];
+  return (res.data.data ?? []) as Booking[];
 }
 
 export async function updateBookingStatus(bookingId: string, status: string) {
-  const { data, error } = await supabase
-    .from('bookings')
-    .update({ status })
-    .eq('id', bookingId)
-    .select()
-    .maybeSingle();
-  if (error) throw error;
-  return data;
+  const res = await apiClient.patch(`/bookings/${bookingId}/status`, { status });
+  if (!res.data?.success) {
+    throw new Error(res.data?.error || 'Failed to update booking');
+  }
+  return res.data.data;
 }
 
-// --- Vendor service requests management ---
-
-export async function fetchVendorServiceRequests() {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return [];
-
-  const { data: vendor } = await supabase
-    .from('vendors')
-    .select('id')
-    .eq('user_id', user.id)
-    .maybeSingle();
-  if (!vendor) return [];
-
-  const { data, error } = await supabase
-    .from('service_requests')
-    .select('*')
-    .eq('vendor_id', vendor.id)
-    .order('created_at', { ascending: false });
-  if (error) throw error;
-  return data as ServiceRequest[];
+export async function fetchVendorServiceRequests(lat: number, lng: number) {
+  const res = await apiClient.get(`/service-requests/nearby?lat=${lat}&lng=${lng}`);
+  if (!res.data?.success) return [];
+  return (res.data.data ?? []) as ServiceRequest[];
 }
 
-export async function updateServiceRequestStatus(requestId: string, status: string) {
-  const { data, error } = await supabase
-    .from('service_requests')
-    .update({ status })
-    .eq('id', requestId)
-    .select()
-    .maybeSingle();
-  if (error) throw error;
-  return data;
+export async function updateServiceRequestStatus(
+  requestId: string,
+  action: 'accept' | 'start' | 'complete' | 'cancel',
+) {
+  const res = await apiClient.patch(`/service-requests/${requestId}/${action}`);
+  if (!res.data?.success) {
+    throw new Error(res.data?.error || 'Failed to update service request');
+  }
+  return res.data.data;
 }
 
-// --- Driver operations ---
+export async function fetchDriverJobs() {
+  const res = await apiClient.get('/orders/driver');
+  if (!res.data?.success) {
+    return { available: [] as Order[], active: [] as Order[] };
+  }
+  return res.data.data as { available: Order[]; active: Order[] };
+}
 
+export async function acceptDelivery(orderId: string) {
+  const res = await apiClient.patch(`/drivers/accept-delivery/${orderId}`);
+  if (!res.data?.success) {
+    throw new Error(res.data?.error || 'Failed to accept delivery');
+  }
+  return res.data.data;
+}
+
+export async function declineDelivery(orderId: string) {
+  const res = await apiClient.patch(`/drivers/decline-delivery/${orderId}`);
+  if (!res.data?.success) {
+    throw new Error(res.data?.error || 'Failed to decline delivery');
+  }
+  return res.data.data;
+}
+
+/** @deprecated use fetchDriverJobs */
 export async function fetchDriverDeliveries() {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return [];
-
-  const { data, error } = await supabase
-    .from('deliveries')
-    .select('*, orders(id, order_number, total_amount, delivery_address, vendor:vendors(business_name))')
-    .eq('driver_id', user.id)
-    .order('assigned_at', { ascending: false });
-  if (error) throw error;
-  return data;
+  const jobs = await fetchDriverJobs();
+  return [...jobs.active, ...jobs.available].map((order) => ({
+    id: order.id,
+    order_id: order.id,
+    status: order.status === 'ready' && !('driverId' in order) ? 'assigned' : order.status,
+    orders: {
+      order_number: order.orderNumber,
+      total_amount: order.totalAmount,
+      delivery_address: order.deliveryAddress?.addressLine,
+      vendor: { business_name: order.vendor?.businessName },
+    },
+  }));
 }
 
-export async function updateDeliveryStatus(deliveryId: string, status: string) {
-  const { data, error } = await supabase
-    .from('deliveries')
-    .update({ status })
-    .eq('id', deliveryId)
-    .select()
-    .maybeSingle();
-  if (error) throw error;
-  return data;
+/** @deprecated use updateOrderStatus */
+export async function updateDeliveryStatus(orderId: string, status: string) {
+  const mapped =
+    status === 'in_transit' || status === 'picked_up'
+      ? 'picked_up'
+      : status === 'delivered'
+        ? 'delivered'
+        : status;
+  return updateOrderStatus(orderId, mapped);
+}
+
+/* ─── Customer lifestyle APIs ─── */
+
+export interface LoyaltyPoints {
+  points: number;
+  earned: number;
+  redeemed: number;
+}
+
+export interface EventPackage {
+  id: string;
+  title: string;
+  eventDate: string;
+  guestCount?: number | null;
+  totalEstimate?: number | null;
+  status: string;
+  items?: Array<{ role: string; label: string; estimatedCost?: number }>;
+}
+
+export interface DeliverySubscription {
+  id: string;
+  vendorId: string;
+  frequency: string;
+  deliveryAddress: string;
+  nextDeliveryAt: string;
+  isActive: boolean;
+  items?: Array<{ productId: string; quantity: number; unitPrice: number }>;
+}
+
+export interface CityZone {
+  id: string;
+  name: string;
+  city?: string | null;
+  demandLevel?: number;
+}
+
+export interface RideEstimate {
+  baseFare: number;
+  distanceKm: number;
+  totalFare: number;
+}
+
+export interface RideRequest {
+  id: string;
+  status: string;
+  totalFare?: number;
+  pickupLat?: number;
+  pickupLng?: number;
+  dropoffLat?: number;
+  dropoffLng?: number;
+  createdAt?: string;
+  message?: string;
+}
+
+export interface SavedAddress {
+  id: string;
+  label: string;
+  addressLine: string;
+  city?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  isDefault?: boolean;
+}
+
+export async function fetchLoyalty(): Promise<LoyaltyPoints> {
+  const res = await apiClient.get('/loyalty/me');
+  return (res.data?.data ?? { points: 0, earned: 0, redeemed: 0 }) as LoyaltyPoints;
+}
+
+export async function redeemLoyalty(points: number) {
+  const res = await apiClient.post('/loyalty/redeem', { points });
+  if (!res.data?.success) throw new Error(res.data?.error || 'Redeem failed');
+  return res.data.data as { loyalty: LoyaltyPoints; promoCode: string };
+}
+
+export async function fetchMyEvents() {
+  const res = await apiClient.get('/events/my');
+  return (res.data?.data ?? []) as EventPackage[];
+}
+
+export async function createEvent(params: {
+  title: string;
+  eventDate: string;
+  guestCount?: number;
+  items?: Array<{ role: string; label: string; estimatedCost?: number }>;
+}) {
+  const res = await apiClient.post('/events', params);
+  if (!res.data?.success) throw new Error(res.data?.error || 'Failed to create event');
+  return res.data.data as EventPackage;
+}
+
+export async function fetchMySubscriptions() {
+  const res = await apiClient.get('/subscriptions/my');
+  return (res.data?.data ?? []) as DeliverySubscription[];
+}
+
+export async function createSubscription(params: {
+  vendorId: string;
+  frequency: 'weekly' | 'biweekly' | 'monthly';
+  items: Array<{ productId: string; quantity: number; unitPrice: number }>;
+  deliveryAddress: string;
+}) {
+  const res = await apiClient.post('/subscriptions', params);
+  if (!res.data?.success) throw new Error(res.data?.error || 'Failed to create subscription');
+  return res.data.data as DeliverySubscription;
+}
+
+export async function cancelSubscription(id: string) {
+  const res = await apiClient.patch(`/subscriptions/${id}/cancel`);
+  if (!res.data?.success) throw new Error(res.data?.error || 'Cancel failed');
+  return res.data.data;
+}
+
+export async function fetchCities() {
+  const res = await apiClient.get('/cities');
+  return (res.data?.data ?? []) as CityZone[];
+}
+
+export async function fetchCityVendors(city: string) {
+  const res = await apiClient.get(`/cities/${encodeURIComponent(city)}/vendors`);
+  return (res.data?.data ?? []) as Vendor[];
+}
+
+export async function estimateRide(params: {
+  pickupLat: number;
+  pickupLng: number;
+  dropoffLat: number;
+  dropoffLng: number;
+}) {
+  const res = await apiClient.post('/rides/estimate', params);
+  return (res.data?.data ?? { baseFare: 0, distanceKm: 0, totalFare: 0 }) as RideEstimate;
+}
+
+export async function createRide(params: {
+  pickupLat: number;
+  pickupLng: number;
+  dropoffLat: number;
+  dropoffLng: number;
+  pickupAddress?: string;
+  dropoffAddress?: string;
+}) {
+  const res = await apiClient.post('/rides', params);
+  if (!res.data?.success) throw new Error(res.data?.error || 'Failed to request ride');
+  return res.data.data as RideRequest;
+}
+
+export async function fetchMyRides() {
+  const res = await apiClient.get('/rides/my');
+  return (res.data?.data ?? []) as RideRequest[];
+}
+
+export async function fetchAddresses() {
+  const res = await apiClient.get('/users/addresses');
+  return (res.data?.data ?? []) as SavedAddress[];
+}
+
+export async function createAddress(params: {
+  label: string;
+  addressLine: string;
+  city?: string;
+  latitude?: number;
+  longitude?: number;
+  isDefault?: boolean;
+}) {
+  const res = await apiClient.post('/users/addresses', params);
+  if (!res.data?.success) throw new Error(res.data?.error || 'Failed to save address');
+  return res.data.data as SavedAddress;
 }

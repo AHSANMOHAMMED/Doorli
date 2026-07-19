@@ -1,8 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { getToken } from '@/lib/api';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+function getApiBase() {
+  return process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:4000');
+}
 
 type Order = {
   id: string;
@@ -21,17 +24,15 @@ export default function KitchenBoardPage() {
   const [token, setToken] = useState('');
 
   useEffect(() => {
-    const t = localStorage.getItem('doorli_vendor_token') || '';
-    setToken(t);
+    setToken(getToken() || '');
   }, []);
 
   useEffect(() => {
     if (!token) return;
     const load = async () => {
-      const res = await fetch(`${API}/api/v1/orders/vendor/mine`, {
+      const res = await fetch(`${getApiBase()}/api/v1/orders/vendor/mine`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      // fallback: use admin-style list if vendor endpoint missing
       if (!res.ok) return;
       const json = await res.json();
       setOrders(json.data?.items ?? json.data ?? []);
@@ -42,7 +43,7 @@ export default function KitchenBoardPage() {
   }, [token]);
 
   async function setStatus(orderId: string, status: string) {
-    await fetch(`${API}/api/v1/orders/${orderId}/status`, {
+    await fetch(`${getApiBase()}/api/v1/orders/${orderId}/status`, {
       method: 'PATCH',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -56,9 +57,14 @@ export default function KitchenBoardPage() {
   return (
     <div className="p-6 space-y-4">
       <h1 className="text-2xl font-bold text-slate-900">Kitchen Display</h1>
-      <p className="text-slate-500">Live order board for restaurants — auto-refreshes every 8s.</p>
+      <p className="text-slate-500">Live order board — auto-refreshes every 8s.</p>
       {!token && (
-        <p className="text-amber-600 text-sm">Set localStorage doorli_vendor_token to load orders.</p>
+        <p className="text-amber-600 text-sm">
+          <a className="underline" href="/login">
+            Sign in
+          </a>{' '}
+          as a vendor to load orders.
+        </p>
       )}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {COLUMNS.map((col) => (
@@ -78,18 +84,23 @@ export default function KitchenBoardPage() {
                     )}
                     <div className="flex gap-2 mt-3 flex-wrap">
                       {col === 'pending' && (
-                        <button className="text-xs bg-blue-600 text-white px-2 py-1 rounded" onClick={() => setStatus(o.id, 'confirmed')}>
+                        <button type="button" className="text-sm min-h-11 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium" onClick={() => setStatus(o.id, 'confirmed')}>
                           Confirm
                         </button>
                       )}
                       {col === 'confirmed' && (
-                        <button className="text-xs bg-indigo-600 text-white px-2 py-1 rounded" onClick={() => setStatus(o.id, 'preparing')}>
-                          Prep
+                        <button type="button" className="text-sm min-h-11 px-4 py-2 bg-amber-600 text-white rounded-lg font-medium" onClick={() => setStatus(o.id, 'preparing')}>
+                          Preparing
                         </button>
                       )}
                       {col === 'preparing' && (
-                        <button className="text-xs bg-emerald-600 text-white px-2 py-1 rounded" onClick={() => setStatus(o.id, 'ready')}>
+                        <button type="button" className="text-sm min-h-11 px-4 py-2 bg-emerald-600 text-white rounded-lg font-medium" onClick={() => setStatus(o.id, 'ready')}>
                           Ready
+                        </button>
+                      )}
+                      {col === 'ready' && (
+                        <button type="button" className="text-sm min-h-11 px-4 py-2 bg-slate-800 text-white rounded-lg font-medium" onClick={() => setStatus(o.id, 'out_for_delivery')}>
+                          Out for delivery
                         </button>
                       )}
                     </div>

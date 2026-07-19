@@ -50,20 +50,6 @@ bookingsRouter.post('/', validate(createBookingSchema), async (req, res, next) =
   }
 });
 
-bookingsRouter.get('/:id', async (req, res, next) => {
-  try {
-    if (!req.user) throw new AppError(401, 'Authentication required');
-    const booking = await bookingsService.getBookingById(
-      req.params.id as string,
-      req.user.id,
-      req.user.role
-    );
-    res.json({ success: true, data: booking });
-  } catch (err) {
-    next(err);
-  }
-});
-
 bookingsRouter.get('/my-bookings', async (req, res, next) => {
   try {
     if (!req.user) throw new AppError(401, 'Authentication required');
@@ -77,13 +63,26 @@ bookingsRouter.get('/my-bookings', async (req, res, next) => {
 bookingsRouter.get('/vendor/:vendorId', async (req, res, next) => {
   try {
     if (!req.user) throw new AppError(401, 'Authentication required');
-    // Only vendors can access their bookings
     if (req.user.role !== 'vendor' && req.user.role !== 'admin') {
       throw new AppError(403, 'Access denied');
     }
 
     const bookings = await bookingsService.getVendorBookings(req.params.vendorId as string);
     res.json({ success: true, data: bookings });
+  } catch (err) {
+    next(err);
+  }
+});
+
+bookingsRouter.get('/:id', async (req, res, next) => {
+  try {
+    if (!req.user) throw new AppError(401, 'Authentication required');
+    const booking = await bookingsService.getBookingById(
+      req.params.id as string,
+      req.user.id,
+      req.user.role
+    );
+    res.json({ success: true, data: booking });
   } catch (err) {
     next(err);
   }

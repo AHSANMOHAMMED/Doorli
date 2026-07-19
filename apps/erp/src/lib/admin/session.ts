@@ -73,25 +73,29 @@ export async function validateAdminSession(): Promise<AdminSession | null> {
 
   const now = new Date()
 
-  // Find valid session
-  const session = await db.query.adminSessions.findFirst({
-    where: and(
-      eq(adminSessions.sessionToken, sessionToken),
-      gte(adminSessions.expiresAt, now)
-    ),
-  })
+  try {
+    const session = await db.query.adminSessions.findFirst({
+      where: and(
+        eq(adminSessions.sessionToken, sessionToken),
+        gte(adminSessions.expiresAt, now)
+      ),
+    })
 
-  if (!session) {
+    if (!session) {
+      return null
+    }
+
+    // Check if session has timed out due to inactivity
+    const inactivityLimit = new Date(now.getTime() - SESSION_TIMEOUT_MS)
+    if (session.lastActivityAt < inactivityLimit) {
+      return null
+    }
+
+    return session
+  } catch (error) {
+    console.error('[validateAdminSession] DB error:', error)
     return null
   }
-
-  // Check if session has timed out due to inactivity
-  const inactivityLimit = new Date(now.getTime() - SESSION_TIMEOUT_MS)
-  if (session.lastActivityAt < inactivityLimit) {
-    return null
-  }
-
-  return session
 }
 
 /**

@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
+import Script from "next/script"
 import { ThemeProvider } from "@/components/providers/ThemeProvider"
 import { ErrorCaptureProvider } from "@/components/providers/ErrorCaptureProvider"
 import "./globals.css"
@@ -83,21 +84,24 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={inter.variable} suppressHydrationWarning>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-        {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
+      <body suppressHydrationWarning>
+        <Script id="theme-init" strategy="beforeInteractive">
+          {themeScript}
+        </Script>
+        {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ? (
           <>
-            <script async src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}`} />
-            <script dangerouslySetInnerHTML={{ __html: `
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="ga-init" strategy="afterInteractive">{`
               window.dataLayer = window.dataLayer || [];
               function gtag(){dataLayer.push(arguments);}
               gtag('js', new Date());
               gtag('config', '${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}');
-            `}} />
+            `}</Script>
           </>
-        )}
-      </head>
-      <body suppressHydrationWarning>
+        ) : null}
         <ThemeProvider>
           <ErrorCaptureProvider>
             {children}

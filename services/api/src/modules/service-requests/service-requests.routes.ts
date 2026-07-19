@@ -100,6 +100,23 @@ serviceRequestsRouter.patch('/:id/accept', async (req, res, next) => {
   }
 });
 
+serviceRequestsRouter.patch('/:id/start', async (req, res, next) => {
+  try {
+    if (!req.user) throw new AppError(401, 'Authentication required');
+    if (req.user.role !== 'vendor' && req.user.role !== 'admin') {
+      throw new AppError(403, 'Access denied');
+    }
+
+    const serviceRequest = await serviceRequestsService.startServiceRequest(
+      req.params.id as string,
+      req.user.id
+    );
+    res.json({ success: true, data: serviceRequest });
+  } catch (err) {
+    next(err);
+  }
+});
+
 serviceRequestsRouter.patch('/:id/complete', async (req, res, next) => {
   try {
     if (!req.user) throw new AppError(401, 'Authentication required');
@@ -110,6 +127,20 @@ serviceRequestsRouter.patch('/:id/complete', async (req, res, next) => {
     const serviceRequest = await serviceRequestsService.completeServiceRequest(
       req.params.id as string,
       req.user.id
+    );
+    res.json({ success: true, data: serviceRequest });
+  } catch (err) {
+    next(err);
+  }
+});
+
+serviceRequestsRouter.patch('/:id/cancel', async (req, res, next) => {
+  try {
+    if (!req.user) throw new AppError(401, 'Authentication required');
+    const serviceRequest = await serviceRequestsService.cancelServiceRequest(
+      req.params.id as string,
+      req.user.id,
+      req.user.role
     );
     res.json({ success: true, data: serviceRequest });
   } catch (err) {

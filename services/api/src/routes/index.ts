@@ -19,6 +19,10 @@ import subscriptionsRouter from '../modules/subscriptions/subscriptions.routes.j
 import eventsRouter from '../modules/events/events.routes.js';
 import citiesRouter from '../modules/cities/cities.routes.js';
 import recommendationsRouter from '../modules/recommendations/recommendations.routes.js';
+import flashSalesRouter from '../modules/flash-sales/flash-sales.routes.js';
+import ridesRouter from '../modules/rides/rides.routes.js';
+import posRouter from '../modules/pos/pos.routes.js';
+import purchasesRouter from '../modules/purchases/purchases.routes.js';
 
 const router = Router();
 
@@ -65,5 +69,9 @@ router.use('/api/v1/subscriptions', subscriptionsRouter);
 router.use('/api/v1/events', eventsRouter);
 router.use('/api/v1/cities', citiesRouter);
 router.use('/api/v1/recommendations', recommendationsRouter);
+router.use('/api/v1/flash-sales', flashSalesRouter);
+router.use('/api/v1/rides', ridesRouter);
+router.use('/api/v1/pos', posRouter);
+router.use('/api/v1/purchases', purchasesRouter);
 
 export default router;

@@ -6,6 +6,9 @@ import {
   verifyOtpSchema,
   refreshTokenSchema,
   logoutSchema,
+  passwordLoginSchema,
+  registerCustomerSchema,
+  registerVendorSchema,
 } from './auth.schema.js';
 import * as authService from './auth.service.js';
 import { AppError } from '../../middleware/errorHandler.js';
@@ -50,6 +53,33 @@ authRouter.post('/verify-otp', validate(verifyOtpSchema), async (req, res, next)
   try {
     const result = await authService.verifyOtpAndLogin(req.body);
     res.json({ success: true, data: result });
+  } catch (err) {
+    next(err);
+  }
+});
+
+authRouter.post('/login', validate(passwordLoginSchema), async (req, res, next) => {
+  try {
+    const result = await authService.loginWithPassword(req.body);
+    res.json({ success: true, data: result });
+  } catch (err) {
+    next(err);
+  }
+});
+
+authRouter.post('/register', validate(registerCustomerSchema), async (req, res, next) => {
+  try {
+    const result = await authService.registerCustomer(req.body);
+    res.status(201).json({ success: true, data: result });
+  } catch (err) {
+    next(err);
+  }
+});
+
+authRouter.post('/register-vendor', validate(registerVendorSchema), async (req, res, next) => {
+  try {
+    const result = await authService.registerVendor(req.body);
+    res.status(201).json({ success: true, data: result });
   } catch (err) {
     next(err);
   }

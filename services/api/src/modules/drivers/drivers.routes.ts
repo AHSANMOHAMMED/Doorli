@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { authenticateToken, requireRole } from '../../middleware/authenticateToken.js';
 import { validateBody } from '../../middleware/validate.js';
+import { AppError } from '../../middleware/errorHandler.js';
 import { toggleOnlineSchema, updateLocationSchema } from './drivers.schema.js';
 import * as driversService from './drivers.service.js';
 
@@ -41,6 +42,24 @@ driversRouter.patch('/me/location', validateBody(updateLocationSchema), async (r
     res.json({ success: true, data: driver });
   } catch (err) {
     next(err);
+  }
+});
+
+driversRouter.patch('/accept-delivery/:orderId', async (req, res, next) => {
+  try {
+    const order = await driversService.acceptDelivery(String(req.params.orderId), req.user!.id);
+    res.json({ success: true, data: order });
+  } catch (err) {
+    next(err instanceof Error ? new AppError(400, err.message) : err);
+  }
+});
+
+driversRouter.patch('/decline-delivery/:orderId', async (req, res, next) => {
+  try {
+    const result = await driversService.declineDelivery(String(req.params.orderId), req.user!.id);
+    res.json({ success: true, data: result });
+  } catch (err) {
+    next(err instanceof Error ? new AppError(400, err.message) : err);
   }
 });
 

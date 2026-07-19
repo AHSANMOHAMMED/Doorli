@@ -1,26 +1,181 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --doorli-navy: #0a0f2e;
+  --doorli-navy-mid: #0c1a4a;
+  --doorli-deep: #061228;
+  --doorli-blue: #185fa5;
+  --doorli-sky: #378add;
+  --doorli-teal: #1d9e75;
+  --doorli-mint: #5dcaa5;
+  --doorli-gold: #fac775;
+  --doorli-text: #f4f7fb;
+  --doorli-text-muted: #9bb4d0;
+  --background: #0a0f2e;
+  --foreground: #f4f7fb;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: var(--font-doorli-body);
+  --font-display: var(--font-doorli-display);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-doorli-body), 'Manrope', system-ui, sans-serif;
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.pb-tab-bar {
+  padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 768px) {
+  .pb-tab-bar {
+    padding-bottom: 0;
+  }
+}
+
+.safe-fixed-bottom {
+  bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 768px) {
+  .safe-fixed-bottom {
+    bottom: 2rem;
+  }
+}
+
+.font-display {
+  font-family: var(--font-doorli-display), 'Syne', system-ui, sans-serif;
+}
+
+.doorli-hero-plane {
+  background:
+    radial-gradient(ellipse 80% 60% at 15% 20%, rgba(24, 95, 165, 0.55), transparent 55%),
+    radial-gradient(ellipse 70% 50% at 85% 30%, rgba(29, 158, 117, 0.35), transparent 50%),
+    radial-gradient(ellipse 50% 40% at 60% 80%, rgba(250, 199, 117, 0.18), transparent 45%),
+    linear-gradient(160deg, #0a0f2e 0%, #0c1a4a 45%, #061228 100%);
+}
+
+.doorli-orb {
+  position: absolute;
+  z-index: 0;
+  border-radius: 9999px;
+  filter: blur(48px);
+  pointer-events: none;
+  animation: doorli-drift 14s ease-in-out infinite alternate;
+}
+
+.doorli-orb--a {
+  width: min(52vw, 420px);
+  height: min(52vw, 420px);
+  background: rgba(24, 95, 165, 0.45);
+  top: -8%;
+  left: -6%;
+}
+
+.doorli-orb--b {
+  width: min(44vw, 360px);
+  height: min(44vw, 360px);
+  background: rgba(29, 158, 117, 0.32);
+  bottom: 8%;
+  right: -4%;
+  animation-delay: -4s;
+}
+
+.doorli-orb--c {
+  width: min(28vw, 220px);
+  height: min(28vw, 220px);
+  background: rgba(250, 199, 117, 0.22);
+  top: 28%;
+  right: 22%;
+  animation-delay: -7s;
+}
+
+@keyframes doorli-drift {
+  from { transform: translate(0, 0) scale(1); }
+  to { transform: translate(18px, -22px) scale(1.06); }
+}
+
+@keyframes doorli-rise {
+  from { transform: translateY(12px); }
+  to { transform: translateY(0); }
+}
+
+.doorli-rise {
+  opacity: 1;
+  animation: doorli-rise 0.55s ease-out both;
+}
+
+.doorli-rise-delay {
+  opacity: 1;
+  animation: doorli-rise 0.55s ease-out 0.08s both;
+}
+
+.doorli-rise-delay-2 {
+  opacity: 1;
+  animation: doorli-rise 0.55s ease-out 0.14s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .doorli-orb {
+    animation: none;
+  }
+  .doorli-rise,
+  .doorli-rise-delay,
+  .doorli-rise-delay-2 {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+.doorli-glass {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.doorli-cta-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  background: #fff;
+  color: #0a0f2e;
+  transition: transform 0.2s ease, background 0.2s ease;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+}
+
+.doorli-cta-primary:hover {
+  background: #e8f2ff;
+  transform: translateY(-1px);
+}
+
+.doorli-cta-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  transition: background 0.2s ease;
+}
+
+.doorli-cta-ghost:hover {
+  background: rgba(255, 255, 255, 0.14);
 }

@@ -21,10 +21,10 @@ export const STRICT_LIMIT: RateLimitConfig = {
   maxRequests: 10,
 }
 
-// Very strict for login attempts
+// Very strict for login attempts (looser in local/dev)
 export const LOGIN_LIMIT: RateLimitConfig = {
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  maxRequests: 5,
+  windowMs: process.env.NODE_ENV === 'production' ? 15 * 60 * 1000 : 60 * 1000,
+  maxRequests: process.env.NODE_ENV === 'production' ? 5 : 100,
 }
 
 interface RateLimitResult {

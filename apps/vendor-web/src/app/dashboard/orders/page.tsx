@@ -1,51 +1,59 @@
-import { createClient } from '@/lib/supabase/server';
-import { prisma } from '@doorli/db';
-import { redirect } from 'next/navigation';
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { apiFetch, getToken } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 import OrderStatusUpdate from './OrderStatusUpdate';
 
-export default async function OrdersPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+type Order = {
+  id: string;
+  orderNumber?: string;
+  status: string;
+  totalAmount: number | string;
+  createdAt: string;
+  customer?: { fullName?: string; phone?: string };
+  items?: Array<{ product?: { name?: string }; quantity?: number }>;
+};
 
-  if (!user) {
-    redirect('/login');
-  }
+export default function OrdersPage() {
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Get user profile to determine role
-  const profile = await prisma.user.findUnique({
-    where: { id: user.id }
-  });
+  const load = async () => {
+    const res = await apiFetch<{ items: Order[] }>('/orders/vendor/mine');
+    setOrders(res.data?.items ?? []);
+  };
 
-  if (!profile || profile.role !== 'vendor') {
-    return (
-      <div className="bg-red-50 text-red-600 p-4 rounded-lg border border-red-200 m-8">
-        Access Denied: You must be a vendor to view this page.
-      </div>
-    );
-  }
-
-  const vendor = await prisma.vendor.findUnique({
-    where: { userId: user.id }
-  });
-
-  if (!vendor) {
-    return (
-      <div className="bg-red-50 text-red-600 p-4 rounded-lg border border-red-200 m-8">
-        No vendor profile found. Please complete onboarding first.
-      </div>
-    );
-  }
-
-  const orders = await prisma.order.findMany({
-    where: { vendorId: vendor.id },
-    orderBy: { createdAt: 'desc' },
-    include: {
-      customer: { select: { fullName: true, phone: true } },
-      items: {
-        include: { product: true }
-      },
+  useEffect(() => {
+    if (authLoading) return;
+    if (!getToken() || !user) {
+      router.replace('/login');
+      return;
     }
-  });
+    if (user.role !== 'vendor' && user.role !== 'admin') {
+      setError('Access Denied: You must be a vendor to view this page.');
+      setLoading(false);
+      return;
+    }
+
+    load()
+      .catch((e) => setError(e instanceof Error ? e.message : 'Failed to load orders'))
+      .finally(() => setLoading(false));
+  }, [authLoading, user, router]);
+
+  if (authLoading || loading) {
+    return <div className="p-8 text-slate-500">Loading orders...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 text-red-600 p-4 rounded-lg border border-red-200 m-8">{error}</div>
+    );
+  }
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -56,9 +64,7 @@ export default async function OrdersPage() {
 
       <div className="card overflow-hidden border rounded-lg shadow-sm bg-white mt-8">
         {orders.length === 0 ? (
-          <div className="p-8 text-center text-slate-500">
-            No orders found.
-          </div>
+          <div className="p-8 text-center text-slate-500">No orders found.</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
@@ -79,24 +85,26 @@ export default async function OrdersPage() {
                       {order.orderNumber ?? order.id.slice(0, 8)}
                     </td>
                     <td className="px-6 py-4 text-slate-600">
-                      {order.customer?.fullName ?? 'Customer'}<br/>
-                      <span className="text-xs text-slate-400">{order.customer?.phone}</span>
+                      {order.customer?.fullName ?? 'Customer'}
+                      {order.customer?.phone ? (
+                        <div className="text-xs text-slate-400">{order.customer.phone}</div>
+                      ) : null}
                     </td>
                     <td className="px-6 py-4 text-slate-600">
-                      {order.items?.map((item: any) => (
-                        <div key={item.id} className="text-xs">
-                          {item.quantity}x {item.product?.name ?? 'Unknown'}
-                        </div>
-                      ))}
+                      {(order.items ?? [])
+                        .map((i) => `${i.product?.name ?? 'Item'} ×${i.quantity ?? 1}`)
+                        .join(', ') || `${order.items?.length ?? 0} items`}
                     </td>
-                    <td className="px-6 py-4 font-medium text-slate-900">
-                      ${Number(order.totalAmount).toFixed(2)}
-                    </td>
+                    <td className="px-6 py-4 font-medium">LKR {Number(order.totalAmount).toFixed(0)}</td>
                     <td className="px-6 py-4">
-                      <OrderStatusUpdate orderId={order.id} currentStatus={order.status} />
+                      <OrderStatusUpdate
+                        orderId={order.id}
+                        currentStatus={order.status}
+                        onUpdated={load}
+                      />
                     </td>
                     <td className="px-6 py-4 text-slate-500">
-                      {new Date(order.createdAt).toLocaleString()}
+                      {new Date(order.createdAt).toLocaleDateString()}
                     </td>
                   </tr>
                 ))}

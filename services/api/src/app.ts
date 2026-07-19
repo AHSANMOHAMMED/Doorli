@@ -18,16 +18,40 @@ const openApiSpec = {
   servers: [{ url: 'http://localhost:4000', description: 'Local development' }],
   paths: {
     '/health': {
-      get: {
-        summary: 'Health check',
-        responses: { '200': { description: 'Service health status' } },
-      },
+      get: { summary: 'Health check', responses: { '200': { description: 'Service health status' } } },
     },
     '/api/v1': {
-      get: {
-        summary: 'API version info',
-        responses: { '200': { description: 'Version metadata' } },
-      },
+      get: { summary: 'API version info', responses: { '200': { description: 'Version metadata' } } },
+    },
+    '/api/v1/auth/send-otp': {
+      post: { summary: 'Send phone OTP', responses: { '200': { description: 'OTP sent' } } },
+    },
+    '/api/v1/auth/verify-otp': {
+      post: { summary: 'Verify OTP and login', responses: { '200': { description: 'JWT pair' } } },
+    },
+    '/api/v1/vendors/nearby': {
+      get: { summary: 'Nearby vendors', responses: { '200': { description: 'Vendor list with distance' } } },
+    },
+    '/api/v1/orders': {
+      post: { summary: 'Create order', responses: { '201': { description: 'Order created' } } },
+    },
+    '/api/v1/orders/estimate-fee': {
+      get: { summary: 'Estimate delivery fee', responses: { '200': { description: 'Fee breakdown' } } },
+    },
+    '/api/v1/orders/driver': {
+      get: { summary: 'Driver job list', responses: { '200': { description: 'Available and active jobs' } } },
+    },
+    '/api/v1/drivers/accept-delivery/{orderId}': {
+      patch: { summary: 'Driver accepts delivery', responses: { '200': { description: 'Order assigned' } } },
+    },
+    '/api/v1/bookings': {
+      post: { summary: 'Create booking', responses: { '200': { description: 'Booking created' } } },
+    },
+    '/api/v1/service-requests': {
+      post: { summary: 'Create service request', responses: { '200': { description: 'Request created' } } },
+    },
+    '/api/v1/payments/initiate': {
+      post: { summary: 'Initiate payment', responses: { '200': { description: 'Payment intent / COD' } } },
     },
   },
 };
@@ -44,10 +68,28 @@ export function createApp() {
 
   app.set('trust proxy', 1); // Trust first proxy if behind reverse proxy
   
-  app.use(helmet());
-  app.use(cors());
+  app.use(
+    helmet({
+      // Allow browser fetches via nginx same-host and direct API access
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+    }),
+  );
+  app.use(cors({ origin: true, credentials: true }));
   app.use(limiter); // Apply rate limiter to all requests globally
-  
+
+  // Stripe needs the raw body for signature verification
+  app.use('/api/v1/payments/webhook', express.raw({ type: 'application/json' }), (req, _res, next) => {
+    (req as express.Request & { rawBody?: Buffer }).rawBody = req.body as Buffer;
+    if (Buffer.isBuffer(req.body)) {
+      try {
+        req.body = JSON.parse(req.body.toString('utf8'));
+      } catch {
+        req.body = {};
+      }
+    }
+    next();
+  });
+
   app.use(express.json());
   app.use(requestLogger);
 

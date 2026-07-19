@@ -40,3 +40,7 @@ dist-web/
 
 # Misc
 *.pem
+
+.env.oci
+*.pem
+*.key

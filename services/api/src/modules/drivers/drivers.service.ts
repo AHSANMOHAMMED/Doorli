@@ -1,6 +1,7 @@
 import { prisma } from '@doorli/db';
 import { getRedis } from '../../lib/redis.js';
-import { emitDriverEvent } from '../../lib/socket.js';
+import { emitDriverEvent, emitOrderEvent } from '../../lib/socket.js';
+import { getDispatchService } from '../../lib/dispatch.js';
 import type { UpdateLocationInput, ToggleOnlineInput } from './drivers.schema.js';
 
 const LOCATION_THROTTLE_SEC = 5;
@@ -129,6 +130,107 @@ export async function creditDriverOnDelivery(userId: string, deliveryFee: number
       earningsToday: { increment: earning },
     },
   });
+}
+
+const jobInclude = {
+  items: { include: { product: true } },
+  vendor: {
+    select: {
+      id: true,
+      businessName: true,
+      addressLine: true,
+      latitude: true,
+      longitude: true,
+      phone: true,
+    },
+  },
+  deliveryAddress: true,
+  customer: { select: { id: true, fullName: true, phone: true } },
+} as const;
+
+export async function getDriverJobs(driverUserId: string) {
+  const [active, available] = await Promise.all([
+    prisma.order.findMany({
+      where: {
+        driverId: driverUserId,
+        status: { in: ['ready', 'picked_up'] },
+        orderType: 'delivery',
+      },
+      orderBy: { createdAt: 'desc' },
+      include: jobInclude,
+    }),
+    prisma.order.findMany({
+      where: {
+        driverId: null,
+        status: 'ready',
+        orderType: 'delivery',
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+      include: jobInclude,
+    }),
+  ]);
+
+  return { available, active };
+}
+
+export async function acceptDelivery(orderId: string, driverUserId: string) {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { vendor: { select: { userId: true, businessName: true } } },
+  });
+
+  if (!order) throw new Error('Order not found');
+  if (order.orderType !== 'delivery') throw new Error('Not a delivery order');
+  if (order.status !== 'ready') throw new Error(`Cannot accept order in status ${order.status}`);
+  if (order.driverId && order.driverId !== driverUserId) {
+    throw new Error('Order already assigned to another driver');
+  }
+
+  await getOrCreateDriver(driverUserId);
+
+  const dispatch = getDispatchService();
+  const offerOk = await dispatch.validateOffer(orderId, driverUserId);
+  if (!offerOk && !order.driverId) {
+    throw new Error('This job is offered to another driver');
+  }
+
+  const updated = await prisma.order.update({
+    where: { id: orderId },
+    data: { driverId: driverUserId },
+    include: {
+      vendor: { select: { userId: true, businessName: true } },
+      customer: { select: { fullName: true, phone: true } },
+      deliveryAddress: true,
+    },
+  });
+
+  await dispatch.clearDispatch(orderId);
+
+  emitOrderEvent(
+    'order:status_update',
+    [`order:${updated.id}`, `customer:${updated.customerId}`, `vendor:${updated.vendorId}`, `driver:${driverUserId}`],
+    {
+      orderId: updated.id,
+      orderNumber: updated.orderNumber,
+      status: updated.status,
+      driverId: driverUserId,
+    },
+  );
+
+  return updated;
+}
+
+export async function declineDelivery(orderId: string, driverUserId: string) {
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  if (!order) throw new Error('Order not found');
+  if (order.driverId === driverUserId) {
+    throw new Error('Cannot decline an accepted delivery');
+  }
+
+  const dispatch = getDispatchService();
+  await dispatch.handleDecline(orderId, driverUserId);
+  return { orderId, declined: true };
 }
 
 export { DRIVER_EARNINGS_SHARE };

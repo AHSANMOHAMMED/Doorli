@@ -27,7 +27,7 @@ describe('Drivers endpoints', () => {
 
     const verifyRes = await request(app)
       .post('/api/v1/auth/verify-otp')
-      .send({ phone: '+94771234569', code: otp, fullName: 'Test Driver' });
+      .send({ phone: '+94771234569', code: otp, fullName: 'Test Driver', role: 'driver' });
 
     if (verifyRes.status === 200 && verifyRes.body.data?.accessToken) {
       driverToken = verifyRes.body.data.accessToken;

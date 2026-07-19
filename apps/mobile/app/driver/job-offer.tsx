@@ -25,20 +25,35 @@ export default function JobOfferScreen() {
 
   const acceptJob = async () => {
     try {
-      if (rideId && !orderId) {
-        await apiClient.post('/rides/accept', {
+      if (orderId) {
+        await apiClient.patch(`/drivers/accept-delivery/${orderId}`);
+        Alert.alert('Job Accepted', 'Navigate to pickup location.');
+        router.replace(`/(driver)/navigate/${orderId}`);
+        return;
+      }
+      if (rideId) {
+        await apiClient.post('/rides/accept-ride', {
           rideId,
           driverId: user?.id,
         });
-      }
-      Alert.alert('Job Accepted', 'Navigate to pickup location.');
-      if (orderId) {
-        router.replace(`/(driver)/navigate/${orderId}`);
-      } else {
+        Alert.alert('Job Accepted', 'Navigate to pickup location.');
         router.back();
+        return;
       }
+      Alert.alert('Error', 'Missing job id');
     } catch (e) {
       Alert.alert('Error', e instanceof Error ? e.message : 'Failed to accept job');
+    }
+  };
+
+  const declineJob = async () => {
+    try {
+      if (orderId) {
+        await apiClient.patch(`/drivers/decline-delivery/${orderId}`);
+      }
+      router.back();
+    } catch (e) {
+      Alert.alert('Error', e instanceof Error ? e.message : 'Failed to decline');
     }
   };
 
@@ -71,7 +86,7 @@ export default function JobOfferScreen() {
         </View>
 
         <View style={styles.actionButtons}>
-          <TouchableOpacity style={[styles.button, styles.declineBtn]} onPress={() => router.back()}>
+          <TouchableOpacity style={[styles.button, styles.declineBtn]} onPress={declineJob}>
             <Text style={styles.declineText}>Decline</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.button, styles.acceptBtn]} onPress={acceptJob}>

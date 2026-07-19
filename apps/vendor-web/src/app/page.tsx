@@ -1,346 +1,148 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingBag, Utensils, Hotel, Calendar, Wrench, Sparkles, ArrowRight, Store, Users, Truck, Search, PackageCheck, CircleCheck as CheckCircle2 } from 'lucide-react';
+import { ArrowRight, ShoppingBag, Utensils, Wrench } from 'lucide-react';
 
-const CATEGORIES = [
+const SELLER_TYPES = [
   {
     icon: ShoppingBag,
-    name: 'Grocery',
-    description: 'Fresh produce and daily essentials delivered to your door',
-    color: 'bg-green-50 text-green-600',
+    name: 'Grocery & retail',
+    description: 'Catalog, stock, and doorstep orders from neighbors nearby.',
   },
   {
     icon: Utensils,
-    name: 'Restaurant',
-    description: 'Order from your favorite local restaurants and kitchens',
-    color: 'bg-orange-50 text-orange-600',
-  },
-  {
-    icon: Hotel,
-    name: 'Hotel',
-    description: 'Book rooms and stays from trusted local hotels',
-    color: 'bg-blue-50 text-blue-600',
-  },
-  {
-    icon: Calendar,
-    name: 'Hall',
-    description: 'Reserve halls and venues for your special events',
-    color: 'bg-purple-50 text-purple-600',
+    name: 'Restaurants & kitchens',
+    description: 'Live tickets, kitchen board, and delivery handoff in one place.',
   },
   {
     icon: Wrench,
-    name: 'Service',
-    description: 'On-demand home services from skilled professionals',
-    color: 'bg-amber-50 text-amber-600',
-  },
-  {
-    icon: Sparkles,
-    name: 'Beauty',
-    description: 'Book beauty and salon appointments with ease',
-    color: 'bg-pink-50 text-pink-600',
+    name: 'Services & bookings',
+    description: 'Appointments, halls, and on-demand jobs without spreadsheet chaos.',
   },
 ];
 
-const STATS = [
-  { icon: Store, label: 'Vendors', value: '1000+' },
-  { icon: Users, label: 'Customers', value: '50k+' },
-  { icon: Truck, label: 'Deliveries', value: '100k+' },
-];
-
-const STEPS = [
-  {
-    icon: Search,
-    title: 'Browse',
-    description: 'Discover local vendors across grocery, food, hotels, services, and more — all in one app.',
-  },
-  {
-    icon: ShoppingBag,
-    title: 'Order',
-    description: 'Place your order or booking in seconds. Pay securely and track everything in real time.',
-  },
-  {
-    icon: PackageCheck,
-    title: 'Receive',
-    description: 'Get your items delivered to your door or your booking confirmed — fast, reliable, local.',
-  },
-];
-
-const FOOTER_LINKS = [
-  {
-    title: 'Platform',
-    links: [
-      { label: 'Get Started', href: '/login' },
-      { label: 'Sign In', href: '/login' },
-      { label: 'Dashboard', href: '/dashboard' },
-    ],
-  },
-  {
-    title: 'Categories',
-    links: [
-      { label: 'Grocery', href: '/login' },
-      { label: 'Restaurant', href: '/login' },
-      { label: 'Hotel', href: '/login' },
-      { label: 'Beauty', href: '/login' },
-    ],
-  },
-  {
-    title: 'Company',
-    links: [
-      { label: 'About Us', href: '/login' },
-      { label: 'Contact', href: '/login' },
-      { label: 'Privacy', href: '/login' },
-      { label: 'Terms', href: '/login' },
-    ],
-  },
-];
+const MARK = '/vendor/brand/doorli-mark.svg';
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-white">
-      {/* Navbar */}
-      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-600 to-sky-500 flex items-center justify-center">
-                <Store className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold text-slate-900">Doorli</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <Link
-                href="/login"
-                className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors px-3 py-2"
-              >
-                Sign In
-              </Link>
-              <Link
-                href="/login"
-                className="btn-primary text-sm inline-flex items-center gap-2"
-              >
-                Get Started
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
+    <div className="doorli-public min-h-screen">
+      <nav className="absolute top-0 inset-x-0 z-20">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={MARK} alt="" className="w-9 h-9 rounded-xl shadow-lg shadow-black/30" />
+            <span className="font-display text-lg font-semibold tracking-tight text-white">Doorli</span>
+          </Link>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link href="/login" className="text-sm font-medium text-white/75 hover:text-white px-3 py-2 transition-colors">
+              Sign In
+            </Link>
+            <Link href="/login" className="doorli-cta-primary text-sm py-2.5 px-4 shadow-none">
+              Get Started
+              <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
         </div>
       </nav>
 
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-blue-500 to-sky-400"></div>
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white/10"></div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
-          <div className="text-center max-w-3xl mx-auto">
-            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-1.5 text-sm text-white/90 mb-6">
-              <Sparkles className="w-4 h-4" />
-              Your local marketplace, delivered
-            </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white tracking-tight">
-              Everything Local.
-              <br />
-              Delivered.
+      <section className="relative min-h-[100svh] flex flex-col justify-center overflow-hidden doorli-hero-plane">
+        <div className="doorli-orb doorli-orb--a" aria-hidden />
+        <div className="doorli-orb doorli-orb--b" aria-hidden />
+        <div className="doorli-orb doorli-orb--c" aria-hidden />
+
+        <div className="relative z-10 max-w-6xl mx-auto w-full px-5 sm:px-8 pt-24 pb-16 grid lg:grid-cols-[1.1fr_0.9fr] gap-12 lg:gap-8 items-center">
+          <div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={MARK}
+              alt="Doorli"
+              className="doorli-rise w-28 h-28 sm:w-36 sm:h-36 rounded-[1.75rem] shadow-2xl shadow-black/40 mb-8"
+            />
+            <h1 className="doorli-rise-delay font-display text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-[1.05]">
+              Doorli
             </h1>
-            <p className="mt-6 text-lg sm:text-xl text-blue-50 max-w-2xl mx-auto">
-              Doorli connects you with local vendors across grocery, restaurants,
-              hotels, halls, services, and beauty — all in one place. Browse, order,
-              and receive, fast.
+            <p className="doorli-rise-delay font-display text-2xl sm:text-3xl lg:text-[2.15rem] font-semibold text-white/90 mt-3 leading-snug max-w-xl">
+              Sell next door. Grow on Doorli.
             </p>
-            <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link
-                href="/login"
-                className="bg-white text-blue-600 px-8 py-3.5 rounded-lg font-semibold hover:bg-blue-50 transition-colors inline-flex items-center gap-2 shadow-lg"
-              >
+            <p className="doorli-rise-delay-2 mt-5 text-base sm:text-lg text-[var(--doorli-text-muted)] max-w-lg leading-relaxed">
+              Orders, bookings, and your kitchen board — built for local sellers who want neighbors at the door.
+            </p>
+            <div className="doorli-rise-delay-2 mt-9 flex flex-col sm:flex-row gap-3">
+              <Link href="/login" className="doorli-cta-primary justify-center">
                 Get Started
                 <ArrowRight className="w-5 h-5" />
               </Link>
-              <Link
-                href="/login"
-                className="bg-blue-700/40 backdrop-blur-sm text-white px-8 py-3.5 rounded-lg font-semibold border border-white/30 hover:bg-blue-700/60 transition-colors inline-flex items-center gap-2"
-              >
+              <Link href="/login" className="doorli-cta-ghost justify-center">
                 Sign In
               </Link>
             </div>
           </div>
-        </div>
-        {/* Wave separator */}
-        <div className="relative">
-          <svg
-            className="w-full h-12 sm:h-16 text-white"
-            viewBox="0 0 1440 48"
-            preserveAspectRatio="none"
-            fill="currentColor"
-          >
-            <path d="M0,48 L0,18 C240,0 480,0 720,18 C960,36 1200,36 1440,18 L1440,48 Z" />
-          </svg>
-        </div>
-      </section>
 
-      {/* Stats */}
-      <section className="bg-white py-12 lg:py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
-            {STATS.map((stat) => {
-              const Icon = stat.icon;
-              return (
-                <div key={stat.label} className="text-center">
-                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-50 text-blue-600 mb-3">
-                    <Icon className="w-6 h-6" />
-                  </div>
-                  <p className="text-3xl sm:text-4xl font-bold text-slate-900">
-                    {stat.value}
-                  </p>
-                  <p className="mt-1 text-sm font-medium text-slate-500 uppercase tracking-wide">
-                    {stat.label}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Categories / Features */}
-      <section className="bg-slate-50 py-16 lg:py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold text-slate-900">
-              One App. Six Categories.
-            </h2>
-            <p className="mt-4 text-lg text-slate-500">
-              Everything you need from your local community, all in a single platform.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {CATEGORIES.map((cat) => {
-              const Icon = cat.icon;
-              return (
-                <div
-                  key={cat.name}
-                  className="card p-6 hover:shadow-md transition-shadow group"
-                >
+          <div className="relative hidden sm:block doorli-rise-delay-2">
+            <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-br from-[#185FA5]/40 via-transparent to-[#1D9E75]/30 blur-2xl" />
+            <div className="relative doorli-glass rounded-[2rem] p-6 sm:p-8 min-h-[320px] flex flex-col justify-between overflow-hidden">
+              <div className="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-[#FAC775]/20 blur-3xl" />
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-[var(--doorli-mint)] font-medium">Vendor portal</p>
+                <p className="font-display text-2xl font-semibold text-white mt-3 max-w-xs">
+                  One board for tickets, stock, and the next delivery.
+                </p>
+              </div>
+              <div className="mt-10 space-y-3">
+                {['Live order queue', 'Kitchen display', 'Neighborhood reach'].map((label) => (
                   <div
-                    className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${cat.color} group-hover:scale-110 transition-transform`}
+                    key={label}
+                    className="flex items-center gap-3 rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm text-white/90"
                   >
-                    <Icon className="w-6 h-6" />
+                    <span className="w-2 h-2 rounded-full bg-[var(--doorli-gold)]" />
+                    {label}
                   </div>
-                  <h3 className="text-lg font-semibold text-slate-900">{cat.name}</h3>
-                  <p className="mt-2 text-sm text-slate-500">{cat.description}</p>
-                </div>
-              );
-            })}
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* How it works */}
-      <section className="bg-white py-16 lg:py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold text-slate-900">
-              How It Works
-            </h2>
-            <p className="mt-4 text-lg text-slate-500">
-              Three simple steps to get what you need, locally.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-            {/* Connecting line */}
-            <div className="hidden md:block absolute top-12 left-0 right-0 h-0.5 bg-slate-100"></div>
-            {STEPS.map((step, idx) => {
-              const Icon = step.icon;
-              return (
-                <div key={step.title} className="relative text-center">
-                  <div className="relative inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-blue-600 to-sky-500 text-white shadow-lg mb-6">
-                    <Icon className="w-10 h-10" />
-                    <span className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-white text-blue-600 text-sm font-bold flex items-center justify-center shadow">
-                      {idx + 1}
-                    </span>
-                  </div>
-                  <h3 className="text-xl font-semibold text-slate-900">{step.title}</h3>
-                  <p className="mt-2 text-slate-500 max-w-xs mx-auto">{step.description}</p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="bg-gradient-to-br from-blue-600 to-sky-500 py-16 lg:py-20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white">
-            Ready to get started?
+      <section className="bg-[#07101f] py-20 sm:py-24 border-t border-white/5">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8">
+          <h2 className="font-display text-3xl sm:text-4xl font-bold text-white tracking-tight">
+            Built for local sellers
           </h2>
-          <p className="mt-4 text-lg text-blue-50">
-            Join thousands of customers and vendors on Doorli today.
+          <p className="mt-3 text-[var(--doorli-text-muted)] max-w-xl text-lg">
+            Whether you stock shelves, plate meals, or book appointments — Doorli keeps the neighborhood flowing to you.
           </p>
-          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link
-              href="/login"
-              className="bg-white text-blue-600 px-8 py-3.5 rounded-lg font-semibold hover:bg-blue-50 transition-colors inline-flex items-center gap-2 shadow-lg"
-            >
-              Get Started
-              <ArrowRight className="w-5 h-5" />
-            </Link>
-            <Link
-              href="/login"
-              className="bg-blue-700/40 backdrop-blur-sm text-white px-8 py-3.5 rounded-lg font-semibold border border-white/30 hover:bg-blue-700/60 transition-colors"
-            >
-              Sign In
+          <div className="mt-12 grid sm:grid-cols-3 gap-6">
+            {SELLER_TYPES.map((item) => {
+              const Icon = item.icon;
+              return (
+                <div key={item.name} className="doorli-glass rounded-2xl p-6">
+                  <div className="w-11 h-11 rounded-xl bg-white/10 flex items-center justify-center text-[var(--doorli-mint)] mb-4">
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <h3 className="font-display text-lg font-semibold text-white">{item.name}</h3>
+                  <p className="mt-2 text-sm text-[var(--doorli-text-muted)] leading-relaxed">{item.description}</p>
+                </div>
+              );
+            })}
+          </div>
+          <div className="mt-14">
+            <Link href="/login" className="doorli-cta-primary">
+              Open vendor portal
+              <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-slate-900 text-slate-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {/* Brand */}
-            <div className="col-span-2 md:col-span-1">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-600 to-sky-500 flex items-center justify-center">
-                  <Store className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-xl font-bold text-white">Doorli</span>
-              </div>
-              <p className="text-sm text-slate-400">
-                Everything Local. Delivered. Your community marketplace for goods,
-                services, and bookings.
-              </p>
-            </div>
-            {/* Link columns */}
-            {FOOTER_LINKS.map((col) => (
-              <div key={col.title}>
-                <h4 className="text-sm font-semibold text-white uppercase tracking-wide mb-4">
-                  {col.title}
-                </h4>
-                <ul className="space-y-2">
-                  {col.links.map((link) => (
-                    <li key={link.label}>
-                      <Link
-                        href={link.href}
-                        className="text-sm text-slate-400 hover:text-white transition-colors"
-                      >
-                        {link.label}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+      <footer className="bg-[#050b18] py-8 border-t border-white/5">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={MARK} alt="" className="w-7 h-7 rounded-lg" />
+            <span className="font-display font-semibold text-white">Doorli</span>
           </div>
-          <div className="mt-10 pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-slate-400">
-              © {new Date().getFullYear()} Doorli. All rights reserved.
-            </p>
-            <div className="flex items-center gap-2 text-sm text-slate-400">
-              <CheckCircle2 className="w-4 h-4 text-green-500" />
-              <span>Trusted by local communities</span>
-            </div>
-          </div>
+          <p className="text-sm text-white/40">© {new Date().getFullYear()} Doorli. Sell next door.</p>
         </div>
       </footer>
     </div>

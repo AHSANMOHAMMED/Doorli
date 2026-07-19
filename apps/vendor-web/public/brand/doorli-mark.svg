@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 280" role="img" aria-label="Doorli">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0f2e"/>
+      <stop offset="50%" stop-color="#0c1a4a"/>
+      <stop offset="100%" stop-color="#061228"/>
+    </linearGradient>
+    <linearGradient id="orb1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#185FA5" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#1D9E75" stop-opacity="0.6"/>
+    </linearGradient>
+    <linearGradient id="orb2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1D9E75" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#378ADD" stop-opacity="0.4"/>
+    </linearGradient>
+    <linearGradient id="orb3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FAC775" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#185FA5" stop-opacity="0.3"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.05"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.35"/>
+      <stop offset="60%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="door" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#378ADD" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#1D9E75" stop-opacity="0.25"/>
+    </linearGradient>
+    <filter id="soft" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
+    <clipPath id="round">
+      <rect width="280" height="280" rx="60"/>
+    </clipPath>
+  </defs>
+  <rect width="280" height="280" rx="60" fill="url(#bg)"/>
+  <g clip-path="url(#round)">
+    <circle cx="60" cy="80" r="90" fill="url(#orb1)" filter="url(#soft)" opacity="0.7"/>
+    <circle cx="220" cy="200" r="80" fill="url(#orb2)" filter="url(#soft)" opacity="0.6"/>
+    <circle cx="180" cy="60" r="60" fill="url(#orb3)" filter="url(#soft)" opacity="0.5"/>
+    <rect width="280" height="280" fill="url(#glass)"/>
+    <rect width="280" height="100" fill="url(#shine)"/>
+  </g>
+  <rect width="280" height="280" rx="60" fill="none" stroke="#ffffff" stroke-opacity="0.25" stroke-width="1"/>
+  <circle cx="140" cy="140" r="95" fill="none" stroke="#378ADD" stroke-opacity="0.3" stroke-width="1"/>
+  <circle cx="140" cy="140" r="94" fill="rgba(24,95,165,0.08)"/>
+  <rect x="95" y="85" width="90" height="115" rx="14" fill="url(#door)" stroke="#ffffff" stroke-opacity="0.35" stroke-width="1"/>
+  <path d="M95 115 Q140 68 185 115" fill="rgba(55,138,221,0.3)" stroke="#ffffff" stroke-opacity="0.4" stroke-width="1"/>
+  <rect x="103" y="125" width="34" height="34" rx="6" fill="rgba(255,255,255,0.12)" stroke="#ffffff" stroke-opacity="0.4" stroke-width="0.8"/>
+  <rect x="143" y="125" width="34" height="34" rx="6" fill="rgba(255,255,255,0.12)" stroke="#ffffff" stroke-opacity="0.4" stroke-width="0.8"/>
+  <rect x="103" y="166" width="34" height="26" rx="6" fill="rgba(255,255,255,0.08)" stroke="#ffffff" stroke-opacity="0.3" stroke-width="0.8"/>
+  <rect x="143" y="166" width="34" height="26" rx="6" fill="rgba(255,255,255,0.08)" stroke="#ffffff" stroke-opacity="0.3" stroke-width="0.8"/>
+  <rect x="103" y="125" width="34" height="12" rx="6" fill="rgba(255,255,255,0.18)"/>
+  <rect x="143" y="125" width="34" height="12" rx="6" fill="rgba(255,255,255,0.18)"/>
+  <circle cx="138" cy="152" r="5" fill="none" stroke="#FAC775" stroke-opacity="0.9" stroke-width="1.5"/>
+  <circle cx="138" cy="152" r="3" fill="#FAC775" opacity="0.9"/>
+</svg>

@@ -25,7 +25,10 @@ function LoginForm() {
   const [checkingSession, setCheckingSession] = useState(true)
 
   useEffect(() => {
-    fetch('/api/account-auth/session')
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 4000)
+
+    fetch('/api/account-auth/session', { signal: controller.signal })
       .then(res => res.ok ? res.json() : null)
       .then(data => {
         if (data?.user?.id) {
@@ -35,6 +38,12 @@ function LoginForm() {
         }
       })
       .catch(() => setCheckingSession(false))
+      .finally(() => clearTimeout(timeout))
+
+    return () => {
+      clearTimeout(timeout)
+      controller.abort()
+    }
   }, [router])
 
   const registered = searchParams.get('registered') === 'true'

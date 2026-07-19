@@ -2,102 +2,100 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
-import { createClient } from '@/lib/supabase/client';
-import type { Vendor } from '@/lib/types';
+import { apiFetch } from '@/lib/api';
 import { Loader as Loader2, Store, User, Check, CircleAlert as AlertCircle } from 'lucide-react';
 
 interface VendorForm {
-  business_name: string;
+  businessName: string;
   description: string;
   phone: string;
-  address_line: string;
+  addressLine: string;
   city: string;
-  is_open: boolean;
-  delivery_radius_km: string;
-  min_order_amount: string;
+  isOpen: boolean;
+  deliveryRadiusKm: string;
+  minOrderAmount: string;
 }
 
 interface ProfileForm {
-  full_name: string;
-  phone: string;
-  avatar_url: string;
+  fullName: string;
+  email: string;
 }
 
 export default function SettingsPage() {
-  const { profile, loading: authLoading } = useAuth();
-  const supabase = createClient();
-
-  const [vendor, setVendor] = useState<Vendor | null>(null);
+  const { user, profile, loading: authLoading } = useAuth();
+  const [vendorId, setVendorId] = useState<string | null>(null);
   const [vendorForm, setVendorForm] = useState<VendorForm>({
-    business_name: '',
+    businessName: '',
     description: '',
     phone: '',
-    address_line: '',
+    addressLine: '',
     city: '',
-    is_open: false,
-    delivery_radius_km: '5',
-    min_order_amount: '',
+    isOpen: true,
+    deliveryRadiusKm: '5',
+    minOrderAmount: '',
   });
-  const [profileForm, setProfileForm] = useState<ProfileForm>({
-    full_name: '',
-    phone: '',
-    avatar_url: '',
-  });
-
+  const [profileForm, setProfileForm] = useState<ProfileForm>({ fullName: '', email: '' });
   const [loading, setLoading] = useState(true);
   const [savingVendor, setSavingVendor] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
-  const [vendorMessage, setVendorMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [profileMessage, setProfileMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-
-  const isAdmin = profile?.role === 'admin';
+  const [vendorMessage, setVendorMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(
+    null,
+  );
+  const [profileMessage, setProfileMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(
+    null,
+  );
 
   useEffect(() => {
     if (authLoading || !profile) return;
-    loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    void loadData();
   }, [authLoading, profile]);
 
   async function loadData() {
     setLoading(true);
     try {
-      // Load profile form from auth context profile
-      if (profile) {
+      setProfileForm({
+        fullName: profile?.full_name ?? user?.fullName ?? '',
+        email: '',
+      });
+      const me = await apiFetch<{ fullName?: string; email?: string | null }>('/users/me');
+      if (me.success && me.data) {
         setProfileForm({
-          full_name: profile.full_name ?? '',
-          phone: profile.phone ?? '',
-          avatar_url: profile.avatar_url ?? '',
+          fullName: me.data.fullName ?? '',
+          email: me.data.email ?? '',
         });
       }
 
-      // Load vendor record
-      if (!isAdmin) {
-        const { data: vendorData, error: vendorError } = await supabase
-          .from('vendors')
-          .select('*')
-          .eq('user_id', profile!.id)
-          .maybeSingle();
+      const vendorRes = await apiFetch<{
+        id: string;
+        businessName: string;
+        description?: string | null;
+        phone?: string | null;
+        addressLine?: string | null;
+        city?: string | null;
+        isOpen: boolean;
+        deliveryRadiusKm?: number;
+        minOrderAmount?: number | string | null;
+      }>('/vendors/me');
 
-        if (vendorError) throw vendorError;
-
-        if (vendorData) {
-          const v = vendorData as Vendor;
-          setVendor(v);
-          setVendorForm({
-            business_name: v.business_name ?? '',
-            description: v.description ?? '',
-            phone: v.phone ?? '',
-            address_line: v.address_line ?? '',
-            city: v.city ?? '',
-            is_open: v.is_open,
-            delivery_radius_km: String(v.delivery_radius_km ?? 5),
-            min_order_amount: v.min_order_amount ? String(v.min_order_amount) : '',
-          });
-        }
+      if (vendorRes.success && vendorRes.data) {
+        const v = vendorRes.data;
+        setVendorId(v.id);
+        setVendorForm({
+          businessName: v.businessName ?? '',
+          description: v.description ?? '',
+          phone: v.phone ?? '',
+          addressLine: v.addressLine ?? '',
+          city: v.city ?? '',
+          isOpen: v.isOpen,
+          deliveryRadiusKm: String(v.deliveryRadiusKm ?? 5),
+          minOrderAmount: v.minOrderAmount != null ? String(v.minOrderAmount) : '',
+        });
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to load settings';
-      setVendorMessage({ type: 'error', text: msg });
+      setVendorMessage({
+        type: 'error',
+        text: err instanceof Error ? err.message : 'Failed to load settings',
+      });
     } finally {
       setLoading(false);
     }
@@ -105,39 +103,32 @@ export default function SettingsPage() {
 
   async function saveVendor(e: React.FormEvent) {
     e.preventDefault();
+    if (!vendorId) return;
     setSavingVendor(true);
     setVendorMessage(null);
-
     try {
-      if (!vendor) {
-        setVendorMessage({ type: 'error', text: 'No vendor profile found.' });
-        setSavingVendor(false);
-        return;
-      }
-
-      const { error: updateError } = await supabase
-        .from('vendors')
-        .update({
-          business_name: vendorForm.business_name,
-          description: vendorForm.description || null,
-          phone: vendorForm.phone || null,
-          address_line: vendorForm.address_line || null,
-          city: vendorForm.city || null,
-          is_open: vendorForm.is_open,
-          delivery_radius_km: parseInt(vendorForm.delivery_radius_km, 10) || 5,
-          min_order_amount: vendorForm.min_order_amount
-            ? parseFloat(vendorForm.min_order_amount)
-            : null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', vendor.id);
-
-      if (updateError) throw updateError;
-
-      setVendorMessage({ type: 'success', text: 'Business settings saved successfully.' });
+      const res = await apiFetch(`/vendors/${vendorId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          businessName: vendorForm.businessName,
+          description: vendorForm.description || undefined,
+          phone: vendorForm.phone || undefined,
+          addressLine: vendorForm.addressLine,
+          city: vendorForm.city || undefined,
+          isOpen: vendorForm.isOpen,
+          deliveryRadiusKm: parseInt(vendorForm.deliveryRadiusKm, 10) || 5,
+          minOrderAmount: vendorForm.minOrderAmount
+            ? parseFloat(vendorForm.minOrderAmount)
+            : undefined,
+        }),
+      });
+      if (!res.success) throw new Error(res.error || 'Save failed');
+      setVendorMessage({ type: 'success', text: 'Shop settings saved' });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to save business settings';
-      setVendorMessage({ type: 'error', text: msg });
+      setVendorMessage({
+        type: 'error',
+        text: err instanceof Error ? err.message : 'Save failed',
+      });
     } finally {
       setSavingVendor(false);
     }
@@ -147,30 +138,21 @@ export default function SettingsPage() {
     e.preventDefault();
     setSavingProfile(true);
     setProfileMessage(null);
-
     try {
-      if (!profile) {
-        setProfileMessage({ type: 'error', text: 'No profile found.' });
-        setSavingProfile(false);
-        return;
-      }
-
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-          full_name: profileForm.full_name,
-          phone: profileForm.phone || null,
-          avatar_url: profileForm.avatar_url || null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', profile.id);
-
-      if (updateError) throw updateError;
-
-      setProfileMessage({ type: 'success', text: 'Profile settings saved successfully.' });
+      const res = await apiFetch('/users/me', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          fullName: profileForm.fullName,
+          email: profileForm.email || undefined,
+        }),
+      });
+      if (!res.success) throw new Error(res.error || 'Save failed');
+      setProfileMessage({ type: 'success', text: 'Profile saved' });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to save profile settings';
-      setProfileMessage({ type: 'error', text: msg });
+      setProfileMessage({
+        type: 'error',
+        text: err instanceof Error ? err.message : 'Save failed',
+      });
     } finally {
       setSavingProfile(false);
     }
@@ -178,296 +160,168 @@ export default function SettingsPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="p-8 flex items-center gap-2 text-slate-500">
+        <Loader2 className="w-5 h-5 animate-spin" /> Loading settings...
       </div>
     );
   }
 
   return (
-    <div className="animate-fade-in space-y-6 max-w-3xl">
-      {/* Header */}
+    <div className="space-y-8 max-w-2xl">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Settings</h1>
-        <p className="text-slate-500 mt-1">Manage your business and profile settings</p>
+        <p className="text-slate-500 mt-1">Manage your profile and shop details</p>
       </div>
 
-      {/* Vendor / Business settings */}
-      {!isAdmin && (
-        <div className="card p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
-              <Store className="w-5 h-5 text-blue-600" />
-            </div>
-            <div>
-              <h2 className="font-semibold text-slate-900">Business Settings</h2>
-              <p className="text-sm text-slate-500">Update your vendor profile and shop details</p>
-            </div>
-          </div>
-
-          {vendorMessage && (
-            <div
-              className={`mb-4 p-3 rounded-lg border text-sm flex items-start gap-2 ${
-                vendorMessage.type === 'success'
-                  ? 'bg-green-50 text-green-700 border-green-200'
-                  : 'bg-red-50 text-red-600 border-red-200'
-              }`}
-            >
-              {vendorMessage.type === 'success' ? (
-                <Check className="w-4 h-4 mt-0.5 flex-shrink-0" />
-              ) : (
-                <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-              )}
-              {vendorMessage.text}
-            </div>
-          )}
-
-          {!vendor ? (
-            <div className="bg-amber-50 text-amber-700 p-4 rounded-lg border border-amber-200 text-sm">
-              No vendor profile found. Please complete onboarding first to set up your business.
-            </div>
-          ) : (
-            <form onSubmit={saveVendor} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Business Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={vendorForm.business_name}
-                  onChange={(e) => setVendorForm({ ...vendorForm, business_name: e.target.value })}
-                  className="input"
-                  placeholder="Business name"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Description
-                </label>
-                <textarea
-                  value={vendorForm.description}
-                  onChange={(e) => setVendorForm({ ...vendorForm, description: e.target.value })}
-                  className="input"
-                  rows={3}
-                  placeholder="Describe your business"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Phone
-                  </label>
-                  <input
-                    type="tel"
-                    value={vendorForm.phone}
-                    onChange={(e) => setVendorForm({ ...vendorForm, phone: e.target.value })}
-                    className="input"
-                    placeholder="+1 234 567 890"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    City
-                  </label>
-                  <input
-                    type="text"
-                    value={vendorForm.city}
-                    onChange={(e) => setVendorForm({ ...vendorForm, city: e.target.value })}
-                    className="input"
-                    placeholder="City"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Address
-                </label>
-                <input
-                  type="text"
-                  value={vendorForm.address_line}
-                  onChange={(e) => setVendorForm({ ...vendorForm, address_line: e.target.value })}
-                  className="input"
-                  placeholder="Street address"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Delivery Radius (km)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={vendorForm.delivery_radius_km}
-                    onChange={(e) => setVendorForm({ ...vendorForm, delivery_radius_km: e.target.value })}
-                    className="input"
-                    placeholder="5"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Minimum Order Amount ($)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={vendorForm.min_order_amount}
-                    onChange={(e) => setVendorForm({ ...vendorForm, min_order_amount: e.target.value })}
-                    className="input"
-                    placeholder="0.00"
-                  />
-                </div>
-              </div>
-
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={vendorForm.is_open}
-                  onChange={(e) => setVendorForm({ ...vendorForm, is_open: e.target.checked })}
-                  className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                />
-                <div>
-                  <span className="text-sm font-medium text-slate-700">
-                    Shop is currently open
-                  </span>
-                  <p className="text-xs text-slate-500">
-                    Customers can only place orders when your shop is open
-                  </p>
-                </div>
-              </label>
-
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  disabled={savingVendor}
-                  className="btn-primary inline-flex items-center gap-2"
-                >
-                  {savingVendor ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    'Save Business Settings'
-                  )}
-                </button>
-              </div>
-            </form>
-          )}
-        </div>
-      )}
-
-      {/* Profile settings */}
-      <div className="card p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center">
-            <User className="w-5 h-5 text-purple-600" />
-          </div>
-          <div>
-            <h2 className="font-semibold text-slate-900">Profile Settings</h2>
-            <p className="text-sm text-slate-500">Update your personal account information</p>
-          </div>
-        </div>
-
+      <form onSubmit={saveProfile} className="bg-white border rounded-xl p-6 space-y-4">
+        <h2 className="font-semibold flex items-center gap-2">
+          <User className="w-5 h-5" /> Profile
+        </h2>
         {profileMessage && (
-          <div
-            className={`mb-4 p-3 rounded-lg border text-sm flex items-start gap-2 ${
-              profileMessage.type === 'success'
-                ? 'bg-green-50 text-green-700 border-green-200'
-                : 'bg-red-50 text-red-600 border-red-200'
+          <p
+            className={`text-sm flex items-center gap-2 ${
+              profileMessage.type === 'success' ? 'text-green-600' : 'text-red-600'
             }`}
           >
             {profileMessage.type === 'success' ? (
-              <Check className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <Check className="w-4 h-4" />
             ) : (
-              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <AlertCircle className="w-4 h-4" />
             )}
             {profileMessage.text}
-          </div>
+          </p>
         )}
+        <label className="block text-sm">
+          Full name
+          <input
+            className="mt-1 w-full border rounded-lg px-3 py-2"
+            value={profileForm.fullName}
+            onChange={(e) => setProfileForm({ ...profileForm, fullName: e.target.value })}
+          />
+        </label>
+        <label className="block text-sm">
+          Email
+          <input
+            className="mt-1 w-full border rounded-lg px-3 py-2"
+            value={profileForm.email}
+            onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
+          />
+        </label>
+        <button
+          type="submit"
+          disabled={savingProfile}
+          className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium disabled:opacity-50"
+        >
+          {savingProfile ? 'Saving...' : 'Save profile'}
+        </button>
+      </form>
 
-        <form onSubmit={saveProfile} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Full Name <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              required
-              value={profileForm.full_name}
-              onChange={(e) => setProfileForm({ ...profileForm, full_name: e.target.value })}
-              className="input"
-              placeholder="Your full name"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Phone
-            </label>
-            <input
-              type="tel"
-              value={profileForm.phone}
-              onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
-              className="input"
-              placeholder="+1 234 567 890"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Avatar URL
-            </label>
-            <input
-              type="url"
-              value={profileForm.avatar_url}
-              onChange={(e) => setProfileForm({ ...profileForm, avatar_url: e.target.value })}
-              className="input"
-              placeholder="https://..."
-            />
-          </div>
-
-          {profileForm.avatar_url && (
-            <div className="flex items-center gap-3">
-              <div className="w-16 h-16 rounded-full overflow-hidden bg-slate-100 flex items-center justify-center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={profileForm.avatar_url}
-                  alt="Avatar preview"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = 'none';
-                  }}
-                />
-              </div>
-              <span className="text-sm text-slate-500">Avatar preview</span>
-            </div>
-          )}
-
-          <div className="pt-2">
-            <button
-              type="submit"
-              disabled={savingProfile}
-              className="btn-primary inline-flex items-center gap-2"
+      {vendorId ? (
+        <form onSubmit={saveVendor} className="bg-white border rounded-xl p-6 space-y-4">
+          <h2 className="font-semibold flex items-center gap-2">
+            <Store className="w-5 h-5" /> Shop
+          </h2>
+          {vendorMessage && (
+            <p
+              className={`text-sm flex items-center gap-2 ${
+                vendorMessage.type === 'success' ? 'text-green-600' : 'text-red-600'
+              }`}
             >
-              {savingProfile ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Saving...
-                </>
+              {vendorMessage.type === 'success' ? (
+                <Check className="w-4 h-4" />
               ) : (
-                'Save Profile'
+                <AlertCircle className="w-4 h-4" />
               )}
-            </button>
+              {vendorMessage.text}
+            </p>
+          )}
+          <label className="block text-sm">
+            Business name
+            <input
+              required
+              className="mt-1 w-full border rounded-lg px-3 py-2"
+              value={vendorForm.businessName}
+              onChange={(e) => setVendorForm({ ...vendorForm, businessName: e.target.value })}
+            />
+          </label>
+          <label className="block text-sm">
+            Description
+            <textarea
+              className="mt-1 w-full border rounded-lg px-3 py-2"
+              rows={3}
+              value={vendorForm.description}
+              onChange={(e) => setVendorForm({ ...vendorForm, description: e.target.value })}
+            />
+          </label>
+          <label className="block text-sm">
+            Address
+            <input
+              required
+              className="mt-1 w-full border rounded-lg px-3 py-2"
+              value={vendorForm.addressLine}
+              onChange={(e) => setVendorForm({ ...vendorForm, addressLine: e.target.value })}
+            />
+          </label>
+          <div className="grid grid-cols-2 gap-4">
+            <label className="block text-sm">
+              City
+              <input
+                className="mt-1 w-full border rounded-lg px-3 py-2"
+                value={vendorForm.city}
+                onChange={(e) => setVendorForm({ ...vendorForm, city: e.target.value })}
+              />
+            </label>
+            <label className="block text-sm">
+              Phone
+              <input
+                className="mt-1 w-full border rounded-lg px-3 py-2"
+                value={vendorForm.phone}
+                onChange={(e) => setVendorForm({ ...vendorForm, phone: e.target.value })}
+              />
+            </label>
           </div>
+          <div className="grid grid-cols-2 gap-4">
+            <label className="block text-sm">
+              Delivery radius (km)
+              <input
+                className="mt-1 w-full border rounded-lg px-3 py-2"
+                value={vendorForm.deliveryRadiusKm}
+                onChange={(e) => setVendorForm({ ...vendorForm, deliveryRadiusKm: e.target.value })}
+              />
+            </label>
+            <label className="block text-sm">
+              Min order amount
+              <input
+                className="mt-1 w-full border rounded-lg px-3 py-2"
+                value={vendorForm.minOrderAmount}
+                onChange={(e) => setVendorForm({ ...vendorForm, minOrderAmount: e.target.value })}
+              />
+            </label>
+          </div>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={vendorForm.isOpen}
+              onChange={(e) => setVendorForm({ ...vendorForm, isOpen: e.target.checked })}
+            />
+            Shop is open for orders
+          </label>
+          <button
+            type="submit"
+            disabled={savingVendor}
+            className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium disabled:opacity-50"
+          >
+            {savingVendor ? 'Saving...' : 'Save shop settings'}
+          </button>
         </form>
-      </div>
+      ) : (
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl">
+          No shop profile yet.{' '}
+          <a href="/dashboard/onboarding" className="underline font-medium">
+            Complete onboarding
+          </a>
+        </div>
+      )}
     </div>
   );
 }

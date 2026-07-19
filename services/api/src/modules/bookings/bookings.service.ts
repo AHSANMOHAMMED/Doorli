@@ -73,6 +73,19 @@ export async function createBooking(userId: string, input: CreateBookingInput) {
     },
   });
 
+  const deposit = Number(input.depositAmount ?? 0);
+  let payment = null;
+  if (deposit > 0) {
+    const { initiatePayment } = await import('../payments/payments.service.js');
+    payment = await initiatePayment(userId, {
+      referenceId: booking.id,
+      referenceType: 'booking',
+      amount: deposit,
+      method: 'cod',
+      gateway: 'manual',
+    });
+  }
+
   const io = getSocketServer();
   io?.to(`vendor:${vendor.id}`).emit('booking:new', {
     bookingId: booking.id,
@@ -87,7 +100,7 @@ export async function createBooking(userId: string, input: CreateBookingInput) {
     data: { bookingId: booking.id },
   });
 
-  return booking;
+  return { ...booking, payment };
 }
 
 export async function getAvailability(vendorId: string, from: string, to: string) {
@@ -132,12 +145,13 @@ export async function getBookingById(bookingId: string, userId: string, userRole
     throw new AppError(404, 'Booking not found');
   }
 
-  // Check access permissions
+  if (userRole === 'admin') return booking;
+
   if (userRole === 'customer' && booking.customerId !== userId) {
     throw new AppError(403, 'Access denied');
   }
 
-  if (userRole === 'vendor' && booking.vendorId !== userId) {
+  if (userRole === 'vendor' && booking.vendor.userId !== userId) {
     throw new AppError(403, 'Access denied');
   }
 
@@ -167,17 +181,18 @@ export async function getVendorBookings(vendorId: string) {
 export async function updateBookingStatus(
   bookingId: string,
   input: UpdateBookingStatusInput,
-  vendorId: string
+  vendorUserId: string
 ) {
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
+    include: { vendor: { select: { userId: true } } },
   });
 
   if (!booking) {
     throw new AppError(404, 'Booking not found');
   }
 
-  if (booking.vendorId !== vendorId) {
+  if (booking.vendor.userId !== vendorUserId) {
     throw new AppError(403, 'Access denied');
   }
 

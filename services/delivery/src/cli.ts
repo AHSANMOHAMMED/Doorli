@@ -41,6 +41,10 @@ async function main() {
   const connected = await dispatch.connect();
   console.log(`Doorli Delivery Service — Redis: ${connected ? 'connected' : 'disconnected'}`);
 
+  app.get('/health', (_req, res) => {
+    res.json({ status: 'ok', service: 'delivery', redis: connected });
+  });
+
   app.post('/api/delivery/dispatch/:orderId', async (req, res) => {
     const { orderId } = req.params;
     

@@ -120,6 +120,57 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Sys-control admin: light shell even when site theme is dark */
+.sys-control-shell {
+  --page-bg: #f4f6f8;
+  --content-bg: #ffffff;
+  --foreground: 222 47% 11%;
+  color-scheme: light;
+  background-color: #f4f6f8 !important;
+  color: #0f172a !important;
+}
+
+.sys-control-shell .sys-control-main,
+.sys-control-shell .sys-control-content {
+  background-color: #f4f6f8 !important;
+  color: #0f172a !important;
+}
+
+.sys-control-shell .sys-control-header {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.sys-control-shell .sys-control-badge {
+  background-color: #ecfdf5 !important;
+  color: #047857 !important;
+  box-shadow: inset 0 0 0 1px #a7f3d0;
+}
+
+.sys-control-shell a {
+  text-decoration: none;
+}
+
+.sys-control-shell .admin-quick-action {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.sys-control-shell .admin-stat-card {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.sys-control-shell h1,
+.sys-control-shell h2,
+.sys-control-shell h3 {
+  color: #0f172a !important;
+}
+
+
 /* Compact sizing for all elements */
 html {
   font-size: 14px;

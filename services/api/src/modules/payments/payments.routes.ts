@@ -30,7 +30,8 @@ paymentsRouter.post('/webhook/:gateway', async (req, res, next) => {
       (req.headers['stripe-signature'] as string) ||
       (req.headers['x-signature'] as string) ||
       '';
-    const result = await paymentsService.handleWebhook(gateway, req.body, signature);
+    const rawBody = (req as Request & { rawBody?: Buffer }).rawBody;
+    const result = await paymentsService.handleWebhook(gateway, req.body, signature, rawBody);
     res.json({ success: true, data: result });
   } catch (err) {
     next(err);

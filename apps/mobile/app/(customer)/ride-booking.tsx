@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
-import MapView, { Marker, Polyline } from 'react-native-maps';
-import { Stack, router } from 'expo-router';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import MapView, { Marker } from 'react-native-maps';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { getRideSocket, disconnectRideSocket } from '../../lib/socket';
 import { apiClient } from '../../lib/axios';
-import { useAuthStore } from '../../store/auth';
-import { MapPin, Navigation, Car } from 'lucide-react-native';
+import { MapPin, Car } from 'lucide-react-native';
 import * as Location from 'expo-location';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function RideBookingScreen() {
-  const user = useAuthStore((s) => s.user);
+  const router = useRouter();
+  const params = useLocalSearchParams<{ rideId?: string }>();
   const [driverLocation, setDriverLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [isSearching, setIsSearching] = useState(true);
   const [rideStatus, setRideStatus] = useState('Finding your driver...');
-  const [rideId, setRideId] = useState<string | null>(null);
+  const [rideId, setRideId] = useState<string | null>(params.rideId ?? null);
   const [driverInfo, setDriverInfo] = useState<{ name?: string; vehicle?: string } | null>(null);
   const [pickupLocation, setPickupLocation] = useState({ lat: 6.9271, lng: 79.8612 });
   const dropoffLocation = { lat: 6.8649, lng: 79.8997 };
@@ -22,54 +23,70 @@ export default function RideBookingScreen() {
     let cancelled = false;
 
     (async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status === 'granted') {
-        const loc = await Location.getCurrentPositionAsync({});
-        if (!cancelled) {
-          setPickupLocation({ lat: loc.coords.latitude, lng: loc.coords.longitude });
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === 'granted') {
+          const loc = await Location.getCurrentPositionAsync({});
+          if (!cancelled) {
+            setPickupLocation({ lat: loc.coords.latitude, lng: loc.coords.longitude });
+          }
         }
+      } catch {
+        // keep default
       }
 
       try {
-        const res = await apiClient.post('/rides', {
-          pickupLat: pickupLocation.lat,
-          pickupLng: pickupLocation.lng,
-          dropoffLat: dropoffLocation.lat,
-          dropoffLng: dropoffLocation.lng,
-        });
+        let id = params.rideId ?? null;
 
-        const ride = res.data?.data ?? res.data;
-        const id = ride?.id ?? ride?.rideId;
+        // Only create a new ride if none was passed from the Ride tab
+        if (!id) {
+          const res = await apiClient.post('/rides', {
+            pickupLat: pickupLocation.lat,
+            pickupLng: pickupLocation.lng,
+            dropoffLat: dropoffLocation.lat,
+            dropoffLng: dropoffLocation.lng,
+          });
+          const ride = res.data?.data ?? res.data;
+          id = ride?.id ?? ride?.rideId ?? null;
+        }
+
         if (id) setRideId(id);
 
         const socket = getRideSocket();
         socket.connect();
         if (id) socket.emit('subscribe_ride', id);
 
-        socket.on('ride_assigned', (data: { rideId?: string; driverId?: string; driverName?: string; vehicleNumber?: string }) => {
-          if (cancelled) return;
-          setIsSearching(false);
-          setRideStatus('Driver is on the way');
-          setDriverInfo({ name: data.driverName, vehicle: data.vehicleNumber });
-          if (data.driverId) {
-            socket.emit('subscribe_driver', data.driverId);
-          }
-        });
+        socket.on(
+          'ride_assigned',
+          (data: {
+            rideId?: string;
+            driverId?: string;
+            driverName?: string;
+            vehicleNumber?: string;
+          }) => {
+            if (cancelled) return;
+            setIsSearching(false);
+            setRideStatus('Driver is on the way');
+            setDriverInfo({ name: data.driverName, vehicle: data.vehicleNumber });
+            if (data.driverId) socket.emit('subscribe_driver', data.driverId);
+          },
+        );
 
         socket.on('driver_location_changed', (data: { lat: number; lng: number }) => {
           if (!cancelled) setDriverLocation({ lat: data.lat, lng: data.lng });
         });
 
-        // Fallback: if no assignment within 15s, show nearby search state
         setTimeout(() => {
-          if (!cancelled && isSearching) {
-            setRideStatus('Still searching for nearby drivers...');
+          if (!cancelled) {
+            setRideStatus((s) =>
+              s.includes('Finding') ? 'Still searching for nearby drivers…' : s,
+            );
           }
         }, 15000);
       } catch (err) {
         if (!cancelled) {
           setIsSearching(false);
-          setRideStatus('Could not create ride — try again');
+          setRideStatus('Could not load ride — go back and try again');
           console.warn(err);
         }
       }
@@ -79,12 +96,10 @@ export default function RideBookingScreen() {
       cancelled = true;
       disconnectRideSocket();
     };
-  }, []);
+  }, [params.rideId]);
 
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ title: 'Ride Details', headerBackTitle: 'Back' }} />
-
       <View style={styles.mapContainer}>
         <MapView
           style={styles.map}
@@ -100,77 +115,70 @@ export default function RideBookingScreen() {
               <MapPin size={24} color="#2563eb" />
             </View>
           </Marker>
-          <Marker coordinate={{ latitude: dropoffLocation.lat, longitude: dropoffLocation.lng }}>
+          <Marker
+            coordinate={{ latitude: dropoffLocation.lat, longitude: dropoffLocation.lng }}
+          >
             <View style={styles.markerContainer}>
-              <Navigation size={24} color="#dc2626" />
+              <MapPin size={24} color="#5DCAA5" />
             </View>
           </Marker>
           {driverLocation && (
-            <Marker coordinate={{ latitude: driverLocation.lat, longitude: driverLocation.lng }}>
-              <View style={styles.driverMarker}>
-                <Car size={20} color="#fff" />
+            <Marker
+              coordinate={{ latitude: driverLocation.lat, longitude: driverLocation.lng }}
+            >
+              <View style={styles.markerContainer}>
+                <Car size={24} color="#FAC775" />
               </View>
             </Marker>
           )}
-          <Polyline
-            coordinates={[
-              { latitude: pickupLocation.lat, longitude: pickupLocation.lng },
-              { latitude: dropoffLocation.lat, longitude: dropoffLocation.lng },
-            ]}
-            strokeColor="#3b82f6"
-            strokeWidth={4}
-          />
         </MapView>
       </View>
 
-      <View style={styles.bottomSheet}>
-        <Text style={styles.statusTitle}>{rideStatus}</Text>
-        {rideId && <Text style={styles.rideId}>Ride {rideId.slice(0, 8)}</Text>}
-
-        {isSearching ? (
-          <ActivityIndicator size="large" color="#3b82f6" style={{ marginTop: 20 }} />
-        ) : driverInfo ? (
-          <View style={styles.driverInfo}>
-            <View style={styles.driverAvatar}>
-              <Car size={24} color="#6b7280" />
-            </View>
-            <View style={styles.driverDetails}>
-              <Text style={styles.driverName}>{driverInfo.name ?? 'Your driver'}</Text>
-              <Text style={styles.carInfo}>{driverInfo.vehicle ?? 'Vehicle assigned'}</Text>
-            </View>
-          </View>
-        ) : null}
-
-        <TouchableOpacity
-          style={styles.cancelBtn}
-          onPress={() => {
-            Alert.alert('Cancel Ride', 'Are you sure?', [
-              { text: 'No', style: 'cancel' },
-              { text: 'Yes', style: 'destructive', onPress: () => router.back() },
-            ]);
-          }}
-        >
-          <Text style={styles.cancelBtnText}>Cancel Request</Text>
+      <SafeAreaView edges={['bottom']} style={styles.sheet}>
+        {isSearching && <ActivityIndicator color="#5DCAA5" style={{ marginBottom: 12 }} />}
+        <Text style={styles.status}>{rideStatus}</Text>
+        {driverInfo && (
+          <Text style={styles.driver}>
+            {driverInfo.name ?? 'Driver'}
+            {driverInfo.vehicle ? ` · ${driverInfo.vehicle}` : ''}
+          </Text>
+        )}
+        {rideId && <Text style={styles.rideId}>Ride {rideId.slice(0, 8)}…</Text>}
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+          <Text style={styles.backText}>Done</Text>
         </TouchableOpacity>
-      </View>
+      </SafeAreaView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: '#07101f' },
   mapContainer: { flex: 1 },
-  map: { width: '100%', height: '100%' },
-  markerContainer: { backgroundColor: '#fff', padding: 4, borderRadius: 20 },
-  driverMarker: { backgroundColor: '#10b981', padding: 6, borderRadius: 20 },
-  bottomSheet: { backgroundColor: '#fff', padding: 24, borderTopLeftRadius: 24, borderTopRightRadius: 24 },
-  statusTitle: { fontSize: 20, fontWeight: 'bold', color: '#111827', textAlign: 'center' },
-  rideId: { textAlign: 'center', color: '#6b7280', marginTop: 4, fontSize: 12 },
-  driverInfo: { flexDirection: 'row', alignItems: 'center', marginTop: 20, padding: 16, backgroundColor: '#f3f4f6', borderRadius: 16 },
-  driverAvatar: { width: 50, height: 50, borderRadius: 25, backgroundColor: '#e5e7eb', justifyContent: 'center', alignItems: 'center', marginRight: 16 },
-  driverDetails: { flex: 1 },
-  driverName: { fontSize: 16, fontWeight: 'bold', color: '#111827' },
-  carInfo: { fontSize: 14, color: '#4b5563', marginTop: 2 },
-  cancelBtn: { marginTop: 20, padding: 16, borderRadius: 12, backgroundColor: '#fee2e2', alignItems: 'center' },
-  cancelBtnText: { color: '#dc2626', fontWeight: 'bold', fontSize: 16 },
+  map: { flex: 1 },
+  markerContainer: {
+    backgroundColor: 'rgba(7,16,31,0.9)',
+    padding: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  sheet: {
+    padding: 20,
+    backgroundColor: 'rgba(7,16,31,0.96)',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  status: { color: '#fff', fontSize: 18, fontWeight: '700' },
+  driver: { color: 'rgba(255,255,255,0.7)', marginTop: 6 },
+  rideId: { color: 'rgba(255,255,255,0.4)', marginTop: 4, fontSize: 12 },
+  backBtn: {
+    marginTop: 16,
+    backgroundColor: '#5DCAA5',
+    borderRadius: 14,
+    minHeight: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backText: { fontWeight: '800', color: '#07101f' },
 });

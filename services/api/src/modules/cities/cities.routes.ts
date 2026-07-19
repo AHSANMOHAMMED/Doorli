@@ -52,6 +52,68 @@ citiesRouter.get('/:city/vendors', async (req, res, next) => {
   }
 });
 
+citiesRouter.post('/zones', authenticateToken, async (req, res, next) => {
+  try {
+    if (req.user?.role !== 'admin') {
+      res.status(403).json({ success: false, error: 'Admin only' });
+      return;
+    }
+    const { name, city, demandLevel = 1, polygonWkt } = req.body as {
+      name: string;
+      city?: string;
+      demandLevel?: number;
+      polygonWkt?: string;
+    };
+    if (!name) {
+      res.status(400).json({ success: false, error: 'name required' });
+      return;
+    }
+
+    const zone = await prisma.geographicZone.create({
+      data: {
+        name,
+        city: city || null,
+        demandLevel: Number(demandLevel) || 1,
+        isActive: true,
+      },
+    });
+
+    if (polygonWkt) {
+      await prisma.$executeRawUnsafe(
+        `UPDATE geographic_zones SET boundaries = ST_GeogFromText($1) WHERE id = $2::uuid`,
+        polygonWkt,
+        zone.id,
+      );
+    }
+
+    res.status(201).json({ success: true, data: zone });
+  } catch (err) {
+    next(err);
+  }
+});
+
+citiesRouter.patch('/zones/:id/polygon', authenticateToken, async (req, res, next) => {
+  try {
+    if (req.user?.role !== 'admin') {
+      res.status(403).json({ success: false, error: 'Admin only' });
+      return;
+    }
+    const polygonWkt = String(req.body.polygonWkt || '');
+    if (!polygonWkt) {
+      res.status(400).json({ success: false, error: 'polygonWkt required (e.g. POLYGON((lng lat, ...)))' });
+      return;
+    }
+    await prisma.$executeRawUnsafe(
+      `UPDATE geographic_zones SET boundaries = ST_GeogFromText($1), updated_at = NOW() WHERE id = $2::uuid`,
+      polygonWkt,
+      String(req.params.id),
+    );
+    res.json({ success: true, data: { id: req.params.id, updated: true } });
+  } catch (err) {
+    next(err);
+  }
+});
+
 citiesRouter.post('/seed-defaults', authenticateToken, async (req, res, next) => {
   try {
     if (req.user?.role !== 'admin') {

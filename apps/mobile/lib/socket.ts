@@ -1,24 +1,29 @@
 import { io, type Socket } from 'socket.io-client';
-import { API_URL } from './axios';
-import { Platform } from 'react-native';
+import { API_ROOT } from './axios';
+import { useAuthStore } from '../store/auth';
 
 let socket: Socket | null = null;
-let rideSocket: Socket | null = null;
 
+/** Single Socket.io connection on API origin (orders + rides). */
 export function getSocket(): Socket {
+  const token = useAuthStore.getState().accessToken;
   if (!socket) {
-    socket = io(API_URL, { transports: ['websocket', 'polling'], autoConnect: true });
+    socket = io(API_ROOT, {
+      transports: ['websocket', 'polling'],
+      autoConnect: true,
+      auth: { token },
+      path: '/socket.io',
+    });
+  } else if (token) {
+    socket.auth = { token };
+    if (!socket.connected) socket.connect();
   }
   return socket;
 }
 
-const RIDE_SOCKET_URL = Platform.OS === 'android' ? 'http://10.0.2.2:8085' : 'http://localhost:8085';
-
+/** @deprecated Use getSocket() — rides share the API socket. */
 export function getRideSocket(): Socket {
-  if (!rideSocket) {
-    rideSocket = io(RIDE_SOCKET_URL, { transports: ['websocket', 'polling'], autoConnect: false });
-  }
-  return rideSocket;
+  return getSocket();
 }
 
 export function joinSocketRooms(rooms: string | string[]): void {
@@ -33,8 +38,5 @@ export function disconnectSocket(): void {
 }
 
 export function disconnectRideSocket(): void {
-  if (rideSocket) {
-    rideSocket.disconnect();
-    rideSocket = null;
-  }
+  // no-op: shared socket
 }

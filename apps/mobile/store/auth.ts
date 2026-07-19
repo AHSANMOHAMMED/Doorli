@@ -6,10 +6,19 @@ import { apiClient } from '../lib/axios';
 export interface AuthUser {
   id: string;
   fullName: string;
-  phone: string;
+  phone: string | null;
+  email?: string | null;
+  username?: string | null;
   role: 'customer' | 'vendor' | 'driver' | 'admin';
   isVerified: boolean;
   avatar?: string | null;
+}
+
+export function homeForRole(role?: string | null): string {
+  if (role === 'vendor') return '/(vendor)/hub';
+  if (role === 'driver') return '/(driver)/jobs';
+  if (role === 'admin') return '/(customer)';
+  return '/(customer)';
 }
 
 interface AuthState {
@@ -21,7 +30,18 @@ interface AuthState {
   setTokens: (accessToken: string, refreshToken: string) => void;
   setUser: (user: AuthUser) => void;
   sendOtp: (phone: string) => Promise<{ error: string | null }>;
-  verifyOtpAndLogin: (phone: string, code: string, fullName?: string, role?: string) => Promise<{ error: string | null }>;
+  verifyOtpAndLogin: (
+    phone: string,
+    code: string,
+    fullName?: string,
+    role?: string,
+  ) => Promise<{ error: string | null }>;
+  loginWithPassword: (
+    identifier: string,
+    password: string,
+    expectedRole?: 'customer' | 'vendor' | 'driver',
+    businessKey?: string,
+  ) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   loadSession: () => Promise<void>;
 }
@@ -46,18 +66,16 @@ export const useAuthStore = create<AuthState>()(
       sendOtp: async (phone: string) => {
         try {
           const res = await apiClient.post('/auth/send-otp', { phone });
-          if (res.data.success) {
-            return { error: null };
-          }
+          if (res.data.success) return { error: null };
           return { error: res.data.error || 'Failed to send OTP' };
         } catch (err: any) {
           return { error: err.response?.data?.message || err.message };
         }
       },
 
-      verifyOtpAndLogin: async (phone: string, code: string, fullName?: string, role?: string) => {
+      verifyOtpAndLogin: async (phone, code, fullName, role) => {
         try {
-          const payload: any = { phone, code };
+          const payload: Record<string, string> = { phone, code };
           if (fullName) payload.fullName = fullName;
           if (role) payload.role = role;
 
@@ -78,13 +96,37 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
+      loginWithPassword: async (identifier, password, expectedRole, businessKey) => {
+        try {
+          const res = await apiClient.post('/auth/login', {
+            identifier,
+            password,
+            ...(expectedRole ? { expectedRole } : {}),
+            ...(expectedRole === 'vendor' && businessKey ? { businessKey } : {}),
+          });
+          if (res.data.success && res.data.data) {
+            const { user, accessToken, refreshToken } = res.data.data;
+            set({
+              user,
+              accessToken,
+              refreshToken,
+              isAuthenticated: true,
+            });
+            return { error: null };
+          }
+          return { error: res.data.error || 'Login failed' };
+        } catch (err: any) {
+          return { error: err.response?.data?.error || err.response?.data?.message || err.message };
+        }
+      },
+
       signOut: async () => {
         const { refreshToken } = get();
         if (refreshToken) {
           try {
             await apiClient.post('/auth/logout', { refreshToken });
-          } catch (e) {
-            // ignore logout error if server is unreachable
+          } catch {
+            // ignore
           }
         }
         set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false });
@@ -101,8 +143,6 @@ export const useAuthStore = create<AuthState>()(
               return;
             }
           } catch (e) {
-            // Token might be expired, interceptor will try to refresh it
-            // If it fails, interceptor logs out
             console.warn('Failed to load session profile', e);
           }
         }
@@ -118,6 +158,6 @@ export const useAuthStore = create<AuthState>()(
         refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
       }),
-    }
-  )
+    },
+  ),
 );

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import Sidebar from "@/components/Sidebar";
+import AdminShell from "@/components/AdminShell";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -18,10 +18,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className} flex bg-slate-50 min-h-screen`}>
-        <Sidebar />
-        <main className="flex-1 p-8">
-          {children}
-        </main>
+        <AdminShell>{children}</AdminShell>
       </body>
     </html>
   );

@@ -1,11 +1,20 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { createOrder, getOrdersByCustomer, getOrderById, updateOrderStatus, getOrdersForVendorUser } from './orders.service.js';
-import { authenticateToken } from '../../middleware/authenticateToken.js';
+import {
+  createOrder,
+  getOrdersByCustomer,
+  getOrderById,
+  updateOrderStatus,
+  getOrdersForVendorUser,
+  cancelOrder,
+  getDriverJobs,
+  estimateDeliveryFee,
+} from './orders.service.js';
+import { authenticateToken, requireRole } from '../../middleware/authenticateToken.js';
 import { OrderStatus } from '@prisma/client';
+import { AppError } from '../../middleware/errorHandler.js';
 
 const router = Router();
 
-// Get customer's orders
 router.get('/my', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.user?.id;
@@ -20,7 +29,6 @@ router.get('/my', authenticateToken, async (req: Request, res: Response, next: N
   }
 });
 
-// Vendor kitchen / order board
 router.get('/vendor/mine', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!req.user || (req.user.role !== 'vendor' && req.user.role !== 'admin')) {
@@ -34,7 +42,57 @@ router.get('/vendor/mine', authenticateToken, async (req: Request, res: Response
   }
 });
 
-// Create new order
+router.get(
+  '/driver',
+  authenticateToken,
+  requireRole('driver', 'admin'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const jobs = await getDriverJobs(req.user!.id);
+      res.json({ success: true, data: jobs });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+router.get('/estimate-fee', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const vendorId = String(req.query.vendorId || '');
+    const lat = req.query.lat != null ? Number(req.query.lat) : null;
+    const lng = req.query.lng != null ? Number(req.query.lng) : null;
+    if (!vendorId) throw new AppError(400, 'vendorId required');
+    const fee = await estimateDeliveryFee(vendorId, lat, lng);
+    res.json({ success: true, data: fee });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/:id/track', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const order = await getOrderById(String(req.params.id));
+    if (!order) {
+      res.status(404).json({ success: false, error: 'Order not found' });
+      return;
+    }
+    res.json({
+      success: true,
+      data: {
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        status: order.status,
+        vendor: order.vendor,
+        deliveryAddress: order.deliveryAddress,
+        driver: order.driver,
+        estimatedDeliveryTime: order.estimatedDeliveryTime,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.post('/', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.user?.id;
@@ -43,7 +101,8 @@ router.post('/', authenticateToken, async (req: Request, res: Response, next: Ne
       return;
     }
 
-    const { vendorId, paymentMethod, deliveryAddressId, deliveryAddress, specialInstructions, items } = req.body;
+    const { vendorId, paymentMethod, deliveryAddressId, deliveryAddress, specialInstructions, items, promoCode } =
+      req.body;
 
     const order = await createOrder({
       customerId: userId,
@@ -53,6 +112,7 @@ router.post('/', authenticateToken, async (req: Request, res: Response, next: Ne
       deliveryAddress,
       specialInstructions,
       items,
+      promoCode,
     });
 
     res.status(201).json({ success: true, data: order });
@@ -61,7 +121,30 @@ router.post('/', authenticateToken, async (req: Request, res: Response, next: Ne
   }
 });
 
-// Get order by ID
+router.patch('/:id/status', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) throw new AppError(401, 'Unauthorized');
+    const { status } = req.body;
+    const order = await updateOrderStatus(String(req.params.id), status as OrderStatus, {
+      id: req.user.id,
+      role: req.user.role,
+    });
+    res.json({ success: true, data: order });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/:id/cancel', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) throw new AppError(401, 'Unauthorized');
+    const order = await cancelOrder(String(req.params.id), req.user.id, req.user.role);
+    res.json({ success: true, data: order });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get('/:id', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const order = await getOrderById(String(req.params.id));
@@ -69,17 +152,6 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response, next: 
       res.status(404).json({ success: false, error: 'Order not found' });
       return;
     }
-    res.json({ success: true, data: order });
-  } catch (err) {
-    next(err);
-  }
-});
-
-// Update order status (would normally be restricted to vendors/drivers/admins)
-router.patch('/:id/status', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { status } = req.body;
-    const order = await updateOrderStatus(String(req.params.id), status as OrderStatus);
     res.json({ success: true, data: order });
   } catch (err) {
     next(err);

@@ -7,17 +7,32 @@
     "scheme": "doorli",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "extra": {
+      "apiUrl": "http://140.245.207.93"
+    },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "app.doorli.mobile"
+      "bundleIdentifier": "app.doorli.mobile",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Doorli scans product barcodes at the cashier to add items to the bill."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#2563eb"
       },
-      "package": "app.doorli.mobile"
+      "package": "app.doorli.mobile",
+      "permissions": ["CAMERA"]
     },
-    "plugins": ["expo-router"],
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Doorli to scan product barcodes for cashier billing."
+        }
+      ]
+    ],
     "experiments": {
       "typedRoutes": true
     }

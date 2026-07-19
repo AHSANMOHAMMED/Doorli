@@ -4,7 +4,7 @@ export const initiatePaymentSchema = z.object({
   referenceId: z.string().uuid(),
   referenceType: z.enum(['order', 'booking']),
   amount: z.number().positive(),
-  method: z.enum(['card', 'wallet', 'cod']),
+  method: z.enum(['card', 'cod']),
   gateway: z.enum(['stripe', 'payhere', 'manual']),
 });
 

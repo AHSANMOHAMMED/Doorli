@@ -1,9 +1,7 @@
 import axios from 'axios';
 
-// The base URL for the internal ERP API
-// In production, this would point to the internal cluster DNS for the ERP service
-const ERP_API_URL = process.env.ERP_API_URL || 'http://localhost:3000/api/internal';
-const ERP_INTERNAL_SECRET = process.env.ERP_INTERNAL_SECRET || 'doorli_internal_secret_key_123';
+const ERP_API_URL = process.env.ERP_API_URL || 'http://localhost:3010/api/internal';
+const ERP_INTERNAL_SECRET = process.env.ERP_INTERNAL_SECRET || 'doorli_internal_sync_secret';
 
 const erpClient = axios.create({
   baseURL: ERP_API_URL,
@@ -11,33 +9,51 @@ const erpClient = axios.create({
     'Content-Type': 'application/json',
     'x-internal-secret': ERP_INTERNAL_SECRET,
   },
-  timeout: 5000,
+  timeout: 8000,
+  validateStatus: () => true,
 });
 
 export class ErpIntegrationService {
-  /**
-   * Syncs a newly created marketplace order to the ERP system
-   */
-  static async syncOrderToErp(orderPayload: any) {
+  /** Sync marketplace order → ERP sale. Returns ERP invoice/sale id when available. */
+  static async syncOrderToErp(orderPayload: {
+    tenantId: string;
+    items: Array<{ productId: string; name?: string; quantity: number; price: number }>;
+    customerInfo?: { name?: string; phone?: string };
+    totalAmount: number;
+    marketplaceOrderId?: string;
+    marketplaceOrderNumber?: string;
+  }): Promise<{ success: boolean; erpOrderId?: string; message?: string }> {
     try {
       const response = await erpClient.post('/orders', orderPayload);
-      return response.data;
+      if (response.status >= 400) {
+        console.error('ERP sync rejected:', response.status, response.data);
+        return { success: false, message: response.data?.error || 'ERP rejected' };
+      }
+      const erpOrderId =
+        response.data?.saleId ||
+        response.data?.invoiceNo ||
+        response.data?.id ||
+        orderPayload.marketplaceOrderNumber ||
+        undefined;
+      return { success: true, erpOrderId, message: response.data?.message };
     } catch (error) {
       console.error('Failed to sync order to ERP:', error);
-      throw new Error('ERP Sync Failed');
+      return { success: false, message: 'ERP unreachable' };
     }
   }
 
-  /**
-   * Fetches real-time inventory from the ERP for a given vendor
-   */
+  /** Inventory lookup — matches ERP query params tenantId + productId */
   static async getInventoryFromErp(erpTenantId: string, productId: string) {
     try {
-      const response = await erpClient.get(`/inventory/${erpTenantId}/${productId}`);
+      const response = await erpClient.get('/inventory', {
+        params: { tenantId: erpTenantId, productId },
+      });
+      if (response.status >= 400) {
+        return null;
+      }
       return response.data;
-    } catch (error) {
-      console.error('Failed to fetch inventory from ERP:', error);
-      throw new Error('ERP Inventory Fetch Failed');
+    } catch {
+      return null;
     }
   }
 }

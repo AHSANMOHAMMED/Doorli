@@ -19,7 +19,7 @@ export const createOrderSchema = z
     vendorId: z.string().uuid(),
     items: z.array(orderItemSchema).min(1),
     orderType: z.enum(['delivery', 'pickup']).default('delivery'),
-    paymentMethod: z.enum(['cod', 'card', 'wallet']).default('cod'),
+    paymentMethod: z.enum(['cod', 'card']).default('cod'),
     deliveryAddressId: z.string().uuid().optional(),
     newAddress: newAddressSchema.optional(),
     specialInstructions: z.string().max(500).optional(),

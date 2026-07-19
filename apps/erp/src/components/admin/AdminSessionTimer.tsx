@@ -66,10 +66,10 @@ export function AdminSessionTimer() {
   return (
     <div className="flex items-center gap-2">
       <div
-        className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium ${
+        className={`flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium ${
           isWarning
             ? 'bg-red-500/20 text-red-300'
-            : 'bg-gray-700 text-gray-400'
+            : 'bg-white/10 text-slate-300'
         }`}
       >
         {isWarning ? (

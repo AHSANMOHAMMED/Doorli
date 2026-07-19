@@ -1,10 +1,14 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Store, UserCheck, Car, TrendingUp, AlertCircle, Activity } from 'lucide-react';
 import { adminFetch } from '@/lib/api';
 
+type InfraService = { name: string; port: string; status: string };
+
 export default function AdminDashboard() {
+  const router = useRouter();
   const [stats, setStats] = useState({
     totalVendors: 0,
     pendingKyc: 0,
@@ -12,20 +16,37 @@ export default function AdminDashboard() {
     ordersToday: 0,
     revenue30d: 0,
   });
+  const [infra, setInfra] = useState<InfraService[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (typeof window !== 'undefined' && !localStorage.getItem('doorli_admin_token')) {
+      router.replace('/login');
+      return;
+    }
     adminFetch('/admin/stats')
       .then(setStats)
-      .catch((e) => setError(e.message));
-  }, []);
+      .catch((e) => {
+        setError(e.message);
+        if (String(e.message).toLowerCase().includes('unauthorized') || String(e.message).includes('401')) {
+          router.replace('/login');
+        }
+      });
+    adminFetch('/admin/infra')
+      .then((data: { services: InfraService[] }) => setInfra(data.services || []))
+      .catch(() => setInfra([]));
+  }, [router]);
 
   return (
     <div className="animate-fade-in space-y-8">
       <div>
         <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Platform Overview</h1>
         <p className="text-slate-500 mt-2 text-lg">Live Doorli marketplace metrics from the API.</p>
-        {error && <p className="text-amber-600 mt-2 text-sm">API: {error} (set doorli_admin_token in localStorage)</p>}
+        {error && (
+          <p className="text-amber-600 mt-2 text-sm">
+            API: {error} — <a className="underline" href="/login">sign in again</a>
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -42,11 +63,11 @@ export default function AdminDashboard() {
             Infrastructure Status
           </h2>
           <div className="space-y-4">
-            <ServiceStatus name="Marketplace API Gateway" port="4000" status="healthy" />
-            <ServiceStatus name="Notifications Worker" port="—" status="healthy" />
-            <ServiceStatus name="Ride-Hailing Socket" port="8085" status="healthy" />
-            <ServiceStatus name="Search (Elasticsearch)" port="4004" status="healthy" />
-            <ServiceStatus name="MinIO Storage" port="9000" status="healthy" />
+            {infra.length === 0 ? (
+              <p className="text-sm text-slate-500">Sign in to load live service health.</p>
+            ) : (
+              infra.map((s) => <ServiceStatus key={s.name} name={s.name} port={s.port} status={s.status} />)
+            )}
           </div>
         </div>
 
@@ -65,7 +86,21 @@ export default function AdminDashboard() {
   );
 }
 
-function StatCard({ title, value, change, icon, bgColor, alert }: any) {
+function StatCard({
+  title,
+  value,
+  change,
+  icon,
+  bgColor,
+  alert,
+}: {
+  title: string;
+  value: string;
+  change: string;
+  icon: React.ReactNode;
+  bgColor: string;
+  alert?: boolean;
+}) {
   return (
     <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col justify-between">
       <div className="flex justify-between items-start">
@@ -80,7 +115,7 @@ function StatCard({ title, value, change, icon, bgColor, alert }: any) {
   );
 }
 
-function ServiceStatus({ name, port, status }: any) {
+function ServiceStatus({ name, port, status }: { name: string; port: string; status: string }) {
   const isHealthy = status === 'healthy';
   return (
     <div className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50/50">
@@ -96,7 +131,7 @@ function ServiceStatus({ name, port, status }: any) {
   );
 }
 
-function ActionItem({ title, desc, type }: any) {
+function ActionItem({ title, desc, type }: { title: string; desc: string; type: string }) {
   return (
     <div className="p-4 rounded-xl border border-slate-100">
       <div className="flex items-start justify-between">

@@ -33,10 +33,10 @@ export default function BookingScreen() {
   const [loading, setLoading] = useState(false);
 
   const bookingType =
-    vendor?.category === 'hotel' ? 'hotel_room' :
-    vendor?.category === 'hall' ? 'hall_booking' :
-    vendor?.category === 'beauty' ? 'beauty_appointment' :
-    'restaurant_table';
+    vendor?.category === 'hotel' ? 'hotel' :
+    vendor?.category === 'hall' ? 'hall' :
+    vendor?.category === 'beauty' ? 'beauty' :
+    'service';
 
   async function submit() {
     if (!vendor) return;
@@ -57,6 +57,7 @@ export default function BookingScreen() {
         contactName,
         contactPhone,
         specialRequests: specialRequests || undefined,
+        requirements: `Contact: ${contactName} ${contactPhone}`,
       });
       Alert.alert('Booking placed', 'Your booking has been submitted', [
         { text: 'OK', onPress: () => router.replace('/(customer)/orders') },

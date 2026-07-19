@@ -4,10 +4,10 @@ import {
   Text,
   FlatList,
   StyleSheet,
-  TextInput,
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -16,10 +16,31 @@ import type { VendorCategory } from '@doorli/types';
 import { CategoryTabs } from '../../components/CategoryTabs';
 import { VendorCard } from '../../components/VendorCard';
 import { GlassInput } from '../../components/GlassInput';
-import { Search } from 'lucide-react-native';
-import { fetchVendors, type Vendor } from '../../lib/api';
+import {
+  Search,
+  ShoppingCart,
+  Bell,
+  Car,
+  PartyPopper,
+  Wrench,
+  Hotel,
+  Utensils,
+  Store,
+  Sparkles,
+} from 'lucide-react-native';
+import { fetchNearbyVendors, type Vendor, DEFAULT_LOCATION } from '../../lib/api';
 import { useCartStore } from '../../store/cart';
 import { useAuthStore } from '../../store/auth';
+
+const QUICK = [
+  { label: 'Grocery', emoji: '🛒', category: 'grocery' as const, icon: Store },
+  { label: 'Food', emoji: '🍽️', category: 'restaurant' as const, icon: Utensils },
+  { label: 'Hotels', emoji: '🏨', category: 'hotel' as const, icon: Hotel },
+  { label: 'Beauty', emoji: '💈', category: 'beauty' as const, icon: Sparkles },
+  { label: 'Services', emoji: '🔧', category: 'service' as const, icon: Wrench },
+  { label: 'Events', emoji: '🎉', href: '/(customer)/events', icon: PartyPopper },
+  { label: 'Ride', emoji: '🚗', href: '/(customer)/ride', icon: Car },
+] as const;
 
 export default function CustomerHome() {
   const router = useRouter();
@@ -29,8 +50,14 @@ export default function CustomerHome() {
   const user = useAuthStore((s) => s.user);
 
   const { data, isLoading, refetch, isRefetching } = useQuery({
-    queryKey: ['vendors', category],
-    queryFn: async () => fetchVendors(category),
+    queryKey: ['vendors-nearby', category],
+    queryFn: async () =>
+      fetchNearbyVendors({
+        lat: DEFAULT_LOCATION.lat,
+        lng: DEFAULT_LOCATION.lng,
+        radius: 10,
+        category,
+      }),
   });
 
   const filtered = (data ?? []).filter(
@@ -43,16 +70,22 @@ export default function CustomerHome() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>Hello, {user?.fullName?.split(' ')[0] ?? 'there'}</Text>
-          <Text style={styles.subtitle}>What do you need from your neighbourhood?</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.brand}>Doorli</Text>
+          <Text style={styles.greeting}>
+            Hello, {user?.fullName?.split(' ')[0] ?? 'there'}
+          </Text>
+          <Text style={styles.subtitle}>Everything from your neighbourhood</Text>
         </View>
         <View style={styles.headerActions}>
-          <TouchableOpacity style={styles.ordersBtn} onPress={() => router.push('/(customer)/orders')}>
-            <Text style={styles.ordersIcon}>📦</Text>
+          <TouchableOpacity
+            style={styles.iconBtn}
+            onPress={() => router.push('/(customer)/notifications')}
+          >
+            <Bell color="#fff" size={20} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.cartBtn} onPress={() => router.push('/(customer)/cart')}>
-            <Text style={styles.cartIcon}>🛒</Text>
+          <TouchableOpacity style={styles.iconBtn} onPress={() => router.push('/(customer)/cart')}>
+            <ShoppingCart color="#fff" size={20} />
             {cartCount > 0 && (
               <View style={styles.cartBadge}>
                 <Text style={styles.cartBadgeText}>{cartCount}</Text>
@@ -62,14 +95,38 @@ export default function CustomerHome() {
         </View>
       </View>
 
-      <View style={{ paddingHorizontal: 16, marginTop: 12 }}>
+      <View style={{ paddingHorizontal: 16, marginTop: 8 }}>
         <GlassInput
           icon={<Search color="rgba(255,255,255,0.5)" size={18} />}
           placeholder="Search shops and products..."
           value={search}
           onChangeText={setSearch}
+          onSubmitEditing={() => router.push('/(customer)/search')}
         />
       </View>
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.quickRow}
+      >
+        {QUICK.map((q) => (
+          <TouchableOpacity
+            key={q.label}
+            style={styles.quickChip}
+            onPress={() => {
+              if ('href' in q && q.href) {
+                router.push(q.href as never);
+              } else if ('category' in q) {
+                setCategory(q.category);
+              }
+            }}
+          >
+            <Text style={styles.quickEmoji}>{q.emoji}</Text>
+            <Text style={styles.quickLabel}>{q.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
 
       <CategoryTabs selected={category} onSelect={setCategory} />
 
@@ -85,13 +142,15 @@ export default function CustomerHome() {
               onPress={() => router.push(`/(customer)/vendor/${item.id}`)}
             />
           )}
-          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#0ea5e9" />}
+          refreshControl={
+            <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#0ea5e9" />
+          }
           ListEmptyComponent={
             <Text style={styles.empty}>No shops found nearby. Pull to refresh.</Text>
           }
           contentContainerStyle={[
             styles.listContent,
-            filtered.length === 0 ? styles.emptyContainer : undefined
+            filtered.length === 0 ? styles.emptyContainer : undefined,
           ]}
         />
       )}
@@ -109,27 +168,55 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 4,
   },
+  brand: {
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 2,
+    color: '#5DCAA5',
+    textTransform: 'uppercase',
+    marginBottom: 4,
+  },
   greeting: { fontSize: 22, fontWeight: 'bold', color: '#ffffff' },
-  subtitle: { fontSize: 14, color: 'rgba(255,255,255,0.8)', marginTop: 4 },
-  headerActions: { flexDirection: 'row', alignItems: 'center' },
-  ordersBtn: { padding: 8 },
-  ordersIcon: { fontSize: 22 },
-  cartBtn: { position: 'relative', padding: 8 },
-  cartIcon: { fontSize: 24 },
+  subtitle: { fontSize: 14, color: 'rgba(255,255,255,0.75)', marginTop: 4 },
+  headerActions: { flexDirection: 'row', gap: 8 },
+  iconBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
   cartBadge: {
     position: 'absolute',
-    top: 2,
-    right: 2,
+    top: -2,
+    right: -2,
     backgroundColor: '#ef4444',
     borderRadius: 10,
     minWidth: 18,
     height: 18,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 4,
   },
-  cartBadgeText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
+  cartBadgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
+  quickRow: { paddingHorizontal: 16, gap: 10, paddingTop: 12, paddingBottom: 4 },
+  quickChip: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 72,
+    paddingVertical: 10,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+  },
+  quickEmoji: { fontSize: 22, marginBottom: 4 },
+  quickLabel: { fontSize: 11, fontWeight: '600', color: 'rgba(255,255,255,0.85)' },
   loader: { marginTop: 40 },
-  listContent: { paddingHorizontal: 16, paddingBottom: 24 },
-  empty: { textAlign: 'center', color: 'rgba(255,255,255,0.6)', marginTop: 40, paddingHorizontal: 24 },
+  listContent: { paddingHorizontal: 16, paddingBottom: 100 },
   emptyContainer: { flexGrow: 1, justifyContent: 'center' },
+  empty: { textAlign: 'center', color: 'rgba(255,255,255,0.5)', padding: 24 },
 });

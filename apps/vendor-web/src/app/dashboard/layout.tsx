@@ -4,7 +4,7 @@ import { useAuth } from '@/lib/auth-context';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { LayoutDashboard, Package, ShoppingBag, Calendar, Wrench, Star, Settings, LogOut, Menu, X, Bell, Store, Users, Truck, ChartBar as BarChart3 } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingBag, Calendar, Wrench, Star, Settings, LogOut, Menu, X, Bell, Store, Users, Truck, ChartBar as BarChart3, FileUp } from 'lucide-react';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, profile, loading, signOut } = useAuth();
@@ -32,7 +32,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const navItems = [
     { href: '/dashboard', label: 'Overview', icon: LayoutDashboard, roles: ['vendor', 'admin', 'driver'] },
+    { href: '/dashboard/pos', label: 'Cashier / POS', icon: Store, roles: ['vendor', 'admin'] },
+    { href: '/dashboard/purchases', label: 'Purchases', icon: FileUp, roles: ['vendor', 'admin'] },
     { href: '/dashboard/orders', label: 'Orders', icon: ShoppingBag, roles: ['vendor', 'admin'] },
+    { href: '/dashboard/kitchen', label: 'Kitchen', icon: Package, roles: ['vendor', 'admin'] },
     { href: '/dashboard/products', label: 'Products', icon: Package, roles: ['vendor', 'admin'] },
     { href: '/dashboard/bookings', label: 'Bookings', icon: Calendar, roles: ['vendor', 'admin'] },
     { href: '/dashboard/service-requests', label: 'Service Requests', icon: Wrench, roles: ['vendor', 'admin'] },
@@ -69,13 +72,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                onClick={() => setSidebarOpen(false)}
+                className={`flex items-center gap-3 px-3 py-3 min-h-11 rounded-lg text-sm font-medium transition-colors ${
                   active
                     ? 'bg-blue-50 text-blue-700'
                     : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                 }`}
               >
-                <Icon className="w-4 h-4" />
+                <Icon className="w-5 h-5 shrink-0" />
                 {item.label}
               </Link>
             );
@@ -106,8 +110,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 lg:px-6">
-          <button onClick={() => setSidebarOpen(true)} className="lg:hidden">
-            <Menu className="w-5 h-5 text-slate-600" />
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(true)}
+            className="lg:hidden min-w-11 min-h-11 flex items-center justify-center -ml-2"
+            aria-label="Open menu"
+          >
+            <Menu className="w-6 h-6 text-slate-600" />
           </button>
 
           <div className="flex-1" />

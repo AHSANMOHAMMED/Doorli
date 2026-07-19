@@ -57,7 +57,12 @@ export async function POST(req: Request) {
       });
     });
 
-    return NextResponse.json({ success: true, message: 'Order synced to ERP successfully' });
+    return NextResponse.json({
+      success: true,
+      message: 'Order synced to ERP successfully',
+      invoiceNo,
+      saleId: invoiceNo,
+    });
   } catch (error) {
     console.error('ERP Internal API Error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
