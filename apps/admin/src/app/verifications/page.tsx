@@ -3,8 +3,16 @@
 import { useEffect, useState } from 'react';
 import { adminFetch } from '@/lib/api';
 
+type Vendor = {
+  id: string;
+  businessName: string;
+  category: string;
+  addressLine?: string | null;
+  user?: { fullName?: string; phone?: string };
+};
+
 export default function VerificationsPage() {
-  const [vendors, setVendors] = useState<any[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const load = () =>

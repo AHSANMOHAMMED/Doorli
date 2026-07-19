@@ -3,8 +3,18 @@
 import { useEffect, useState } from 'react';
 import { adminFetch } from '@/lib/api';
 
+type Driver = {
+  id: string;
+  vehicleType: string;
+  vehicleNumber?: string | null;
+  isOnline: boolean;
+  totalDeliveries: number;
+  earningsToday: number | string | null;
+  user?: { fullName?: string; phone?: string };
+};
+
 export default function DriversPage() {
-  const [drivers, setDrivers] = useState<any[]>([]);
+  const [drivers, setDrivers] = useState<Driver[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
