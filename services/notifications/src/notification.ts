@@ -82,7 +82,7 @@ async function sendFcmPush(payload: NotificationPayload): Promise<void> {
       where: { userId: payload.userId },
       select: { token: true },
     });
-    tokens = devices.map((d) => d.token);
+    tokens = devices.map((d: { token: string }) => d.token);
   } catch (err) {
     console.warn('[notifications] device token lookup failed', err);
   }
