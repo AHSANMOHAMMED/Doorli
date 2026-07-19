@@ -12,8 +12,8 @@ if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = prisma;
 }
 
-// Explicit named re-exports so workspace consumers (via dist/*.d.ts) can import
-// enums/namespaces that `export *` alone does not always surface under tsc.
-export { PrismaClient, Prisma, RideStatus, $Enums } from '@prisma/client';
+// Safe re-exports — enums as type-only so CI tsc does not require value exports
+export { PrismaClient, Prisma } from '@prisma/client';
+export type { RideStatus } from '@prisma/client';
 export * from '@prisma/client';
 export default prisma;

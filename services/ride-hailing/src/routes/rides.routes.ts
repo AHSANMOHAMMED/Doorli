@@ -1,7 +1,18 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { prisma, RideStatus } from '@doorli/db';
+import { prisma } from '@doorli/db';
+import type { RideStatus } from '@doorli/db';
 import { calculateFare } from '../pricingEngine.js';
+
+/** Runtime enum mirror — RideStatus is type-only from @doorli/db */
+const RIDE_STATUS = {
+  searching: 'searching',
+  assigned: 'assigned',
+  arrived: 'arrived',
+  in_transit: 'in_transit',
+  completed: 'completed',
+  cancelled: 'cancelled',
+} as const satisfies Record<string, RideStatus>;
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'doorli-dev-access-secret-change-in-prod';
@@ -168,7 +179,7 @@ router.post('/request-ride', requireAuth, async (req: Request, res: Response): P
         pickupLng: Number(pickupLng),
         dropoffLat: Number(dropoffLat),
         dropoffLng: Number(dropoffLng),
-        status: RideStatus.searching,
+        status: RIDE_STATUS.searching,
         baseFare: Number(baseFare),
         returnPremium,
         totalFare: fare,
@@ -191,14 +202,14 @@ router.post('/accept-ride', requireAuth, async (req: Request, res: Response): Pr
     const { driverId, rideId } = req.body;
 
     const ride = await prisma.rideRequest.findUnique({ where: { id: rideId } });
-    if (!ride || ride.status !== RideStatus.searching) {
+    if (!ride || ride.status !== RIDE_STATUS.searching) {
       res.status(400).json({ message: 'Ride no longer available' });
       return;
     }
 
     const updatedRide = await prisma.rideRequest.update({
       where: { id: rideId },
-      data: { driverId, status: RideStatus.assigned },
+      data: { driverId, status: RIDE_STATUS.assigned },
     });
 
     if (req.app.get('io')) {
@@ -213,10 +224,10 @@ router.post('/accept-ride', requireAuth, async (req: Request, res: Response): Pr
 });
 
 const TRANSITIONS: Record<string, RideStatus[]> = {
-  assigned: [RideStatus.arrived, RideStatus.cancelled],
-  arrived: [RideStatus.in_transit, RideStatus.cancelled],
-  in_transit: [RideStatus.completed, RideStatus.cancelled],
-  searching: [RideStatus.cancelled, RideStatus.assigned],
+  assigned: [RIDE_STATUS.arrived, RIDE_STATUS.cancelled],
+  arrived: [RIDE_STATUS.in_transit, RIDE_STATUS.cancelled],
+  in_transit: [RIDE_STATUS.completed, RIDE_STATUS.cancelled],
+  searching: [RIDE_STATUS.cancelled, RIDE_STATUS.assigned],
 };
 
 // Static paths before /:id

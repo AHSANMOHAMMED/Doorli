@@ -1,9 +1,20 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { prisma, RideStatus } from '@doorli/db';
+import { prisma } from '@doorli/db';
+import type { RideStatus } from '@doorli/db';
 import { authenticateToken } from '../../middleware/authenticateToken.js';
 import { AppError } from '../../middleware/errorHandler.js';
 import { getSocketServer } from '../../lib/socket.js';
+
+/** Runtime enum mirror — RideStatus is type-only from @doorli/db */
+const RIDE_STATUS = {
+  searching: 'searching',
+  assigned: 'assigned',
+  arrived: 'arrived',
+  in_transit: 'in_transit',
+  completed: 'completed',
+  cancelled: 'cancelled',
+} as const satisfies Record<string, RideStatus>;
 
 const ridesRouter = Router();
 
@@ -67,7 +78,7 @@ ridesRouter.post('/', authenticateToken, async (req, res, next) => {
         dropoffLng: body.dropoffLng,
         baseFare: fare.baseFare,
         totalFare: fare.totalFare,
-        status: RideStatus.searching,
+        status: RIDE_STATUS.searching,
       },
     });
 
@@ -125,7 +136,7 @@ ridesRouter.patch('/:id/cancel', authenticateToken, async (req, res, next) => {
     if (!ride || ride.customerId !== req.user!.id) throw new AppError(404, 'Ride not found');
     const updated = await prisma.rideRequest.update({
       where: { id: ride.id },
-      data: { status: RideStatus.cancelled },
+      data: { status: RIDE_STATUS.cancelled },
     });
     res.json({ success: true, data: updated });
   } catch (err) {
