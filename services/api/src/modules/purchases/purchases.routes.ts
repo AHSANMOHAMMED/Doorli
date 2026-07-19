@@ -6,6 +6,7 @@ import { authenticateToken, requireRole } from '../../middleware/authenticateTok
 import { AppError } from '../../middleware/errorHandler.js';
 import { parseInvoiceFile, normalizeKey } from './invoiceExtract.js';
 import { matchInvoiceLine } from './matchProducts.js';
+import { asSingle } from '../../lib/httpParams.js';
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -20,7 +21,11 @@ const upload = multer({
         'application/vnd.ms-excel',
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       ].includes(file.mimetype);
-    cb(ok ? null : new Error('Only CSV, Excel, PDF, or TXT invoices are allowed'), ok);
+    if (!ok) {
+      cb(new Error('Only CSV, Excel, PDF, or TXT invoices are allowed'));
+      return;
+    }
+    cb(null, true);
   },
 });
 
@@ -38,6 +43,16 @@ async function getVendorForUser(userId: string, role: string, vendorId?: string)
   return v;
 }
 
+function purchaseIdParam(req: Request): string {
+  const id = asSingle(req.params.id);
+  if (!id) throw new AppError(400, 'Purchase id required');
+  return id;
+}
+
+function vendorIdQuery(req: Request): string {
+  return asSingle(req.query.vendorId as string | string[] | undefined) || '';
+}
+
 /** Upload supplier invoice → draft purchase with matched suggestions */
 purchasesRouter.post(
   '/import',
@@ -47,7 +62,7 @@ purchasesRouter.post(
       const vendor = await getVendorForUser(
         req.user!.id,
         req.user!.role,
-        String(req.body.vendorId || req.query.vendorId || ''),
+        asSingle(req.body.vendorId) || vendorIdQuery(req),
       );
       if (!req.file) throw new AppError(400, 'Upload an invoice file (CSV, Excel, or PDF)');
 
@@ -140,7 +155,7 @@ purchasesRouter.post(
 
 purchasesRouter.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const vendor = await getVendorForUser(req.user!.id, req.user!.role, String(req.query.vendorId || ''));
+    const vendor = await getVendorForUser(req.user!.id, req.user!.role, vendorIdQuery(req));
     const list = await prisma.supplierPurchase.findMany({
       where: { vendorId: vendor.id },
       orderBy: { createdAt: 'desc' },
@@ -156,7 +171,7 @@ purchasesRouter.get('/', async (req: Request, res: Response, next: NextFunction)
 /** Manually add / list aliases for local-language names (before /:id) */
 purchasesRouter.get('/aliases', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const vendor = await getVendorForUser(req.user!.id, req.user!.role, String(req.query.vendorId || ''));
+    const vendor = await getVendorForUser(req.user!.id, req.user!.role, vendorIdQuery(req));
     const aliases = await prisma.productAlias.findMany({
       where: { vendorId: vendor.id },
       include: { product: { select: { id: true, name: true } } },
@@ -199,9 +214,9 @@ purchasesRouter.post('/aliases', async (req: Request, res: Response, next: NextF
 
 purchasesRouter.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const vendor = await getVendorForUser(req.user!.id, req.user!.role, String(req.query.vendorId || ''));
+    const vendor = await getVendorForUser(req.user!.id, req.user!.role, vendorIdQuery(req));
     const purchase = await prisma.supplierPurchase.findFirst({
-      where: { id: req.params.id, vendorId: vendor.id },
+      where: { id: purchaseIdParam(req), vendorId: vendor.id },
       include: { items: { orderBy: { lineNo: 'asc' } } },
     });
     if (!purchase) throw new AppError(404, 'Purchase not found');
@@ -242,10 +257,10 @@ const itemPatchSchema = z.object({
 /** Vendor corrects line mappings before stock update */
 purchasesRouter.patch('/:id/items', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const vendor = await getVendorForUser(req.user!.id, req.user!.role, String(req.query.vendorId || ''));
+    const vendor = await getVendorForUser(req.user!.id, req.user!.role, vendorIdQuery(req));
     const body = itemPatchSchema.parse(req.body);
     const purchase = await prisma.supplierPurchase.findFirst({
-      where: { id: req.params.id, vendorId: vendor.id },
+      where: { id: purchaseIdParam(req), vendorId: vendor.id },
     });
     if (!purchase) throw new AppError(404, 'Purchase not found');
     if (purchase.status !== SupplierPurchaseStatus.draft) {
@@ -326,9 +341,9 @@ purchasesRouter.patch('/:id/items', async (req: Request, res: Response, next: Ne
  */
 purchasesRouter.post('/:id/confirm', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const vendor = await getVendorForUser(req.user!.id, req.user!.role, String(req.query.vendorId || ''));
+    const vendor = await getVendorForUser(req.user!.id, req.user!.role, vendorIdQuery(req));
     const purchase = await prisma.supplierPurchase.findFirst({
-      where: { id: req.params.id, vendorId: vendor.id },
+      where: { id: purchaseIdParam(req), vendorId: vendor.id },
       include: { items: { orderBy: { lineNo: 'asc' } } },
     });
     if (!purchase) throw new AppError(404, 'Purchase not found');
@@ -451,9 +466,9 @@ purchasesRouter.post('/:id/confirm', async (req: Request, res: Response, next: N
 
 purchasesRouter.post('/:id/cancel', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const vendor = await getVendorForUser(req.user!.id, req.user!.role, String(req.query.vendorId || ''));
+    const vendor = await getVendorForUser(req.user!.id, req.user!.role, vendorIdQuery(req));
     const purchase = await prisma.supplierPurchase.findFirst({
-      where: { id: req.params.id, vendorId: vendor.id },
+      where: { id: purchaseIdParam(req), vendorId: vendor.id },
     });
     if (!purchase) throw new AppError(404, 'Purchase not found');
     if (purchase.status === SupplierPurchaseStatus.confirmed) {

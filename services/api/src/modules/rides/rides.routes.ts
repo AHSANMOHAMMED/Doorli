@@ -5,6 +5,7 @@ import type { RideStatus } from '@doorli/db';
 import { authenticateToken } from '../../middleware/authenticateToken.js';
 import { AppError } from '../../middleware/errorHandler.js';
 import { getSocketServer } from '../../lib/socket.js';
+import { asSingle } from '../../lib/httpParams.js';
 
 /** Runtime enum mirror — RideStatus is type-only from @doorli/db */
 const RIDE_STATUS = {
@@ -119,7 +120,9 @@ ridesRouter.get('/my', authenticateToken, async (req, res, next) => {
 
 ridesRouter.get('/:id', authenticateToken, async (req, res, next) => {
   try {
-    const ride = await prisma.rideRequest.findUnique({ where: { id: req.params.id } });
+    const id = asSingle(req.params.id);
+    if (!id) throw new AppError(400, 'Ride id required');
+    const ride = await prisma.rideRequest.findUnique({ where: { id } });
     if (!ride) throw new AppError(404, 'Ride not found');
     if (ride.customerId !== req.user!.id && req.user!.role !== 'admin' && req.user!.role !== 'driver') {
       throw new AppError(403, 'Access denied');
@@ -132,7 +135,9 @@ ridesRouter.get('/:id', authenticateToken, async (req, res, next) => {
 
 ridesRouter.patch('/:id/cancel', authenticateToken, async (req, res, next) => {
   try {
-    const ride = await prisma.rideRequest.findUnique({ where: { id: req.params.id } });
+    const id = asSingle(req.params.id);
+    if (!id) throw new AppError(400, 'Ride id required');
+    const ride = await prisma.rideRequest.findUnique({ where: { id } });
     if (!ride || ride.customerId !== req.user!.id) throw new AppError(404, 'Ride not found');
     const updated = await prisma.rideRequest.update({
       where: { id: ride.id },

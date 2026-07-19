@@ -325,7 +325,7 @@ async function syncOrderToErpIfLinked(orderId: string) {
     marketplaceOrderId: order.id,
     marketplaceOrderNumber: order.orderNumber,
     totalAmount: Number(order.totalAmount),
-    customerInfo: { name: order.customer.fullName, phone: order.customer.phone },
+    customerInfo: { name: order.customer.fullName, phone: order.customer.phone ?? undefined },
     items: order.items.map((i) => ({
       productId: i.productId,
       name: i.product.name,

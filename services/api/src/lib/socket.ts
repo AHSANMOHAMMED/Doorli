@@ -13,7 +13,7 @@ export function getSocketServer(): Server | null {
 }
 
 export function emitOrderEvent(
-  event: 'order:new_order' | 'order:status_update',
+  event: 'order:new_order' | 'order:status_update' | 'order:pos_sale',
   rooms: string[],
   payload: unknown,
 ): void {
