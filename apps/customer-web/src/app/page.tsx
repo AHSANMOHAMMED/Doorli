@@ -126,11 +126,10 @@ type Vendor = {
 export default function Home() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loggedIn, setLoggedIn] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(() => !!getCustomerToken());
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setLoggedIn(!!getCustomerToken());
     let cancelled = false;
     (async () => {
       try {

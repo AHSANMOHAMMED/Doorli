@@ -38,7 +38,6 @@ function SearchInner() {
 
   useEffect(() => {
     if (!q) {
-      setHits([]);
       return;
     }
     fetch(`${getApiBase()}/api/v1/search/products?q=${encodeURIComponent(q)}`)

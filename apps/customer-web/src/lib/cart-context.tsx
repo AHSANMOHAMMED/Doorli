@@ -23,28 +23,22 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([]);
-  const [isMounted, setIsMounted] = useState(false);
-
-  // Hydrate from localStorage
-  useEffect(() => {
-    setIsMounted(true);
+  const [items, setItems] = useState<CartItem[]>(() => {
+    if (typeof window === "undefined") return [];
     const saved = localStorage.getItem("doorli_customer_cart");
-    if (saved) {
-      try {
-        setItems(JSON.parse(saved));
-      } catch (e) {
-        console.error("Failed to parse cart data", e);
-      }
+    if (!saved) return [];
+    try {
+      return JSON.parse(saved);
+    } catch (e) {
+      console.error("Failed to parse cart data", e);
+      return [];
     }
-  }, []);
+  });
 
   // Save to localStorage
   useEffect(() => {
-    if (isMounted) {
-      localStorage.setItem("doorli_customer_cart", JSON.stringify(items));
-    }
-  }, [items, isMounted]);
+    localStorage.setItem("doorli_customer_cart", JSON.stringify(items));
+  }, [items]);
 
   const addItem = (newItem: Omit<CartItem, "quantity">) => {
     setItems((prev) => {

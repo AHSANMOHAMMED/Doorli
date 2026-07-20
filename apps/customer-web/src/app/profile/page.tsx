@@ -10,16 +10,15 @@ type City = { id: string; name: string; city?: string | null };
 
 export default function ProfilePage() {
   const router = useRouter();
-  const [loggedIn, setLoggedIn] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(() => !!getCustomerToken());
   const [loyalty, setLoyalty] = useState<Loyalty | null>(null);
   const [cities, setCities] = useState<City[]>([]);
-  const [city, setCity] = useState("Colombo");
+  const [city, setCity] = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("doorli_city") || "Colombo" : "Colombo",
+  );
 
   useEffect(() => {
-    const token = !!getCustomerToken();
-    setLoggedIn(token);
-    const saved = localStorage.getItem("doorli_city");
-    if (saved) setCity(saved);
+    const token = loggedIn;
     apiFetch<City[]>("/cities")
       .then((d) => setCities(Array.isArray(d) ? d : []))
       .catch(() => undefined);
@@ -28,7 +27,7 @@ export default function ProfilePage() {
         .then(setLoyalty)
         .catch(() => undefined);
     }
-  }, []);
+  }, [loggedIn]);
 
   return (
     <main className="min-h-screen doorli-hero-plane text-white px-5 pt-10 pb-8">
