@@ -1,8 +1,13 @@
 import { z } from 'zod';
 import dotenv from 'dotenv';
+import fs from 'fs';
 import path from 'path';
 
-dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
+// Load repo-root .env when present (local/dev). CI has no .env — use schema defaults.
+const envPath = path.resolve(__dirname, '../../../.env');
+if (fs.existsSync(envPath)) {
+  dotenv.config({ path: envPath, override: false });
+}
 
 const optionalEmpty = <T extends z.ZodTypeAny>(schema: T) =>
   z.preprocess((val) => (val === '' || val === undefined ? undefined : val), schema);
