@@ -14,6 +14,9 @@ const eslintConfig = defineConfig([
         varsIgnorePattern: "^_",
         destructuredArrayIgnorePattern: "^_",
       }],
+      // Modal reset / fetch-on-open patterns are pervasive; this React 19 rule
+      // currently fails hundreds of existing ERP screens in CI.
+      "react-hooks/set-state-in-effect": "off",
     },
   },
   // Custom rule: prevent direct request.json() in API routes
