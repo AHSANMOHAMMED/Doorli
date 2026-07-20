@@ -210,11 +210,52 @@ export async function getPaymentById(paymentId: string, userId: string, userRole
   return payment;
 }
 
-export async function getPaymentByReference(referenceId: string, userId: string) {
-  return prisma.payment.findFirst({
-    where: { referenceId, userId },
+export async function getPaymentByReference(referenceId: string, userId: string, userRole?: string) {
+  const payment = await prisma.payment.findFirst({
+    where: { referenceId },
     orderBy: { createdAt: 'desc' },
   });
+  if (!payment) return null;
+  if (userRole === 'customer' && payment.userId !== userId) {
+    throw new AppError(403, 'Access denied');
+  }
+  return payment;
+}
+
+/** Driver/vendor/admin: find or create COD payment for an order, then mark paid. */
+export async function collectCodForOrder(orderId: string, actorRole: string) {
+  if (!['driver', 'vendor', 'admin'].includes(actorRole)) {
+    throw new AppError(403, 'Access denied');
+  }
+
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  if (!order) throw new AppError(404, 'Order not found');
+
+  let payment = await prisma.payment.findFirst({
+    where: {
+      referenceId: orderId,
+      referenceType: PaymentReferenceType.order,
+      method: PaymentMethod.cod,
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  if (!payment) {
+    payment = await prisma.payment.create({
+      data: {
+        referenceId: orderId,
+        referenceType: PaymentReferenceType.order,
+        userId: order.customerId,
+        amount: order.totalAmount,
+        method: PaymentMethod.cod,
+        gateway: 'manual',
+        status: PaymentStatus.pending,
+        gatewayTransactionId: `cod_${Date.now()}`,
+      },
+    });
+  }
+
+  return collectCodPayment(payment.id, actorRole);
 }
 
 async function createStripePaymentIntent(

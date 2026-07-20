@@ -11,7 +11,12 @@ type TrackData = {
   status: string;
   estimatedDeliveryTime?: string | null;
   vendor?: { businessName?: string; phone?: string | null };
-  deliveryAddress?: { addressLine?: string; city?: string | null };
+  deliveryAddress?: {
+    addressLine?: string;
+    city?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+  };
   driver?: {
     user?: { fullName?: string; phone?: string | null };
     vehicleNumber?: string | null;
@@ -27,6 +32,7 @@ export default function TrackOrderPage() {
   const router = useRouter();
   const [data, setData] = useState<TrackData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [liveCoords, setLiveCoords] = useState<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => {
     if (!getCustomerToken()) {
@@ -37,7 +43,13 @@ export default function TrackOrderPage() {
     const load = () =>
       apiFetch<TrackData>(`/orders/${id}/track`)
         .then((d) => {
-          if (alive) setData(d);
+          if (!alive) return;
+          setData(d);
+          const lat = d.driver?.currentLatitude;
+          const lng = d.driver?.currentLongitude;
+          if (lat != null && lng != null && Number.isFinite(Number(lat)) && Number.isFinite(Number(lng))) {
+            setLiveCoords({ lat: Number(lat), lng: Number(lng) });
+          }
         })
         .catch((e) => {
           if (alive) setError(e.message);
@@ -56,6 +68,13 @@ export default function TrackOrderPage() {
         STEPS.findIndex((s) => s === data.status.replace(/cancelled|failed/, "pending")),
       )
     : 0;
+
+  const mapLat = liveCoords?.lat ?? (data?.driver?.currentLatitude != null ? Number(data.driver.currentLatitude) : null);
+  const mapLng = liveCoords?.lng ?? (data?.driver?.currentLongitude != null ? Number(data.driver.currentLongitude) : null);
+  const hasMap = mapLat != null && mapLng != null && Number.isFinite(mapLat) && Number.isFinite(mapLng);
+  const osmEmbed = hasMap
+    ? `https://www.openstreetmap.org/export/embed.html?bbox=${mapLng! - 0.02}%2C${mapLat! - 0.015}%2C${mapLng! + 0.02}%2C${mapLat! + 0.015}&layer=mapnik&marker=${mapLat}%2C${mapLng}`
+    : null;
 
   return (
     <main className="min-h-screen doorli-hero-plane text-white relative">
@@ -114,9 +133,29 @@ export default function TrackOrderPage() {
                 <p>{data.driver.user?.fullName || "Driver"}</p>
                 {data.driver.vehicleNumber && <p className="text-white/60">{data.driver.vehicleNumber}</p>}
                 {data.driver.user?.phone && <p className="text-white/60">{data.driver.user.phone}</p>}
+                {hasMap && (
+                  <p className="text-[var(--doorli-mint)] pt-2 font-mono text-xs">
+                    GPS {mapLat!.toFixed(5)}, {mapLng!.toFixed(5)}
+                  </p>
+                )}
               </div>
             ) : (
               <p className="text-sm text-white/50">Waiting for a driver / kitchen prep…</p>
+            )}
+
+            {osmEmbed && (
+              <div className="overflow-hidden rounded-xl border border-white/10 aspect-[4/3] bg-black/40">
+                <iframe
+                  title="Driver location map"
+                  src={osmEmbed}
+                  className="w-full h-full border-0"
+                  loading="lazy"
+                />
+              </div>
+            )}
+
+            {!hasMap && data.driver && (
+              <p className="text-xs text-white/45">Driver GPS will appear here once they go online.</p>
             )}
 
             {data.estimatedDeliveryTime && (

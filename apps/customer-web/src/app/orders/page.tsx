@@ -9,6 +9,8 @@ type Order = {
   id: string;
   orderNumber: string;
   status: string;
+  paymentStatus?: string;
+  paymentMethod?: string;
   totalAmount: number | string;
   createdAt: string;
   vendor?: { id: string; businessName: string };
@@ -54,7 +56,9 @@ export default function MyOrdersPage() {
                   <div className="font-semibold">#{o.orderNumber}</div>
                   <div className="text-sm text-white/55 mt-1">{o.vendor?.businessName ?? "Vendor"}</div>
                   <div className="text-xs text-white/40 mt-2 capitalize">
-                    {o.status.replace(/_/g, " ")} · {new Date(o.createdAt).toLocaleString()}
+                    {o.status.replace(/_/g, " ")} · pay {(o.paymentStatus || "pending").replace(/_/g, " ")}
+                    {o.paymentMethod ? ` (${o.paymentMethod})` : ""} ·{" "}
+                    {new Date(o.createdAt).toLocaleString()}
                   </div>
                 </div>
                 <div className="text-right space-y-2">

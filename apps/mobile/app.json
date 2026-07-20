@@ -7,22 +7,37 @@
     "scheme": "doorli",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0B1B2B"
+    },
     "extra": {
-      "apiUrl": "http://140.245.207.93"
+      "apiUrl": "http://140.245.207.93",
+      "eas": {
+        "projectId": "doorli-preview"
+      }
     },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "app.doorli.mobile",
       "infoPlist": {
-        "NSCameraUsageDescription": "Doorli scans product barcodes at the cashier to add items to the bill."
+        "NSCameraUsageDescription": "Doorli scans product barcodes at the cashier to add items to the bill.",
+        "NSLocationWhenInUseUsageDescription": "Doorli shares your location while online so customers can track deliveries.",
+        "UIBackgroundModes": ["location"]
       }
     },
     "android": {
       "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#2563eb"
       },
       "package": "app.doorli.mobile",
-      "permissions": ["CAMERA"]
+      "permissions": ["CAMERA", "ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-router",
@@ -30,6 +45,19 @@
         "expo-camera",
         {
           "cameraPermission": "Allow Doorli to scan product barcodes for cashier billing."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow Doorli to share your location for live delivery tracking."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#2563eb"
         }
       ]
     ],

@@ -17,8 +17,15 @@ curl -sf -X POST "$BASE/api/v1/rides/estimate" \
   -d '{"pickupLat":6.93,"pickupLng":79.84,"dropoffLat":6.92,"dropoffLng":79.86}' | grep -q '"success":true'
 
 echo "Login…"
-curl -sf -X POST "$BASE/api/v1/auth/login" \
+TOKEN=$(curl -sf -X POST "$BASE/api/v1/auth/login" \
   -H 'Content-Type: application/json' \
-  -d '{"identifier":"customer@doorli.test","password":"Doorli123!"}' | grep -q accessToken
+  -d '{"identifier":"customer@doorli.test","password":"Doorli123!"}' | tee /tmp/doorli-smoke-login.json | sed -n 's/.*"accessToken":"\([^"]*\)".*/\1/p')
+test -n "$TOKEN"
+
+echo "Promo validate…"
+curl -sf -X POST "$BASE/api/v1/promos/validate" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"code":"WELCOME50","orderAmount":1000}' | grep -q '"success":true'
 
 echo "OK — smoke passed against $BASE"

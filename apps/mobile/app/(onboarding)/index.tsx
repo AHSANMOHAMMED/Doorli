@@ -174,7 +174,7 @@ function DemoVisual({ kind }: { kind: 'brand' | 'home' | 'nav' | 'vendor' }) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
-  slide: { paddingHorizontal: 28, paddingTop: 24, justifyItems: 'center' },
+  slide: { paddingHorizontal: 28, paddingTop: 24, justifyContent: 'center' },
   brand: {
     alignSelf: 'flex-start',
     color: '#5DCAA5',

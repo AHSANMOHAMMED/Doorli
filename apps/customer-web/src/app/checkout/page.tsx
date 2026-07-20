@@ -7,14 +7,46 @@ import { useCart } from "@/lib/cart-context";
 import { apiFetch, getCustomerToken } from "@/lib/api";
 import { ArrowLeft, CheckCircle2, Minus, Plus, Trash2 } from "lucide-react";
 
+type PaymentInit = {
+  id: string;
+  clientSecret?: string | null;
+  gateway?: string;
+  payHere?: Record<string, string> | null;
+};
+
+function openPayHereCheckout(fields: Record<string, string>) {
+  const action =
+    process.env.NEXT_PUBLIC_PAYHERE_CHECKOUT_URL ||
+    "https://sandbox.payhere.lk/pay/checkout";
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = action;
+  form.target = "_blank";
+  for (const [key, value] of Object.entries(fields)) {
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = key;
+    input.value = value;
+    form.appendChild(input);
+  }
+  document.body.appendChild(form);
+  form.submit();
+  form.remove();
+}
+
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, updateQuantity, totalPrice, clearCart } = useCart();
   const [address, setAddress] = useState("123 Main Street, Colombo 03");
   const [promoCode, setPromoCode] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState("");
   const [discount, setDiscount] = useState(0);
+  const [paymentMethod, setPaymentMethod] = useState<"cod" | "card">("cod");
+  const [cardGateway, setCardGateway] = useState<"stripe" | "payhere">("stripe");
   const [placing, setPlacing] = useState(false);
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
+  const [orderId, setOrderId] = useState<string | null>(null);
+  const [paymentNote, setPaymentNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const deliveryFee = 300;
@@ -29,36 +61,77 @@ export default function CheckoutPage() {
     const vendorId = items[0].vendorId;
     setPlacing(true);
     setError(null);
+    setPaymentNote(null);
     try {
-      const order = await apiFetch<{ id: string; orderNumber: string }>("/orders", {
-        method: "POST",
-        body: JSON.stringify({
-          vendorId,
-          paymentMethod: "cod",
-          deliveryAddress: address,
-          items: items.map((i) => ({
-            productId: i.id,
-            quantity: i.quantity,
-            unitPrice: i.price,
-          })),
-        }),
-      });
-      // Initiate COD payment record
-      try {
-        await apiFetch("/payments/initiate", {
+      const order = await apiFetch<{ id: string; orderNumber: string; totalAmount?: number }>(
+        "/orders",
+        {
           method: "POST",
           body: JSON.stringify({
-            referenceId: (order as { id?: string }).id,
+            vendorId,
+            paymentMethod,
+            deliveryAddress: address,
+            ...(appliedPromo ? { promoCode: appliedPromo } : {}),
+            items: items.map((i) => ({
+              productId: i.id,
+              quantity: i.quantity,
+              unitPrice: i.price,
+            })),
+          }),
+        },
+      );
+
+      const payAmount = Number(order.totalAmount ?? finalTotal);
+      const gateway = paymentMethod === "cod" ? "manual" : cardGateway;
+
+      try {
+        const payment = await apiFetch<PaymentInit>("/payments/initiate", {
+          method: "POST",
+          body: JSON.stringify({
+            referenceId: order.id,
             referenceType: "order",
-            amount: finalTotal,
-            method: "cod",
-            gateway: "manual",
+            amount: payAmount,
+            method: paymentMethod,
+            gateway,
           }),
         });
+
+        if (paymentMethod === "card") {
+          if (payment.clientSecret?.startsWith("pi_dev_")) {
+            await apiFetch(`/payments/${payment.id}/confirm-dev`, { method: "POST" });
+            setPaymentNote("Dev card payment confirmed.");
+          } else if (payment.payHere && Object.keys(payment.payHere).length) {
+            openPayHereCheckout(payment.payHere);
+            setPaymentNote("PayHere checkout opened in a new tab.");
+          } else if (payment.clientSecret && process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
+            const { loadStripe } = await import("@stripe/stripe-js");
+            const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
+            if (stripe) {
+              const { error: stripeError } = await stripe.confirmPayment({
+                clientSecret: payment.clientSecret,
+                confirmParams: {
+                  return_url: `${window.location.origin}/orders/${order.id}/track`,
+                },
+                redirect: "if_required",
+              });
+              if (stripeError) {
+                setPaymentNote(stripeError.message || "Card confirmation needed — pay from order detail.");
+              } else {
+                setPaymentNote("Card payment submitted.");
+              }
+            }
+          } else {
+            setPaymentNote(
+              "Card initiated. Set NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY for live Stripe, or use COD.",
+            );
+          }
+        }
       } catch {
         // order still created
       }
+
       setOrderNumber(order.orderNumber);
+      setOrderId(order.id);
       clearCart();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Order failed");
@@ -73,13 +146,17 @@ export default function CheckoutPage() {
         <div className="bg-neutral-900 border border-white/10 rounded-3xl p-12 text-center max-w-md w-full">
           <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-4" />
           <h1 className="text-3xl font-bold mb-2">Order placed</h1>
-          <p className="text-neutral-400 mb-6">Order {orderNumber} is with the vendor.</p>
+          <p className="text-neutral-400 mb-2">Order {orderNumber} is with the vendor.</p>
+          {paymentNote && <p className="text-sm text-emerald-300/90 mb-6">{paymentNote}</p>}
           <div className="space-y-3">
             <Link
-              href="/orders"
+              href={orderId ? `/orders/${orderId}/track` : "/orders"}
               className="block w-full py-3.5 bg-white text-black rounded-xl font-semibold min-h-11"
             >
-              View orders & track
+              Track order
+            </Link>
+            <Link href="/orders" className="block w-full py-3 text-neutral-400">
+              View orders
             </Link>
             <Link href="/" className="block w-full py-3 text-neutral-400">
               Back home
@@ -117,7 +194,11 @@ export default function CheckoutPage() {
                 className="flex-1 bg-neutral-900 border border-white/10 rounded-xl px-4 py-3 min-h-11 uppercase"
                 placeholder="Promo code"
                 value={promoCode}
-                onChange={(e) => setPromoCode(e.target.value)}
+                onChange={(e) => {
+                  setPromoCode(e.target.value);
+                  setAppliedPromo("");
+                  setDiscount(0);
+                }}
               />
               <button
                 type="button"
@@ -129,9 +210,11 @@ export default function CheckoutPage() {
                       body: JSON.stringify({ code: promoCode, orderAmount: totalPrice + deliveryFee }),
                     });
                     setDiscount(Number(d.discount) || 0);
+                    setAppliedPromo(promoCode.trim().toUpperCase());
                     setError(null);
                   } catch (e) {
                     setDiscount(0);
+                    setAppliedPromo("");
                     setError(e instanceof Error ? e.message : "Invalid promo");
                   }
                 }}
@@ -139,6 +222,57 @@ export default function CheckoutPage() {
                 Apply
               </button>
             </div>
+            {appliedPromo && discount > 0 && (
+              <p className="text-sm text-emerald-400">Promo {appliedPromo} applied (−LKR {discount})</p>
+            )}
+
+            <div className="flex gap-2">
+              {(
+                [
+                  { key: "cod" as const, label: "Cash on delivery" },
+                  { key: "card" as const, label: "Card" },
+                ] as const
+              ).map((m) => (
+                <button
+                  key={m.key}
+                  type="button"
+                  onClick={() => setPaymentMethod(m.key)}
+                  className={`flex-1 py-3 min-h-11 rounded-xl border font-medium ${
+                    paymentMethod === m.key
+                      ? "bg-indigo-500/30 border-indigo-400"
+                      : "bg-neutral-900 border-white/10 text-neutral-400"
+                  }`}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+            {paymentMethod === "card" && (
+              <div className="flex gap-2 text-sm">
+                {(
+                  [
+                    { key: "stripe" as const, label: "Stripe" },
+                    { key: "payhere" as const, label: "PayHere" },
+                  ] as const
+                ).map((g) => (
+                  <button
+                    key={g.key}
+                    type="button"
+                    onClick={() => setCardGateway(g.key)}
+                    className={`px-3 py-2 rounded-lg border ${
+                      cardGateway === g.key
+                        ? "border-emerald-400 text-emerald-300"
+                        : "border-white/10 text-neutral-500"
+                    }`}
+                  >
+                    {g.label}
+                  </button>
+                ))}
+                <p className="text-neutral-500 self-center text-xs">
+                  Without gateway keys, Stripe uses confirm-dev.
+                </p>
+              </div>
+            )}
 
             <div className="bg-neutral-900 border border-white/10 rounded-3xl p-6 space-y-4">
               {items.map((item) => (
@@ -187,7 +321,11 @@ export default function CheckoutPage() {
                 onClick={handlePlaceOrder}
                 className="w-full py-4 min-h-12 bg-indigo-500 rounded-xl font-bold disabled:opacity-50"
               >
-                {placing ? "Placing…" : "Place order (COD)"}
+                {placing
+                  ? "Placing…"
+                  : paymentMethod === "cod"
+                    ? `Place order (COD) · LKR ${finalTotal.toLocaleString()}`
+                    : `Pay by card · LKR ${finalTotal.toLocaleString()}`}
               </button>
             </div>
           </div>

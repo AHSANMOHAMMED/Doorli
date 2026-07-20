@@ -14,7 +14,7 @@ export default function Index() {
     (async () => {
       const done = await AsyncStorage.getItem(ONBOARDING_KEY);
       if (!done) {
-        router.replace('/(onboarding)');
+        router.replace("/(onboarding)" as any);
         return;
       }
       if (!isAuthenticated || !user) {
@@ -22,7 +22,7 @@ export default function Index() {
         return;
       }
       if (user.role === 'vendor') {
-        router.replace('/(vendor)/hub');
+        router.replace("/(vendor)/hub" as any);
       } else if (user.role === 'driver') {
         router.replace('/(driver)/jobs');
       } else {

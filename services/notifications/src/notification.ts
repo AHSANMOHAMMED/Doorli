@@ -62,6 +62,9 @@ export class NotificationService {
         if (channels.includes('sms')) {
           await sendSms(job.data);
         }
+        if (channels.includes('in_app')) {
+          await persistInApp(job.data);
+        }
       },
       { connection: { url: this.redisUrl, maxRetriesPerRequest: null } },
     );
@@ -69,6 +72,34 @@ export class NotificationService {
 
   async close(): Promise<void> {
     await this.queue.close();
+  }
+}
+
+async function persistInApp(payload: NotificationPayload): Promise<void> {
+  try {
+    // Idempotent-ish: skip if an identical title/body was just written by API enqueue
+    const recent = await prisma.notification.findFirst({
+      where: {
+        userId: payload.userId,
+        title: payload.title,
+        body: payload.body,
+        type: payload.type,
+        sentAt: { gte: new Date(Date.now() - 60_000) },
+      },
+    });
+    if (recent) return;
+
+    await prisma.notification.create({
+      data: {
+        userId: payload.userId,
+        title: payload.title,
+        body: payload.body,
+        type: payload.type,
+        data: payload.data ? (JSON.parse(JSON.stringify(payload.data)) as object) : undefined,
+      },
+    });
+  } catch (err) {
+    console.warn('[notifications] in_app persist failed', err);
   }
 }
 

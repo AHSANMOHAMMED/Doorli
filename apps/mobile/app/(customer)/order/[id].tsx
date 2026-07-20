@@ -183,6 +183,16 @@ export default function OrderDetailScreen() {
         <GlassCard style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Payment Summary</Text>
           <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Method</Text>
+            <Text style={styles.summaryValue}>{(order.paymentMethod || 'cod').toUpperCase()}</Text>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Status</Text>
+            <Text style={styles.summaryValue}>
+              {(order.paymentStatus || 'pending').replace(/_/g, ' ')}
+            </Text>
+          </View>
+          <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Subtotal</Text>
             <Text style={styles.summaryValue}>{formatPrice(Number(order.subtotal))}</Text>
           </View>

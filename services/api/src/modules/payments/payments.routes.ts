@@ -50,6 +50,32 @@ paymentsRouter.post('/initiate', validate(initiatePaymentSchema), async (req, re
   }
 });
 
+paymentsRouter.post('/collect-cod-for-order', async (req, res, next) => {
+  try {
+    if (!req.user) throw new AppError(401, 'Authentication required');
+    const orderId = String(req.body?.orderId || '');
+    if (!orderId) throw new AppError(400, 'orderId required');
+    const payment = await paymentsService.collectCodForOrder(orderId, req.user.role);
+    res.json({ success: true, data: payment });
+  } catch (err) {
+    next(err);
+  }
+});
+
+paymentsRouter.get('/by-reference/:referenceId', async (req, res, next) => {
+  try {
+    if (!req.user) throw new AppError(401, 'Authentication required');
+    const payment = await paymentsService.getPaymentByReference(
+      req.params.referenceId,
+      req.user.id,
+      req.user.role,
+    );
+    res.json({ success: true, data: payment });
+  } catch (err) {
+    next(err);
+  }
+});
+
 paymentsRouter.post('/:id/collect-cod', async (req, res, next) => {
   try {
     if (!req.user) throw new AppError(401, 'Authentication required');

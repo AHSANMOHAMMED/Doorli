@@ -77,10 +77,10 @@ export default function VendorAdminScreen() {
       </Text>
 
       <View style={styles.quick}>
-        <TouchableOpacity style={styles.qBtn} onPress={() => router.push('/(vendor)/cashier')}>
+        <TouchableOpacity style={styles.qBtn} onPress={() => router.push("/(vendor)/cashier" as any)}>
           <Text style={styles.qText}>Open cashier</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.qBtn} onPress={() => router.push('/(vendor)/stock')}>
+        <TouchableOpacity style={styles.qBtn} onPress={() => router.push("/(vendor)/stock" as any)}>
           <Text style={styles.qText}>Stock board</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.qBtn} onPress={() => router.push('/(vendor)/orders')}>

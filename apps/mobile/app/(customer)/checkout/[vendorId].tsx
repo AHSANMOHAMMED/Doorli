@@ -4,10 +4,9 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  ActivityIndicator,
-  TextInput,
   ScrollView,
   Alert,
+  Linking,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,10 +14,18 @@ import { BlurView } from 'expo-blur';
 import { GlassCard } from '../../../components/GlassCard';
 import { GlassInput } from '../../../components/GlassInput';
 import { GlassButton } from '../../../components/GlassButton';
-import { createOrder, formatPrice, DEFAULT_LOCATION } from '../../../lib/api';
+import {
+  createOrder,
+  formatPrice,
+  DEFAULT_LOCATION,
+  validatePromo,
+  confirmPaymentDev,
+} from '../../../lib/api';
 import { useCartStore } from '../../../store/cart';
-import { MapPin, Banknote, CreditCard, FileText, ShoppingBag, ArrowLeft } from 'lucide-react-native';
+import { MapPin, Banknote, CreditCard, FileText, ShoppingBag, ArrowLeft, Tag } from 'lucide-react-native';
 import { apiClient } from '../../../lib/axios';
+
+type CardGateway = 'stripe' | 'payhere';
 
 export default function CheckoutScreen() {
   const { vendorId } = useLocalSearchParams<{ vendorId: string }>();
@@ -28,8 +35,12 @@ export default function CheckoutScreen() {
   const [address, setAddress] = useState('');
   const [instructions, setInstructions] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'cod' | 'card'>('cod');
+  const [cardGateway, setCardGateway] = useState<CardGateway>('stripe');
   const [placing, setPlacing] = useState(false);
   const [estimatedDeliveryFee, setEstimatedDeliveryFee] = useState(125);
+  const [promoCode, setPromoCode] = useState('');
+  const [appliedPromo, setAppliedPromo] = useState('');
+  const [discount, setDiscount] = useState(0);
 
   useEffect(() => {
     if (!vendorId) return;
@@ -51,7 +62,21 @@ export default function CheckoutScreen() {
 
   const vendorName = items[0]?.vendorName ?? 'Shop';
   const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-  const total = subtotal + estimatedDeliveryFee;
+  const total = Math.max(0, subtotal + estimatedDeliveryFee - discount);
+
+  async function applyPromo() {
+    if (!promoCode.trim()) return;
+    try {
+      const result = await validatePromo(promoCode.trim(), subtotal + estimatedDeliveryFee);
+      setDiscount(Number(result.discount) || 0);
+      setAppliedPromo(promoCode.trim().toUpperCase());
+      Alert.alert('Promo applied', `You save ${formatPrice(Number(result.discount) || 0)}`);
+    } catch (e) {
+      setDiscount(0);
+      setAppliedPromo('');
+      Alert.alert('Invalid promo', e instanceof Error ? e.message : 'Try another code');
+    }
+  }
 
   async function placeOrder() {
     if (!items.length) return;
@@ -72,13 +97,34 @@ export default function CheckoutScreen() {
         deliveryAddress: address.trim(),
         paymentMethod,
         notes: instructions.trim() || undefined,
+        promoCode: appliedPromo || undefined,
+        paymentGateway: paymentMethod === 'cod' ? 'manual' : cardGateway,
       });
 
-      // Card: confirm via Stripe client secret in dev, or open PayHere checkout
-      const payment = (order as { payment?: { id: string; clientSecret?: string | null; gateway?: string } }).payment;
-      if (paymentMethod === 'card' && payment?.id && payment.clientSecret?.startsWith('pi_dev_')) {
-        const { confirmPaymentDev } = await import('../../../lib/api');
-        await confirmPaymentDev(payment.id);
+      const payment = (
+        order as {
+          payment?: {
+            id: string;
+            clientSecret?: string | null;
+            gateway?: string;
+            payHere?: Record<string, string> | null;
+          };
+        }
+      ).payment;
+
+      if (paymentMethod === 'card' && payment?.id) {
+        if (payment.clientSecret?.startsWith('pi_dev_')) {
+          await confirmPaymentDev(payment.id);
+        } else if (payment.payHere) {
+          const qs = new URLSearchParams(payment.payHere).toString();
+          const url = `https://sandbox.payhere.lk/pay/checkout?${qs}`;
+          await Linking.openURL(url).catch(() => undefined);
+        } else if (payment.clientSecret) {
+          Alert.alert(
+            'Card payment',
+            'Complete payment in your browser if prompted. Dev builds confirm automatically when Stripe keys are unset.',
+          );
+        }
       }
 
       clearVendor(vendorId);
@@ -136,7 +182,10 @@ export default function CheckoutScreen() {
           </View>
           <GlassCard style={styles.itemsCard}>
             {items.map((item, index) => (
-              <View key={item.productId} style={[styles.itemRow, index === items.length - 1 && styles.lastItemRow]}>
+              <View
+                key={item.productId}
+                style={[styles.itemRow, index === items.length - 1 && styles.lastItemRow]}
+              >
                 <Text style={styles.itemName} numberOfLines={2}>
                   {item.quantity}x {item.name}
                 </Text>
@@ -148,14 +197,45 @@ export default function CheckoutScreen() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Wallet color="#0ea5e9" size={20} />
+            <Tag color="#0ea5e9" size={20} />
+            <Text style={styles.sectionTitle}>Promo code</Text>
+          </View>
+          <View style={styles.promoRow}>
+            <View style={{ flex: 1 }}>
+              <GlassInput
+                placeholder="Enter code"
+                autoCapitalize="characters"
+                value={promoCode}
+                onChangeText={(t) => {
+                  setPromoCode(t);
+                  setAppliedPromo('');
+                  setDiscount(0);
+                }}
+              />
+            </View>
+            <TouchableOpacity style={styles.promoBtn} onPress={applyPromo}>
+              <Text style={styles.promoBtnText}>Apply</Text>
+            </TouchableOpacity>
+          </View>
+          {appliedPromo && discount > 0 ? (
+            <Text style={styles.promoOk}>
+              {appliedPromo} − {formatPrice(discount)}
+            </Text>
+          ) : null}
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Banknote color="#0ea5e9" size={20} />
             <Text style={styles.sectionTitle}>Payment Method</Text>
           </View>
           <View style={styles.row}>
-            {([
-              { key: 'cod' as const, label: 'Cash', icon: Banknote },
-              { key: 'card' as const, label: 'Card', icon: CreditCard },
-            ]).map((m) => {
+            {(
+              [
+                { key: 'cod' as const, label: 'Cash', icon: Banknote },
+                { key: 'card' as const, label: 'Card', icon: CreditCard },
+              ] as const
+            ).map((m) => {
               const Icon = m.icon;
               const isActive = paymentMethod === m.key;
               return (
@@ -167,14 +247,33 @@ export default function CheckoutScreen() {
                 >
                   <BlurView intensity={20} tint="dark" style={[styles.chip, isActive && styles.chipActive]}>
                     <Icon color={isActive ? '#fff' : 'rgba(255,255,255,0.7)'} size={18} />
-                    <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
-                      {m.label}
-                    </Text>
+                    <Text style={[styles.chipText, isActive && styles.chipTextActive]}>{m.label}</Text>
                   </BlurView>
                 </TouchableOpacity>
               );
             })}
           </View>
+          {paymentMethod === 'card' && (
+            <View style={[styles.row, { marginTop: 10 }]}>
+              {(['stripe', 'payhere'] as const).map((g) => (
+                <TouchableOpacity
+                  key={g}
+                  style={[styles.chipWrapper, cardGateway === g && styles.chipWrapperActive]}
+                  onPress={() => setCardGateway(g)}
+                >
+                  <BlurView
+                    intensity={20}
+                    tint="dark"
+                    style={[styles.chip, cardGateway === g && styles.chipActive]}
+                  >
+                    <Text style={[styles.chipText, cardGateway === g && styles.chipTextActive]}>
+                      {g === 'stripe' ? 'Stripe' : 'PayHere'}
+                    </Text>
+                  </BlurView>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
         </View>
 
         <View style={styles.section}>
@@ -200,6 +299,12 @@ export default function CheckoutScreen() {
             <Text style={styles.summaryLabel}>Delivery fee</Text>
             <Text style={styles.summaryValue}>{formatPrice(estimatedDeliveryFee)}</Text>
           </View>
+          {discount > 0 && (
+            <View style={styles.summaryRow}>
+              <Text style={[styles.summaryLabel, { color: '#34d399' }]}>Promo</Text>
+              <Text style={[styles.summaryValue, { color: '#34d399' }]}>-{formatPrice(discount)}</Text>
+            </View>
+          )}
           <View style={[styles.summaryRow, styles.totalRow]}>
             <Text style={styles.totalLabel}>Total to Pay</Text>
             <Text style={styles.totalValue}>{formatPrice(total)}</Text>
@@ -211,7 +316,7 @@ export default function CheckoutScreen() {
         <GlassButton
           onPress={placeOrder}
           disabled={placing}
-          title={placing ? "Processing..." : `Confirm & Pay  •  ${formatPrice(total)}`}
+          title={placing ? 'Processing...' : `Confirm & Pay  •  ${formatPrice(total)}`}
         />
       </BlurView>
     </SafeAreaView>
@@ -251,6 +356,15 @@ const styles = StyleSheet.create({
   section: { marginBottom: 28 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
   sectionTitle: { fontSize: 16, fontWeight: '700', color: '#fff' },
+  promoRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+  promoBtn: {
+    backgroundColor: 'rgba(14,165,233,0.45)',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 12,
+  },
+  promoBtnText: { color: '#fff', fontWeight: '700' },
+  promoOk: { marginTop: 8, color: '#34d399', fontWeight: '600' },
   row: { flexDirection: 'row', gap: 12, flexWrap: 'wrap' },
   chipWrapper: {
     borderRadius: 16,

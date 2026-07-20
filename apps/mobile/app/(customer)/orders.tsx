@@ -31,13 +31,13 @@ export default function OrdersScreen() {
       <View style={styles.quickLinks}>
         <TouchableOpacity
           style={styles.quickLink}
-          onPress={() => router.push('/(customer)/bookings')}
+          onPress={() => router.push("/(customer)/bookings" as any)}
         >
           <Text style={styles.quickLinkText}>Bookings</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.quickLink}
-          onPress={() => router.push('/(customer)/subscriptions')}
+          onPress={() => router.push("/(customer)/subscriptions" as any)}
         >
           <Text style={styles.quickLinkText}>Subscriptions</Text>
         </TouchableOpacity>

@@ -9,6 +9,7 @@ import {
   RefreshControl,
   Alert,
 } from 'react-native';
+import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -22,6 +23,7 @@ import {
 } from '../../lib/api';
 import { useAuthStore } from '../../store/auth';
 import { apiClient } from '../../lib/axios';
+import { fetchDriverEarnings, useDriverLocationPublish } from '../../lib/driverLocation';
 
 const ACTIVE_ACTIONS: Record<string, { label: string; next: string }[]> = {
   ready: [{ label: 'Picked up', next: 'picked_up' }],
@@ -34,6 +36,8 @@ export default function DriverJobs() {
   const queryClient = useQueryClient();
   const [isOnline, setIsOnline] = useState(true);
 
+  useDriverLocationPublish(isOnline, user?.id);
+
   const { data, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['driver-jobs'],
     queryFn: fetchDriverJobs,
@@ -41,11 +45,25 @@ export default function DriverJobs() {
     enabled: !!user,
   });
 
+  const { data: earnings } = useQuery({
+    queryKey: ['driver-earnings'],
+    queryFn: fetchDriverEarnings,
+    enabled: !!user,
+    refetchInterval: 30000,
+  });
+
   const available = data?.available ?? [];
   const active = data?.active ?? [];
 
   async function toggleOnline(next: boolean) {
     try {
+      if (next) {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Location required', 'Enable location to go online and share GPS for live tracking.');
+          return;
+        }
+      }
       await apiClient.patch('/drivers/me/online', { isOnline: next });
       setIsOnline(next);
     } catch {
@@ -76,6 +94,10 @@ export default function DriverJobs() {
     try {
       await updateOrderStatus(orderId, status);
       queryClient.invalidateQueries({ queryKey: ['driver-jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['driver-earnings'] });
+      if (status === 'delivered') {
+        router.push(`/(driver)/navigate/${orderId}`);
+      }
     } catch (err) {
       Alert.alert('Update failed', err instanceof Error ? err.message : 'Try again');
     }
@@ -139,7 +161,9 @@ export default function DriverJobs() {
       <View style={styles.header}>
         <View>
           <Text style={styles.greeting}>Hi, {user?.fullName?.split(' ')[0] ?? 'Driver'}</Text>
-          <Text style={styles.subtitle}>{isOnline ? 'Online · Ready for jobs' : 'Offline'}</Text>
+          <Text style={styles.subtitle}>
+            {isOnline ? 'Online · GPS sharing for live track' : 'Offline'}
+          </Text>
         </View>
         <TouchableOpacity
           style={[styles.onlineToggle, isOnline ? styles.onlineOn : styles.onlineOff]}
@@ -149,12 +173,25 @@ export default function DriverJobs() {
         </TouchableOpacity>
       </View>
 
+      <View style={styles.earningsRow}>
+        <View style={styles.earnBox}>
+          <Text style={styles.earnLabel}>Today</Text>
+          <Text style={styles.earnValue}>
+            LKR {Number(earnings?.earningsToday ?? 0).toFixed(0)}
+          </Text>
+        </View>
+        <View style={styles.earnBox}>
+          <Text style={styles.earnLabel}>Deliveries</Text>
+          <Text style={styles.earnValue}>{earnings?.totalDeliveries ?? 0}</Text>
+        </View>
+      </View>
+
       {isLoading ? (
         <ActivityIndicator color="#2563eb" style={{ marginTop: 48 }} />
       ) : !isOnline ? (
         <View style={styles.center}>
           <Text style={styles.offlineTitle}>You are offline</Text>
-          <Text style={styles.offlineText}>Go online to receive delivery jobs</Text>
+          <Text style={styles.offlineText}>Go online to receive delivery jobs and share GPS</Text>
         </View>
       ) : listData.length === 0 ? (
         <View style={styles.center}>
@@ -191,6 +228,17 @@ const styles = StyleSheet.create({
   onlineOn: { backgroundColor: '#dcfce7' },
   onlineOff: { backgroundColor: '#f1f5f9' },
   onlineToggleText: { fontSize: 14, fontWeight: '600', color: '#334155' },
+  earningsRow: { flexDirection: 'row', gap: 10, padding: 12 },
+  earnBox: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  earnLabel: { fontSize: 11, color: '#64748b', fontWeight: '600', textTransform: 'uppercase' },
+  earnValue: { fontSize: 18, fontWeight: '800', color: '#0f172a', marginTop: 4 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
   offlineTitle: { fontSize: 18, fontWeight: '600', color: '#0f172a' },
   offlineText: { fontSize: 14, color: '#64748b', marginTop: 8, textAlign: 'center' },

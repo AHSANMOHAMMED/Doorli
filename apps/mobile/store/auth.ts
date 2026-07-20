@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiClient } from '../lib/axios';
+import { registerForPush } from '../lib/push';
 
 export interface AuthUser {
   id: string;
@@ -88,6 +89,7 @@ export const useAuthStore = create<AuthState>()(
               refreshToken,
               isAuthenticated: true,
             });
+            void registerForPush().catch(() => undefined);
             return { error: null };
           }
           return { error: res.data.error || 'Invalid OTP' };
@@ -112,6 +114,7 @@ export const useAuthStore = create<AuthState>()(
               refreshToken,
               isAuthenticated: true,
             });
+            void registerForPush().catch(() => undefined);
             return { error: null };
           }
           return { error: res.data.error || 'Login failed' };
@@ -140,6 +143,7 @@ export const useAuthStore = create<AuthState>()(
             const res = await apiClient.get('/users/me');
             if (res.data.success) {
               set({ user: res.data.data, isAuthenticated: true, loading: false });
+              void registerForPush().catch(() => undefined);
               return;
             }
           } catch (e) {

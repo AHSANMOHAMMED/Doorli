@@ -259,6 +259,14 @@ export async function createOrder(data: {
     data: { orderId: order.id },
   });
 
+  await enqueueNotification({
+    userId: order.customerId,
+    title: 'Order placed',
+    body: `Your order ${order.orderNumber} was placed successfully`,
+    type: 'order_placed',
+    data: { orderId: order.id },
+  });
+
   void publishEvent({
     type: 'order.created',
     orderId: order.id,

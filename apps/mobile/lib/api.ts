@@ -170,8 +170,19 @@ export async function createOrder(params: {
   notes?: string;
   deliveryFee?: number;
   deliveryAddressId?: string;
+  promoCode?: string;
+  paymentGateway?: 'stripe' | 'payhere' | 'manual';
 }) {
-  const { vendorId, items, deliveryAddress, paymentMethod, notes, deliveryAddressId } = params;
+  const {
+    vendorId,
+    items,
+    deliveryAddress,
+    paymentMethod,
+    notes,
+    deliveryAddressId,
+    promoCode,
+    paymentGateway,
+  } = params;
 
   const res = await apiClient.post('/orders', {
     vendorId,
@@ -179,6 +190,7 @@ export async function createOrder(params: {
     deliveryAddressId,
     paymentMethod: paymentMethod ?? 'cod',
     specialInstructions: notes,
+    ...(promoCode ? { promoCode } : {}),
     items: items.map((i) => ({
       productId: i.productId,
       quantity: i.quantity,
@@ -193,7 +205,8 @@ export async function createOrder(params: {
   const order = res.data.data as Order & { totalAmount: number };
 
   const method = (paymentMethod ?? 'cod') as 'cod' | 'card';
-  const gateway = method === 'cod' ? 'manual' : 'stripe';
+  const gateway =
+    paymentGateway ?? (method === 'cod' ? 'manual' : 'stripe');
   try {
     const payRes = await apiClient.post('/payments/initiate', {
       referenceId: order.id,
@@ -210,6 +223,14 @@ export async function createOrder(params: {
   }
 
   return order;
+}
+
+export async function validatePromo(code: string, orderAmount: number) {
+  const res = await apiClient.post('/promos/validate', { code, orderAmount });
+  if (!res.data?.success) {
+    throw new Error(res.data?.error || 'Invalid promo');
+  }
+  return res.data.data as { discount: number; code?: string };
 }
 
 export async function initiatePayment(params: {
@@ -286,6 +307,10 @@ export async function createBooking(params: {
   bookingDate?: string;
   /** @deprecated use guestCount */
   partySize?: number;
+  /** @deprecated mapped into requirements */
+  contactName?: string;
+  /** @deprecated mapped into requirements */
+  contactPhone?: string;
 }) {
   const bookingTypeMap: Record<string, 'hotel' | 'hall' | 'beauty' | 'service'> = {
     hotel: 'hotel',
@@ -299,9 +324,16 @@ export async function createBooking(params: {
   };
   const bookingType = bookingTypeMap[params.bookingType] ?? 'service';
   const eventDate = params.eventDate ?? params.bookingDate;
-  const requirements = [params.requirements, params.specialRequests, params.serviceName]
-    .filter(Boolean)
-    .join(' | ') || undefined;
+  const requirements =
+    [
+      params.requirements,
+      params.specialRequests,
+      params.serviceName,
+      params.contactName ? `Contact: ${params.contactName}` : null,
+      params.contactPhone ? `Phone: ${params.contactPhone}` : null,
+    ]
+      .filter(Boolean)
+      .join(' | ') || undefined;
 
   const body = {
     vendorId: params.vendorId,

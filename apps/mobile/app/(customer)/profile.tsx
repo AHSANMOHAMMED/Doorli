@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -109,7 +108,7 @@ export default function ProfileScreen() {
           {loyalty && (
             <TouchableOpacity
               style={styles.pointsPill}
-              onPress={() => router.push('/(customer)/loyalty')}
+              onPress={() => router.push("/(customer)/loyalty" as any)}
             >
               <Gift color="#FAC775" size={14} />
               <Text style={styles.pointsText}>{loyalty.points} pts</Text>
