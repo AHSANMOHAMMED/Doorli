@@ -12,34 +12,41 @@ import {
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Home, Search, Package, Car, User, ScanBarcode, ShoppingBag } from 'lucide-react-native';
+import { Home, Search, Package, Car, User, ScanBarcode, ShoppingBag, Languages } from 'lucide-react-native';
 import { ONBOARDING_KEY } from '../../lib/onboarding';
+import { useI18nStore, Language } from '../../lib/i18n';
 
 const { width } = Dimensions.get('window');
 
 const SLIDES = [
   {
+    key: 'language',
+    titleKey: 'onboarding.language.title',
+    bodyKey: 'onboarding.language.body',
+    demo: 'language' as const,
+  },
+  {
     key: 'welcome',
-    title: 'Welcome to Doorli',
-    body: 'Your neighbourhood super-app — shops, food, rides, bookings, and more on one phone.',
+    titleKey: 'onboarding.welcome.title',
+    bodyKey: 'onboarding.welcome.body',
     demo: 'brand' as const,
   },
   {
     key: 'home',
-    title: 'Home hub',
-    body: 'Browse grocery, food, hotels, beauty & services. Search nearby shops and add to cart in a tap.',
+    titleKey: 'onboarding.home.title',
+    bodyKey: 'onboarding.home.body',
     demo: 'home' as const,
   },
   {
     key: 'nav',
-    title: 'Bottom navigation',
-    body: 'Home · Search · Orders · Ride · Profile — always one thumb away, built for phones.',
+    titleKey: 'onboarding.nav.title',
+    bodyKey: 'onboarding.nav.body',
     demo: 'nav' as const,
   },
   {
     key: 'vendor',
-    title: 'Selling on Doorli?',
-    body: 'Vendors get Cashier barcode scan, live stock, and supplier invoice import — no typing every purchase.',
+    titleKey: 'onboarding.vendor.title',
+    bodyKey: 'onboarding.vendor.body',
     demo: 'vendor' as const,
   },
 ];
@@ -48,6 +55,7 @@ export default function OnboardingScreen() {
   const router = useRouter();
   const listRef = useRef<FlatList>(null);
   const [index, setIndex] = useState(0);
+  const { t } = useI18nStore();
 
   async function finish() {
     await AsyncStorage.setItem(ONBOARDING_KEY, '1');
@@ -74,8 +82,8 @@ export default function OnboardingScreen() {
           <View style={[styles.slide, { width }]}>
             <Text style={styles.brand}>DOORLI</Text>
             <DemoVisual kind={item.demo} />
-            <Text style={styles.title}>{item.title}</Text>
-            <Text style={styles.body}>{item.body}</Text>
+            <Text style={styles.title}>{t(item.titleKey)}</Text>
+            <Text style={styles.body}>{t(item.bodyKey)}</Text>
           </View>
         )}
       />
@@ -90,18 +98,18 @@ export default function OnboardingScreen() {
         {index < SLIDES.length - 1 ? (
           <>
             <TouchableOpacity onPress={finish} style={styles.skip}>
-              <Text style={styles.skipText}>Skip</Text>
+              <Text style={styles.skipText}>{t('onboarding.skip')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.next}
               onPress={() => listRef.current?.scrollToIndex({ index: index + 1, animated: true })}
             >
-              <Text style={styles.nextText}>Next</Text>
+              <Text style={styles.nextText}>{t('onboarding.next')}</Text>
             </TouchableOpacity>
           </>
         ) : (
           <TouchableOpacity style={[styles.next, { flex: 1 }]} onPress={finish}>
-            <Text style={styles.nextText}>Get started</Text>
+            <Text style={styles.nextText}>{t('onboarding.start')}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -109,7 +117,32 @@ export default function OnboardingScreen() {
   );
 }
 
-function DemoVisual({ kind }: { kind: 'brand' | 'home' | 'nav' | 'vendor' }) {
+function DemoVisual({ kind }: { kind: 'brand' | 'home' | 'nav' | 'vendor' | 'language' }) {
+  const { language, setLanguage } = useI18nStore();
+
+  if (kind === 'language') {
+    return (
+      <View style={styles.demoCard}>
+        <View style={styles.vendorTile}>
+          <Languages color="#5DCAA5" size={28} />
+          <Text style={styles.vendorTileText}>Language / භාෂාව / மொழி</Text>
+        </View>
+        <View style={styles.langButtons}>
+          {(['en', 'si', 'ta'] as Language[]).map((lang) => (
+            <TouchableOpacity 
+              key={lang} 
+              style={[styles.langButton, language === lang && styles.langButtonActive]}
+              onPress={() => setLanguage(lang)}
+            >
+              <Text style={[styles.langButtonText, language === lang && styles.langButtonTextActive]}>
+                {lang === 'en' ? 'English' : lang === 'si' ? 'සිංහල' : 'தமிழ்'}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+    );
+  }
   if (kind === 'brand') {
     return (
       <View style={styles.demoBrand}>
@@ -161,7 +194,7 @@ function DemoVisual({ kind }: { kind: 'brand' | 'home' | 'nav' | 'vendor' }) {
   return (
     <View style={styles.demoCard}>
       <View style={styles.vendorTile}>
-        <ScanBarcode color="#2563eb" size={28} />
+        <ScanBarcode color="#00B241" size={28} />
         <Text style={styles.vendorTileText}>Cashier scan</Text>
       </View>
       <View style={styles.vendorTile}>
@@ -274,6 +307,32 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.06)',
   },
   vendorTileText: { color: '#fff', fontWeight: '700' },
+  langButtons: {
+    flexDirection: 'column',
+    gap: 8,
+    marginTop: 8
+  },
+  langButton: {
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  langButtonActive: {
+    backgroundColor: '#5DCAA5',
+    borderColor: '#5DCAA5',
+  },
+  langButtonText: {
+    color: 'rgba(255,255,255,0.8)',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  langButtonTextActive: {
+    color: '#07101f',
+    fontWeight: '800',
+  },
   dots: { flexDirection: 'row', justifyContent: 'center', gap: 8, marginBottom: 16 },
   dot: {
     width: 8,

@@ -2,7 +2,6 @@ import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator }
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { GlassCard } from '../../components/GlassCard';
 import { fetchMyOrders, formatPrice, formatStatus } from '../../lib/api';
 import { Package, Clock, CheckCircle, XCircle, Store, ChevronRight, Truck } from 'lucide-react-native';
 
@@ -10,8 +9,8 @@ const STATUS_CONFIG: Record<string, { color: string, bg: string, icon: any }> = 
   pending: { color: '#fbbf24', bg: 'rgba(245,158,11,0.2)', icon: Clock },
   confirmed: { color: '#60a5fa', bg: 'rgba(37,99,235,0.2)', icon: CheckCircle },
   preparing: { color: '#a78bfa', bg: 'rgba(139,92,246,0.2)', icon: Package },
-  ready: { color: '#60a5fa', bg: 'rgba(37,99,235,0.2)', icon: Store },
-  picked_up: { color: '#38bdf8', bg: 'rgba(14,165,233,0.2)', icon: Truck },
+  ready: { color: '#0ea5e9', bg: 'rgba(14,165,233,0.1)', icon: Store },
+  picked_up: { color: '#38bdf8', bg: 'rgba(56,189,248,0.1)', icon: Truck },
   delivered: { color: '#34d399', bg: 'rgba(16,185,129,0.2)', icon: CheckCircle },
   cancelled: { color: '#f87171', bg: 'rgba(239,68,68,0.2)', icon: XCircle },
 };
@@ -48,7 +47,7 @@ export default function OrdersScreen() {
       ) : orders.length === 0 ? (
         <View style={styles.empty}>
           <View style={styles.emptyIconCircle}>
-            <Package color="rgba(255,255,255,0.8)" size={48} />
+            <Package color="#6b7280" size={48} />
           </View>
           <Text style={styles.emptyTitle}>No orders yet</Text>
           <Text style={styles.emptyText}>Your order history will appear here.</Text>
@@ -69,10 +68,10 @@ export default function OrdersScreen() {
                 activeOpacity={0.7}
                 onPress={() => router.push(`/(customer)/order/${item.id}`)}
               >
-                <GlassCard style={styles.card}>
+                <View style={styles.card}>
                   <View style={styles.cardHeader}>
                     <View style={styles.vendorInfo}>
-                      <Store color="rgba(255,255,255,0.6)" size={16} />
+                      <Store color="#6b7280" size={16} />
                       <Text style={styles.vendor}>{item.vendor?.businessName ?? 'Shop'}</Text>
                   </View>
                   <View style={[styles.badge, { backgroundColor: config.bg }]}>
@@ -102,7 +101,7 @@ export default function OrdersScreen() {
                     onPress={() => router.push(`/(customer)/order/${item.id}`)}
                   >
                     <Text style={styles.viewDetailsText}>Details</Text>
-                    <ChevronRight color="#0ea5e9" size={16} />
+                    <ChevronRight color="#00B241" size={16} />
                   </TouchableOpacity>
                   {!['delivered', 'cancelled'].includes(item.status) && (
                     <TouchableOpacity
@@ -114,7 +113,7 @@ export default function OrdersScreen() {
                     </TouchableOpacity>
                   )}
                 </View>
-                </GlassCard>
+                </View>
               </TouchableOpacity>
             );
           }}
@@ -125,8 +124,8 @@ export default function OrdersScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: 'transparent' },
-  title: { fontSize: 28, fontWeight: '800', color: '#fff', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
+  container: { flex: 1, backgroundColor: '#f9fafb' },
+  title: { fontSize: 28, fontWeight: '800', color: '#002b5b', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
   quickLinks: {
     flexDirection: 'row',
     gap: 8,
@@ -137,32 +136,45 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: '#ffffff',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: '#e5e7eb',
+    shadowColor: '#002b5b',
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 1,
   },
-  quickLinkText: { color: 'rgba(255,255,255,0.85)', fontWeight: '600', fontSize: 13 },
+  quickLinkText: { color: '#002b5b', fontWeight: '600', fontSize: 13 },
   loader: { marginTop: 48 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
   emptyIconCircle: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: '#ffffff',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: '#e5e7eb',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 24,
+    shadowColor: '#002b5b',
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
   },
-  emptyTitle: { fontSize: 20, fontWeight: '700', color: '#fff', marginBottom: 8 },
-  emptyText: { fontSize: 15, color: 'rgba(255,255,255,0.7)', textAlign: 'center' },
+  emptyTitle: { fontSize: 20, fontWeight: '700', color: '#002b5b', marginBottom: 8 },
+  emptyText: { fontSize: 15, color: '#6b7280', textAlign: 'center' },
   listContent: { padding: 16, paddingBottom: 100 },
   footerBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12 },
   card: {
     marginBottom: 16,
     padding: 0,
-    overflow: 'hidden',
+    backgroundColor: '#ffffff',
+    borderRadius: 18,
+    shadowColor: '#002b5b',
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -170,11 +182,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.1)',
-    backgroundColor: 'rgba(255,255,255,0.02)',
+    borderBottomColor: '#e5e7eb',
+    backgroundColor: '#f9fafb',
   },
   vendorInfo: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  vendor: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  vendor: { color: '#002b5b', fontSize: 16, fontWeight: '700' },
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -190,20 +202,20 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   orderNumberContainer: { gap: 4 },
-  orderLabel: { fontSize: 13, color: 'rgba(255,255,255,0.6)', fontWeight: '500' },
-  orderNumber: { fontWeight: '700', color: '#fff', fontSize: 15 },
+  orderLabel: { fontSize: 13, color: '#6b7280', fontWeight: '500' },
+  orderNumber: { fontWeight: '700', color: '#002b5b', fontSize: 15 },
   priceContainer: { alignItems: 'flex-end', gap: 4 },
-  total: { fontWeight: '800', color: '#0ea5e9', fontSize: 16 },
-  date: { color: 'rgba(255,255,255,0.6)', fontSize: 13 },
+  total: { fontWeight: '800', color: '#00B241', fontSize: 16 },
+  date: { color: '#6b7280', fontSize: 13 },
   cardFooter: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
     gap: 8,
     padding: 12,
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: '#ffffff',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.1)',
+    borderTopColor: '#f3f4f6',
   },
-  viewDetailsText: { color: '#0ea5e9', fontSize: 14, fontWeight: '600' },
+  viewDetailsText: { color: '#00B241', fontSize: 14, fontWeight: '600' },
 });

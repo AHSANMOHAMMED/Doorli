@@ -1,66 +1,69 @@
 import { Tabs } from 'expo-router';
 import { Home, Search, Package, Car, User } from 'lucide-react-native';
-import { Platform } from 'react-native';
+import { Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useI18nStore } from '../../lib/i18n';
 
-const MINT = '#5DCAA5';
-const INACTIVE = 'rgba(255,255,255,0.45)';
+const ACTIVE_TEXT = '#003b10'; // on-primary-container
+const ACTIVE_BG = '#00b241'; // primary-container
+const INACTIVE = '#3d4a3c'; // on-surface-variant
+const SURFACE = '#f8f9fa';
 
 export default function CustomerLayout() {
   const insets = useSafeAreaInsets();
   const bottomPad = Math.max(insets.bottom, 8);
+  const { t } = useI18nStore();
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: MINT,
+        tabBarActiveTintColor: ACTIVE_BG,
         tabBarInactiveTintColor: INACTIVE,
-        tabBarLabelStyle: { fontSize: 10, fontWeight: '600', marginBottom: 2 },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '600', paddingBottom: 4 },
         tabBarStyle: {
-          backgroundColor: 'rgba(7, 16, 31, 0.96)',
-          borderTopColor: 'rgba(255,255,255,0.1)',
-          borderTopWidth: 1,
-          height: 56 + bottomPad,
-          paddingBottom: bottomPad,
-          paddingTop: 6,
-          position: Platform.OS === 'ios' ? 'absolute' : 'relative',
+          backgroundColor: SURFACE,
+          borderTopWidth: 0,
+          minHeight: 60 + bottomPad,
+          paddingTop: 8,
+          elevation: 10,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.04,
+          shadowRadius: 10,
         },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color, size }) => <Home color={color} size={size ?? 22} />,
+          title: t('tabs.home'),
+          tabBarIcon: ({ color, focused, size }) => <Home color={color} size={size ?? 24} strokeWidth={focused ? 2.5 : 2} />,
         }}
       />
       <Tabs.Screen
         name="search"
         options={{
-          title: 'Search',
-          tabBarIcon: ({ color, size }) => <Search color={color} size={size ?? 22} />,
+          title: t('tabs.search'),
+          tabBarIcon: ({ color, focused, size }) => <Search color={color} size={size ?? 24} strokeWidth={focused ? 2.5 : 2} />,
         }}
       />
       <Tabs.Screen
         name="orders"
         options={{
-          title: 'Orders',
-          tabBarIcon: ({ color, size }) => <Package color={color} size={size ?? 22} />,
+          title: t('tabs.orders'),
+          tabBarIcon: ({ color, focused, size }) => <Package color={color} size={size ?? 24} strokeWidth={focused ? 2.5 : 2} />,
         }}
       />
       <Tabs.Screen
         name="ride"
-        options={{
-          title: 'Ride',
-          tabBarIcon: ({ color, size }) => <Car color={color} size={size ?? 22} />,
-        }}
+        options={{ href: null, title: 'Ride' }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
-          tabBarIcon: ({ color, size }) => <User color={color} size={size ?? 22} />,
+          title: t('tabs.profile'),
+          tabBarIcon: ({ color, focused, size }) => <User color={color} size={size ?? 24} strokeWidth={focused ? 2.5 : 2} />,
         }}
       />
 
@@ -73,6 +76,9 @@ export default function CustomerLayout() {
       <Tabs.Screen name="order/[id]" options={{ href: null, title: 'Order' }} />
       <Tabs.Screen name="track/[orderId]" options={{ href: null, title: 'Track' }} />
       <Tabs.Screen name="ride-booking" options={{ href: null, title: 'Live ride' }} />
+      <Tabs.Screen name="profile-edit" options={{ href: null, title: 'Edit Profile' }} />
+      <Tabs.Screen name="settings" options={{ href: null, title: 'Settings' }} />
+      <Tabs.Screen name="reviews" options={{ href: null, title: 'Reviews' }} />
       <Tabs.Screen name="review" options={{ href: null, title: 'Review' }} />
       <Tabs.Screen name="notifications" options={{ href: null, title: 'Notifications' }} />
       <Tabs.Screen name="events" options={{ href: null, title: 'Events' }} />
@@ -80,6 +86,9 @@ export default function CustomerLayout() {
       <Tabs.Screen name="subscriptions" options={{ href: null, title: 'Subscriptions' }} />
       <Tabs.Screen name="bookings" options={{ href: null, title: 'Bookings' }} />
       <Tabs.Screen name="addresses" options={{ href: null, title: 'Addresses' }} />
+      <Tabs.Screen name="checkout/payment" options={{ href: null, title: 'Secure Payment' }} />
+      <Tabs.Screen name="gov/index" options={{ href: null, title: 'Gov' }} />
+      <Tabs.Screen name="emergency/index" options={{ href: null, title: 'Emergency' }} />
     </Tabs>
   );
 }

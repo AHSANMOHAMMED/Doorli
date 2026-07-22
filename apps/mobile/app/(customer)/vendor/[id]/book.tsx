@@ -69,7 +69,7 @@ export default function BookingScreen() {
     }
   }
 
-  if (!vendor) return <ActivityIndicator color="#2563eb" style={{ marginTop: 48 }} />;
+  if (!vendor) return <ActivityIndicator color="#00B241" style={{ marginTop: 48 }} />;
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -130,6 +130,6 @@ const styles = StyleSheet.create({
   input: {
     backgroundColor: '#fff', borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 12, padding: 12, fontSize: 15,
   },
-  btn: { backgroundColor: '#2563eb', padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 8 },
+  btn: { backgroundColor: '#00B241', padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 8 },
   btnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });

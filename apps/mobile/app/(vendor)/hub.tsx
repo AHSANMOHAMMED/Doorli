@@ -15,7 +15,7 @@ import {
 import { useAuthStore } from '../../store/auth';
 
 const TILES = [
-  { href: '/(vendor)/cashier', label: 'Cashier / Scan', blurb: 'Scan barcode & bill', icon: ScanBarcode, color: '#2563eb' },
+  { href: '/(vendor)/cashier', label: 'Cashier / Scan', blurb: 'Scan barcode & bill', icon: ScanBarcode, color: '#00B241' },
   { href: '/(vendor)/purchases', label: 'Purchases', blurb: 'Import supplier invoice', icon: FileUp, color: '#0ea5e9' },
   { href: '/(vendor)/stock', label: 'Live stock', blurb: 'Levels & low stock', icon: Package, color: '#059669' },
   { href: '/(vendor)/menu', label: 'Products', blurb: 'Menu & prices', icon: LayoutGrid, color: '#7c3aed' },
@@ -72,7 +72,7 @@ export default function VendorHub() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#f1f5f9' },
   container: { padding: 16, paddingBottom: 40 },
-  brand: { fontSize: 13, fontWeight: '700', color: '#2563eb', letterSpacing: 0.5 },
+  brand: { fontSize: 13, fontWeight: '700', color: '#00B241', letterSpacing: 0.5 },
   hello: { fontSize: 26, fontWeight: '800', color: '#0f172a', marginTop: 4 },
   sub: { color: '#64748b', marginTop: 6, marginBottom: 18, lineHeight: 20 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },

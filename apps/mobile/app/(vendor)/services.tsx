@@ -43,7 +43,7 @@ export default function VendorServiceJobs() {
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Service jobs</Text>
       {isLoading ? (
-        <ActivityIndicator color="#2563eb" />
+        <ActivityIndicator color="#00B241" />
       ) : (
         <FlatList
           data={data ?? []}
@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
   meta: { color: '#64748b', marginTop: 4, fontSize: 13 },
   row: { flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap' },
   btn: {
-    backgroundColor: '#2563eb',
+    backgroundColor: '#00B241',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 10,

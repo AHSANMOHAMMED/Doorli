@@ -112,19 +112,9 @@ export default function CheckoutScreen() {
         }
       ).payment;
 
-      if (paymentMethod === 'card' && payment?.id) {
-        if (payment.clientSecret?.startsWith('pi_dev_')) {
-          await confirmPaymentDev(payment.id);
-        } else if (payment.payHere) {
-          const qs = new URLSearchParams(payment.payHere).toString();
-          const url = `https://sandbox.payhere.lk/pay/checkout?${qs}`;
-          await Linking.openURL(url).catch(() => undefined);
-        } else if (payment.clientSecret) {
-          Alert.alert(
-            'Card payment',
-            'Complete payment in your browser if prompted. Dev builds confirm automatically when Stripe keys are unset.',
-          );
-        }
+      if (paymentMethod === 'card') {
+        router.push(`/(customer)/checkout/payment?orderId=${order.id}&amount=${total.toFixed(2)}`);
+        return;
       }
 
       clearVendor(vendorId);

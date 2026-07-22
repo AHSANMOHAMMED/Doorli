@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<title>LocalConnect - Welcome</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-low": "#f3f4f5",
+                        "on-tertiary-fixed-variant": "#264778",
+                        "on-secondary-fixed-variant": "#6f3900",
+                        "background": "#f8f9fa",
+                        "primary-fixed-dim": "#50e169",
+                        "error": "#ba1a1a",
+                        "tertiary-container": "#7c9bd1",
+                        "inverse-primary": "#50e169",
+                        "on-primary-fixed": "#002106",
+                        "surface-bright": "#f8f9fa",
+                        "on-surface": "#191c1d",
+                        "on-background": "#191c1d",
+                        "outline-variant": "#bccbb7",
+                        "primary-container": "#00b241",
+                        "tertiary-fixed": "#d6e3ff",
+                        "on-tertiary-container": "#0a3262",
+                        "on-tertiary-fixed": "#001b3d",
+                        "secondary-fixed-dim": "#ffb77f",
+                        "on-surface-variant": "#3d4a3c",
+                        "on-primary": "#ffffff",
+                        "inverse-surface": "#2e3132",
+                        "primary": "#006e25",
+                        "primary-fixed": "#70ff82",
+                        "on-tertiary": "#ffffff",
+                        "surface-dim": "#d9dadb",
+                        "on-secondary-fixed": "#2f1500",
+                        "secondary-container": "#ff8a00",
+                        "inverse-on-surface": "#f0f1f2",
+                        "tertiary-fixed-dim": "#a9c7ff",
+                        "on-error": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed-variant": "#00531a",
+                        "surface": "#f8f9fa",
+                        "error-container": "#ffdad6",
+                        "surface-variant": "#e1e3e4",
+                        "on-secondary-container": "#613100",
+                        "tertiary": "#405f91",
+                        "surface-container": "#edeeef",
+                        "on-primary-container": "#003b10",
+                        "on-secondary": "#ffffff",
+                        "surface-tint": "#006e25",
+                        "secondary-fixed": "#ffdcc4",
+                        "surface-container-high": "#e7e8e9",
+                        "secondary": "#914c00",
+                        "outline": "#6d7b6a",
+                        "surface-container-highest": "#e1e3e4",
+                        "surface-container-lowest": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "20px",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "section-gap": "2.5rem",
+                        "stack-sm": "0.5rem",
+                        "stack-lg": "1.5rem",
+                        "container-margin": "1rem",
+                        "gutter": "1rem",
+                        "stack-md": "1rem"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "display": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "700"}],
+                        "headline-lg-mobile": ["22px", {"lineHeight": "28px", "fontWeight": "700"}],
+                        "display": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                        "headline-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        .bg-gradient-soft {
+            background: linear-gradient(180deg, rgba(248, 249, 250, 0) 0%, rgba(80, 225, 105, 0.08) 100%);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .interactive-scale:active {
+            transform: scale(0.97);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="min-h-screen flex flex-col items-center justify-between relative bg-surface">
+<!-- Background Gradient Overlay -->
+<div class="fixed inset-0 pointer-events-none bg-gradient-soft z-0"></div>
+<!-- Main Content Canvas -->
+<main class="w-full max-w-md mx-auto flex-1 flex flex-col items-center px-container-margin pt-12 pb-8 relative z-10">
+<!-- Top Logo Anchor -->
+<header class="w-full flex flex-col items-center mb-stack-lg">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-4xl" style="font-variation-settings: 'FILL' 1;">location_on</span>
+<h1 class="font-display text-display text-primary tracking-tight">LocalConnect</h1>
+</div>
+<p class="font-body-md text-on-surface-variant mt-2 text-center">Your community super-app for everything local.</p>
+</header>
+<!-- High-Quality 3D Illustration Area -->
+<div class="w-full flex-1 flex items-center justify-center py-stack-lg">
+<div class="relative w-full aspect-square max-w-[280px]">
+<!-- Floating Elements Animation Container -->
+<div class="absolute inset-0 animate-pulse bg-primary/5 rounded-full blur-3xl"></div>
+<img class="w-full h-full object-contain relative z-10" data-alt="A vibrant, high-quality 3D render of diverse community members interacting in a minimalist urban setting. Soft clay-style characters are seen handing over delivery packages and chatting. The lighting is bright and cheerful with soft shadows, using a primary palette of fresh greens, clean whites, and warm orange accents. The overall mood is energetic, modern, and highly approachable." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDfei4BAIv0TFouF0vK7sxBa0Ejo8GVkKuoYMJ1bU6NDCsP5NKnDGN4KtG8ucWG4LOIE52xaEdCLV1CQe3qa0--GBA3--KbkEPvclp9V7rMJlHe1ZAqWmdfBtTcafSfvBMRa7nkWypoCe0kmjMH4ZfBoqtaQ9r9O6Dbw9KQcHGC7mOZVjb4mtkDBD5AjzZlo8XENp0V9RJ4yII6QKUyh51cwQTpTIpl7zWp_rz2E9k8m3AL_Vajd0j1dRbPH6WHC268EvdG5Nr8bhU"/>
+</div>
+</div>
+<!-- Input Section -->
+<section class="w-full space-y-stack-md mt-auto">
+<div class="space-y-stack-sm">
+<h2 class="font-headline-sm text-on-surface text-center">Ready to get started?</h2>
+<p class="font-body-md text-on-surface-variant text-center px-4">Enter your mobile number to join the community.</p>
+</div>
+<!-- Phone Number Input -->
+<div class="relative group">
+<div class="flex items-center bg-surface-container-lowest border border-outline-variant rounded-2xl p-1 shadow-sm focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+<div class="flex items-center gap-2 px-3 border-r border-outline-variant">
+<!-- Simulated Flag & Country Code -->
+<div class="w-6 h-4 bg-red-600 rounded-sm relative overflow-hidden">
+<div class="absolute inset-0 flex items-center justify-center">
+<div class="w-full h-[2px] bg-white opacity-50"></div>
+</div>
+</div>
+<span class="font-body-lg font-semibold text-on-surface">+971</span>
+</div>
+<input class="flex-1 bg-transparent border-none focus:ring-0 font-body-lg text-on-surface py-3 px-4 placeholder:text-outline" maxlength="9" placeholder="50 000 0000" type="tel"/>
+</div>
+</div>
+<!-- Primary Action Button -->
+<button class="w-full bg-primary-container hover:bg-primary text-on-primary-container font-headline-sm py-4 rounded-2xl shadow-lg interactive-scale transition-all duration-200">
+                Continue
+            </button>
+</section>
+<!-- Divider -->
+<div class="w-full flex items-center gap-4 my-stack-lg">
+<div class="h-[1px] flex-1 bg-outline-variant"></div>
+<span class="font-label-md text-outline">or connect with</span>
+<div class="h-[1px] flex-1 bg-outline-variant"></div>
+</div>
+<!-- Social Login Options -->
+<footer class="w-full grid grid-cols-2 gap-stack-md mb-stack-lg">
+<button class="flex items-center justify-center gap-2 bg-surface-container-lowest border border-outline-variant py-3.5 rounded-2xl hover:bg-surface-container transition-colors interactive-scale">
+<svg class="w-5 h-5" fill="currentColor" viewbox="0 0 24 24">
+<path d="M12.152 6.896c-.548 0-1.151.516-1.151 1.16 0 .643.603 1.159 1.151 1.159.549 0 1.152-.516 1.152-1.16 0-.644-.603-1.159-1.152-1.159zM17.062 14.454c-.402-.353-.615-.867-.615-1.472 0-1.395 1.144-2.529 2.553-2.529.17 0 .337.015.498.046.368-2.614-1.198-5.111-3.666-6.046-2.585-.979-5.553.033-6.938 2.364-1.385-2.331-4.354-3.343-6.939-2.364-2.468.935-4.034 3.432-3.666 6.046.161-.031.328-.046.498-.046 1.409 0 2.553 1.134 2.553 2.529 0 .605-.213 1.119-.615 1.472-1.16 1.018-1.897 2.493-1.897 4.14 0 3.03 2.483 5.513 5.512 5.513.684 0 1.336-.126 1.94-.356.604.23 1.256.356 1.94.356 3.029 0 5.512-2.483 5.512-5.513 0-1.647-.737-3.122-1.897-4.14z"></path>
+</svg>
+<span class="font-label-md text-on-surface">Apple</span>
+</button>
+<button class="flex items-center justify-center gap-2 bg-surface-container-lowest border border-outline-variant py-3.5 rounded-2xl hover:bg-surface-container transition-colors interactive-scale">
+<svg class="w-5 h-5" viewbox="0 0 24 24">
+<path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"></path>
+<path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"></path>
+<path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"></path>
+<path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"></path>
+</svg>
+<span class="font-label-md text-on-surface">Google</span>
+</button>
+</footer>
+<!-- Legal Notice -->
+<p class="font-label-md text-outline text-center pb-safe">
+            By continuing, you agree to our <a class="text-primary hover:underline" href="#">Terms of Service</a> and <a class="text-primary hover:underline" href="#">Privacy Policy</a>.
+        </p>
+</main>
+<!-- Micro-interaction Script -->
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const input = document.querySelector('input[type="tel"]');
+            const button = document.querySelector('button.bg-primary-container');
+            
+            input.addEventListener('input', (e) => {
+                // Remove non-digit characters
+                e.target.value = e.target.value.replace(/\D/g, '');
+                
+                // Toggle button state based on phone number length (e.g., 9 digits for UAE)
+                if (e.target.value.length === 9) {
+                    button.classList.add('shadow-primary/30');
+                } else {
+                    button.classList.remove('shadow-primary/30');
+                }
+            });
+
+            // Gentle parallax on the illustration
+            const illustration = document.querySelector('img[data-alt]');
+            window.addEventListener('mousemove', (e) => {
+                const moveX = (e.clientX - window.innerWidth / 2) / 50;
+                const moveY = (e.clientY - window.innerHeight / 2) / 50;
+                illustration.style.transform = `translate(${moveX}px, ${moveY}px)`;
+            });
+        });
+    </script>
+</body></html>

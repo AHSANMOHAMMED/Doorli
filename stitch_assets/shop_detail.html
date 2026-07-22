@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<title>Green Gourmet | LocalConnect</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-low": "#f3f4f5",
+                    "on-tertiary-fixed-variant": "#264778",
+                    "on-secondary-fixed-variant": "#6f3900",
+                    "background": "#f8f9fa",
+                    "primary-fixed-dim": "#50e169",
+                    "error": "#ba1a1a",
+                    "tertiary-container": "#7c9bd1",
+                    "inverse-primary": "#50e169",
+                    "on-primary-fixed": "#002106",
+                    "surface-bright": "#f8f9fa",
+                    "on-surface": "#191c1d",
+                    "on-background": "#191c1d",
+                    "outline-variant": "#bccbb7",
+                    "primary-container": "#00b241",
+                    "tertiary-fixed": "#d6e3ff",
+                    "on-tertiary-container": "#0a3262",
+                    "on-tertiary-fixed": "#001b3d",
+                    "secondary-fixed-dim": "#ffb77f",
+                    "on-surface-variant": "#3d4a3c",
+                    "on-primary": "#ffffff",
+                    "inverse-surface": "#2e3132",
+                    "primary": "#006e25",
+                    "primary-fixed": "#70ff82",
+                    "on-tertiary": "#ffffff",
+                    "surface-dim": "#d9dadb",
+                    "on-secondary-fixed": "#2f1500",
+                    "secondary-container": "#ff8a00",
+                    "inverse-on-surface": "#f0f1f2",
+                    "tertiary-fixed-dim": "#a9c7ff",
+                    "on-error": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "on-primary-fixed-variant": "#00531a",
+                    "surface": "#f8f9fa",
+                    "error-container": "#ffdad6",
+                    "surface-variant": "#e1e3e4",
+                    "on-secondary-container": "#613100",
+                    "tertiary": "#405f91",
+                    "surface-container": "#edeeef",
+                    "on-primary-container": "#003b10",
+                    "on-secondary": "#ffffff",
+                    "surface-tint": "#006e25",
+                    "secondary-fixed": "#ffdcc4",
+                    "surface-container-high": "#e7e8e9",
+                    "secondary": "#914c00",
+                    "outline": "#6d7b6a",
+                    "surface-container-highest": "#e1e3e4",
+                    "surface-container-lowest": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "2xl": "1rem",
+                    "3xl": "1.5rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "section-gap": "2.5rem",
+                    "stack-sm": "0.5rem",
+                    "stack-lg": "1.5rem",
+                    "container-margin": "1rem",
+                    "gutter": "1rem",
+                    "stack-md": "1rem"
+            },
+            "fontFamily": {
+                    "headline-md": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "display": ["Inter"],
+                    "headline-sm": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "label-md": ["Inter"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["22px", {"lineHeight": "28px", "fontWeight": "700"}],
+                    "display": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "headline-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                    "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .hero-gradient {
+            background: linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,0) 60%, rgba(0,0,0,0.6) 100%);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body-md selection:bg-primary-fixed-dim overflow-x-hidden">
+<!-- Top Action Bar (Overlaying Hero) -->
+<div class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-4 py-4 md:px-8">
+<button class="w-10 h-10 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center text-on-surface shadow-lg hover:scale-105 transition-transform active:scale-95" onclick="window.history.back()">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<div class="flex gap-2">
+<button class="w-10 h-10 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center text-on-surface shadow-lg hover:scale-105 transition-transform active:scale-95">
+<span class="material-symbols-outlined">favorite</span>
+</button>
+<button class="w-10 h-10 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center text-on-surface shadow-lg hover:scale-105 transition-transform active:scale-95">
+<span class="material-symbols-outlined">share</span>
+</button>
+</div>
+</div>
+<!-- Hero Banner -->
+<div class="relative h-72 md:h-96 w-full">
+<div class="w-full h-full bg-cover bg-center" data-alt="A high-resolution, wide-angle interior photograph of a modern, eco-friendly restaurant named Green Gourmet. The space is filled with lush hanging plants, natural light-colored wood furniture, and large floor-to-ceiling windows letting in soft, morning sunlight. The overall aesthetic is bright, airy, and minimalist, using a clean palette of whites and soft greens that feels premium and welcoming. High-end architectural photography style with a shallow depth of field focusing on a beautifully set table." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBvMZhghRpqyr-rqBmlkEGZD2qzWYzZ6us8m3qrgUEfxsVY6FJUdw0WmuxskI_ejcPUqCyrLfkbQ9WFHXX37URdhBRTIpd6_TB1o_53aSTKt_6KR8GXnD4UlFHk_XotyLLdc2vLLNTdhU6wij7uA5A9nWRabguj4KA7F5mbHyFYDD0UmkGT5X32uoSNKa7MsRJr2N4-rkItftFU6NKRYO038zvy0Se3cNzS4TqzgIyzmhGHrduGnjorLyZj8iUX5AYqT7RrihYCBww')">
+<div class="absolute inset-0 hero-gradient"></div>
+</div>
+</div>
+<!-- Info Overlay Card -->
+<main class="relative px-4 -mt-16 pb-24 max-w-4xl mx-auto">
+<div class="bg-surface-container-lowest rounded-2xl p-6 shadow-xl shadow-primary/5 border border-outline-variant/10">
+<div class="flex items-start justify-between">
+<div class="flex-1">
+<div class="flex items-center gap-2 mb-1">
+<span class="px-2 py-0.5 rounded bg-primary-container/10 text-primary font-label-md text-label-md uppercase tracking-wider">Top Rated</span>
+</div>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-on-surface mb-2">Green Gourmet</h1>
+<p class="text-on-surface-variant font-body-md text-body-md flex items-center gap-1">
+                        Healthy • Salads • Organic • Bowls
+                    </p>
+</div>
+<div class="w-16 h-16 rounded-xl overflow-hidden shadow-md border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A minimalist and elegant brand logo for Green Gourmet featuring a stylized green leaf integrated with a modern serif letter G. The background is a clean, ivory white, and the leaf is a vibrant, organic emerald green. Professional vector design style with balanced proportions and sophisticated typography, conveying freshness and premium quality in a community super-app context." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPUcbQkpB4mSXypwdGv0_4u_xqIAcCu_og1IcYYqVdR2Bzi12yuPqdGr0c-m-vM_JfFFYuBUv4BwfPfOqEAYCMlYTpVbxD_zLCOGMqpSAnnPlYyMELDRZzgOfZOzJ0GBCeraid7Qjw8ZTZdJ6ab0wbnb84q-WbbuabCBwnjELYd8eOZZe3Gczcah-CHQSYyZFT_0KXsDRT-sJR0i8Gs3qDKbr6TGaZIOp6tkLe3j0e9hOulSievi-KthOAt--esG5IWKwxwxXMEkM"/>
+</div>
+</div>
+<div class="flex items-center gap-6 mt-6 pt-6 border-t border-outline-variant/20">
+<div class="flex flex-col items-center">
+<div class="flex items-center gap-1 text-primary">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-headline-sm text-headline-sm">4.8</span>
+</div>
+<span class="text-on-surface-variant font-label-md text-label-md">500+ Reviews</span>
+</div>
+<div class="w-[1px] h-8 bg-outline-variant/30"></div>
+<div class="flex flex-col items-center">
+<div class="flex items-center gap-1 text-on-surface">
+<span class="material-symbols-outlined text-[20px]">schedule</span>
+<span class="font-headline-sm text-headline-sm">20-35</span>
+</div>
+<span class="text-on-surface-variant font-label-md text-label-md">mins</span>
+</div>
+<div class="w-[1px] h-8 bg-outline-variant/30"></div>
+<div class="flex flex-col items-center">
+<div class="flex items-center gap-1 text-secondary">
+<span class="material-symbols-outlined text-[20px]">delivery_dining</span>
+<span class="font-headline-sm text-headline-sm">Free</span>
+</div>
+<span class="text-on-surface-variant font-label-md text-label-md">Delivery</span>
+</div>
+</div>
+</div>
+<!-- Menu Tabs -->
+<div class="sticky top-0 bg-background/80 backdrop-blur-md z-40 -mx-4 px-4 pt-6 pb-2">
+<div class="flex gap-2 overflow-x-auto hide-scrollbar pb-2">
+<button class="px-6 py-2 rounded-full bg-primary text-on-primary font-label-md text-label-md whitespace-nowrap shadow-md shadow-primary/20 transition-all active:scale-95">Popular</button>
+<button class="px-6 py-2 rounded-full bg-surface-container-high text-on-surface-variant font-label-md text-label-md whitespace-nowrap hover:bg-surface-container-highest transition-colors active:scale-95">Main Course</button>
+<button class="px-6 py-2 rounded-full bg-surface-container-high text-on-surface-variant font-label-md text-label-md whitespace-nowrap hover:bg-surface-container-highest transition-colors active:scale-95">Organic Bowls</button>
+<button class="px-6 py-2 rounded-full bg-surface-container-high text-on-surface-variant font-label-md text-label-md whitespace-nowrap hover:bg-surface-container-highest transition-colors active:scale-95">Drinks</button>
+<button class="px-6 py-2 rounded-full bg-surface-container-high text-on-surface-variant font-label-md text-label-md whitespace-nowrap hover:bg-surface-container-highest transition-colors active:scale-95">Sides</button>
+</div>
+</div>
+<!-- Section: Popular -->
+<section class="mt-4">
+<h2 class="font-headline-md text-headline-md mb-4 text-on-surface px-1">Popular Items</h2>
+<div class="flex flex-col gap-4">
+<!-- Product Card 1 -->
+<div class="group bg-surface-container-lowest rounded-2xl p-4 flex gap-4 shadow-sm hover:shadow-md transition-all duration-300 border border-transparent hover:border-outline-variant/20">
+<div class="flex-1">
+<div class="flex items-center gap-1 mb-1">
+<span class="material-symbols-outlined text-primary text-[16px]" style="font-variation-settings: 'FILL' 1;">recommend</span>
+<span class="text-primary font-label-md text-label-md">Best Seller</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">Avocado Toast Supreme</h3>
+<p class="text-on-surface-variant font-body-md text-body-md mb-3 line-clamp-2">Sourdough bread topped with mashed organic avocado, poached egg, chili flakes, and radish.</p>
+<span class="font-headline-sm text-headline-sm text-primary">$12.00</span>
+</div>
+<div class="relative w-28 h-28 shrink-0">
+<img class="w-full h-full object-cover rounded-xl shadow-inner" data-alt="A close-up, high-end food photograph of a gourmet Avocado Toast Supreme. Two slices of toasted artisan sourdough are piled high with vibrant green crushed avocado, a perfectly soft-poached egg with a golden yolk, thinly sliced red radishes, and a sprinkle of red chili flakes and black sesame seeds. The lighting is bright and natural, emphasizing the textures of the crusty bread and creamy avocado. Style is clean, professional, and appetizing for a premium delivery menu." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDvN-K1ceJ_aDHBefnkIsvyGBjCgRsE_E6sXtnCrt5MlunowvAbu7eCGTZ0DSUFXY_3iY7fiytwwbMLaJHNclOEjGEP1aa0YSc_PdVdnMjI4pqaZwUU2HAl8Tz3eKRXN7_bvclVoyHZc-9mtRSO0le-s72RZIEQNRVWCzC2-TGOAhttz0Q6k9p1hVUVj5Q0ATJ_T_cNbf8pHrAIMlHsflBTeehtvvcF9vNkEev1sO9hTNz-zqsPabp-V7tVbEYx5mSvrje-mvxjDpU"/>
+<button class="absolute -bottom-2 -right-2 w-10 h-10 bg-primary-container text-on-primary-container rounded-xl shadow-lg flex items-center justify-center hover:scale-110 active:scale-90 transition-transform">
+<span class="material-symbols-outlined">add</span>
+</button>
+</div>
+</div>
+<!-- Product Card 2 -->
+<div class="group bg-surface-container-lowest rounded-2xl p-4 flex gap-4 shadow-sm hover:shadow-md transition-all duration-300 border border-transparent hover:border-outline-variant/20">
+<div class="flex-1">
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">Quinoa Harvest Bowl</h3>
+<p class="text-on-surface-variant font-body-md text-body-md mb-3 line-clamp-2">Tri-color quinoa, roasted sweet potatoes, kale, chickpeas, and a lemon tahini dressing.</p>
+<span class="font-headline-sm text-headline-sm text-primary">$14.50</span>
+</div>
+<div class="relative w-28 h-28 shrink-0">
+<img class="w-full h-full object-cover rounded-xl shadow-inner" data-alt="A beautifully arranged Quinoa Harvest Bowl in a handcrafted ceramic bowl. The bowl features colorful tri-color quinoa, vibrant orange roasted sweet potato cubes, dark green massaged kale, protein-rich chickpeas, and a drizzle of creamy beige tahini dressing. The composition is artistic and vibrant, highlighting the freshness and nutritional density of the ingredients. Bright, top-down culinary lighting with a modern minimalist aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDonSrYGsYdYTdH4QrEk2QXR7WR4RxzfXBdddV5lyvls76MZFz4ELvcgkBwjZU_U9PN5LKfonTtWyJqtIOK3RGCHu1Gf_EKUFYJVIg0DDXMFU12VXwjHdlavWLQ0wu1Vklq-bYnKlQA1bq1JIxWvnwHIgE2mcVkKmvUHWcJhBEm5dF2cIlUnbChm50oNUeynAmX2tB5g8g4OfpmKltD9360CBmbG8GjrPCl1X2FobD1du0Je1OpvnVGhI-hXFXqQG9Vh7aduqT4QY8"/>
+<button class="absolute -bottom-2 -right-2 w-10 h-10 bg-primary-container text-on-primary-container rounded-xl shadow-lg flex items-center justify-center hover:scale-110 active:scale-90 transition-transform">
+<span class="material-symbols-outlined">add</span>
+</button>
+</div>
+</div>
+<!-- Product Card 3 -->
+<div class="group bg-surface-container-lowest rounded-2xl p-4 flex gap-4 shadow-sm hover:shadow-md transition-all duration-300 border border-transparent hover:border-outline-variant/20">
+<div class="flex-1">
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">Green Energy Smoothie</h3>
+<p class="text-on-surface-variant font-body-md text-body-md mb-3 line-clamp-2">Spinach, pineapple, ginger, coconut water, and a touch of agave nectar.</p>
+<span class="font-headline-sm text-headline-sm text-primary">$8.00</span>
+</div>
+<div class="relative w-28 h-28 shrink-0">
+<img class="w-full h-full object-cover rounded-xl shadow-inner" data-alt="A refreshing Green Energy Smoothie served in a tall, condensation-beaded glass with a bamboo straw. The smoothie is a vibrant, deep emerald green, showing its nutrient-dense spinach and pineapple base. A small slice of fresh ginger and a pineapple wedge rest on the rim. The background is a clean white stone surface with soft shadows, creating a cool and revitalizing mood for a premium health-focused drink menu." src="https://lh3.googleusercontent.com/aida-public/AB6AXuARpSsaABfe9f8UmgyQxI6BjvARb0CoXwjNAU5Ov6VnpFAYsTab4rZDfAnM8UNy1FWfkgl5l4k3hpCq2EzIElyEZOwZHKWyNMRmsO4ptDp8IAi_DA8aLjUJg9HEkxNqOCparSjHbEfg8K3bPN2FKT6BUlePNT8LK-CVXGDP0f8P5vpcqR00duo0GTJe8rtK1_gswp3HkG_oro78minbcYJM7FHa0mynjODywlV3mNRhBkWp14VbMlAvPOHd4C4dfIjbQWoT1OzMt0M"/>
+<button class="absolute -bottom-2 -right-2 w-10 h-10 bg-primary-container text-on-primary-container rounded-xl shadow-lg flex items-center justify-center hover:scale-110 active:scale-90 transition-transform">
+<span class="material-symbols-outlined">add</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Section: Bowls -->
+<section class="mt-8">
+<h2 class="font-headline-md text-headline-md mb-4 text-on-surface px-1">Organic Bowls</h2>
+<div class="flex flex-col gap-4">
+<!-- Product Card 4 -->
+<div class="group bg-surface-container-lowest rounded-2xl p-4 flex gap-4 shadow-sm hover:shadow-md transition-all duration-300 border border-transparent hover:border-outline-variant/20">
+<div class="flex-1">
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">Mediterranean Mezze</h3>
+<p class="text-on-surface-variant font-body-md text-body-md mb-3 line-clamp-2">Hummus, tabbouleh, kalamata olives, feta, and warm whole-grain pita bread.</p>
+<span class="font-headline-sm text-headline-sm text-primary">$15.00</span>
+</div>
+<div class="relative w-28 h-28 shrink-0">
+<img class="w-full h-full object-cover rounded-xl shadow-inner" data-alt="A gourmet Mediterranean Mezze platter served in a shallow bowl. It features a dollop of smooth, olive-oil-drizzled hummus, fresh green tabbouleh salad, glossy purple kalamata olives, crumbled white feta cheese, and triangles of warm, slightly charred whole-grain pita bread. The image has a rich, textural quality with warm lighting that emphasizes the vibrant, fresh ingredients of Mediterranean cuisine." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCVD2n3bKexUVZph48ZpQ5NzCqATsQ4gdTttZLNPwtamVz5DKP5yGdNCsV3ZKD73tKV5pcdAZtxP5MAMQBoeChdkt4E5Z5JvqRZFEut24CcM-HRg46JMJ4Z8BIBBfeyBoql7ywqvAI6j0E7SuMfqIaBa6AXoE4lKDwWC5iSLR2KQrBxc-X_wJbr_eugYnSpci8PmmIz4eJMu795URXo0n4Hr3sdR1gjrnLJUqYiVmrgH8hOqc89nQ1K2mxNCRmxa4OC_Ea6weZxloU"/>
+<button class="absolute -bottom-2 -right-2 w-10 h-10 bg-primary-container text-on-primary-container rounded-xl shadow-lg flex items-center justify-center hover:scale-110 active:scale-90 transition-transform">
+<span class="material-symbols-outlined">add</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Floating Cart Summary -->
+<div class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-lg z-50">
+<button class="w-full bg-primary text-on-primary rounded-2xl py-4 px-6 flex items-center justify-between shadow-2xl shadow-primary/30 hover:scale-[1.02] active:scale-95 transition-transform">
+<div class="flex items-center gap-3">
+<div class="bg-on-primary/20 w-8 h-8 rounded-lg flex items-center justify-center font-label-md text-label-md">2</div>
+<span class="font-headline-sm text-headline-sm">View Cart</span>
+</div>
+<span class="font-headline-sm text-headline-sm">$26.50</span>
+</button>
+</div>
+<!-- Bottom Navigation Shell (Suppressed for detail view per guidelines, but usually found in top-level destinations) -->
+<!-- We focus on the detail experience here, hiding the global bottom nav to prioritize the checkout flow -->
+<script>
+        // Micro-interaction: Header opacity change on scroll
+        window.addEventListener('scroll', () => {
+            const scroll = window.scrollY;
+            const topBar = document.querySelector('.fixed.top-0');
+            if (scroll > 100) {
+                topBar.classList.add('bg-white/80', 'backdrop-blur-xl', 'shadow-sm');
+                topBar.classList.remove('px-4', 'md:px-8');
+                topBar.classList.add('px-6');
+            } else {
+                topBar.classList.remove('bg-white/80', 'backdrop-blur-xl', 'shadow-sm');
+                topBar.classList.add('px-4', 'md:px-8');
+                topBar.classList.remove('px-6');
+            }
+        });
+
+        // Simple button active state handler
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('touchstart', function() {
+                this.style.opacity = '0.7';
+            });
+            btn.addEventListener('touchend', function() {
+                this.style.opacity = '1';
+            });
+        });
+    </script>
+</body></html>

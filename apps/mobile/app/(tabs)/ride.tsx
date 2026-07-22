@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8fafc', padding: 20 },
   title: { fontSize: 28, fontWeight: '800', color: '#0f172a' },
   sub: { color: '#64748b', marginTop: 8, marginBottom: 24 },
-  btn: { backgroundColor: '#2563eb', padding: 16, borderRadius: 12, alignItems: 'center' },
+  btn: { backgroundColor: '#00B241', padding: 16, borderRadius: 12, alignItems: 'center' },
   book: { marginTop: 16, backgroundColor: '#059669' },
   btnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
   card: { marginTop: 24, backgroundColor: '#fff', padding: 20, borderRadius: 16, borderWidth: 1, borderColor: '#e2e8f0' },

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
+const MapView = ({ children, style }: any) => <View style={[style, { backgroundColor: '#f3f4f6', alignItems: 'center', justifyContent: 'center' }]}><Text style={{color: '#9ca3af', marginBottom: 10, fontWeight: '500'}}>Interactive Map (Dev Client Required)</Text><View style={{flexDirection:'row', gap: 20}}>{children}</View></View>;
+const Marker = ({ children }: any) => <View>{children}</View>;
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { getRideSocket, disconnectRideSocket } from '../../lib/socket';
 import { apiClient } from '../../lib/axios';
@@ -13,7 +14,7 @@ export default function RideBookingScreen() {
   const params = useLocalSearchParams<{ rideId?: string }>();
   const [driverLocation, setDriverLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [isSearching, setIsSearching] = useState(true);
-  const [rideStatus, setRideStatus] = useState('Finding your driver...');
+  const [rideStatus, setRideStatus] = useState('Finding a driver nearby...');
   const [rideId, setRideId] = useState<string | null>(params.rideId ?? null);
   const [driverInfo, setDriverInfo] = useState<{ name?: string; vehicle?: string } | null>(null);
   const [pickupLocation, setPickupLocation] = useState({ lat: 6.9271, lng: 79.8612 });
@@ -66,7 +67,7 @@ export default function RideBookingScreen() {
           }) => {
             if (cancelled) return;
             setIsSearching(false);
-            setRideStatus('Driver is on the way');
+            setRideStatus('Your driver is on the way');
             setDriverInfo({ name: data.driverName, vehicle: data.vehicleNumber });
             if (data.driverId) socket.emit('subscribe_driver', data.driverId);
           },
@@ -79,14 +80,14 @@ export default function RideBookingScreen() {
         setTimeout(() => {
           if (!cancelled) {
             setRideStatus((s) =>
-              s.includes('Finding') ? 'Still searching for nearby drivers…' : s,
+              s.includes('Finding') ? 'Still looking for nearby drivers...' : s,
             );
           }
         }, 15000);
       } catch (err) {
         if (!cancelled) {
           setIsSearching(false);
-          setRideStatus('Could not load ride — go back and try again');
+          setRideStatus('Could not load ride — please try again.');
           console.warn(err);
         }
       }
@@ -112,73 +113,134 @@ export default function RideBookingScreen() {
         >
           <Marker coordinate={{ latitude: pickupLocation.lat, longitude: pickupLocation.lng }}>
             <View style={styles.markerContainer}>
-              <MapPin size={24} color="#2563eb" />
+              <MapPin size={24} color="#000" />
             </View>
           </Marker>
           <Marker
             coordinate={{ latitude: dropoffLocation.lat, longitude: dropoffLocation.lng }}
           >
             <View style={styles.markerContainer}>
-              <MapPin size={24} color="#5DCAA5" />
+              <MapPin size={24} color="#6b7280" />
             </View>
           </Marker>
           {driverLocation && (
             <Marker
               coordinate={{ latitude: driverLocation.lat, longitude: driverLocation.lng }}
             >
-              <View style={styles.markerContainer}>
-                <Car size={24} color="#FAC775" />
+              <View style={[styles.markerContainer, { backgroundColor: '#000' }]}>
+                <Car size={24} color="#fff" />
               </View>
             </Marker>
           )}
         </MapView>
       </View>
 
-      <SafeAreaView edges={['bottom']} style={styles.sheet}>
-        {isSearching && <ActivityIndicator color="#5DCAA5" style={{ marginBottom: 12 }} />}
-        <Text style={styles.status}>{rideStatus}</Text>
-        {driverInfo && (
-          <Text style={styles.driver}>
-            {driverInfo.name ?? 'Driver'}
-            {driverInfo.vehicle ? ` · ${driverInfo.vehicle}` : ''}
-          </Text>
-        )}
-        {rideId && <Text style={styles.rideId}>Ride {rideId.slice(0, 8)}…</Text>}
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backText}>Done</Text>
-        </TouchableOpacity>
-      </SafeAreaView>
+      <View style={styles.sheetContainer}>
+        <View style={styles.sheet}>
+          <View style={styles.sheetHandle} />
+          
+          <View style={styles.statusRow}>
+            {isSearching ? (
+              <ActivityIndicator color="#000" />
+            ) : (
+              <Car color="#000" size={24} />
+            )}
+            <View style={{ flex: 1, marginLeft: 16 }}>
+              <Text style={styles.status}>{rideStatus}</Text>
+              {rideId && <Text style={styles.rideId}>Booking #{rideId.slice(0, 8).toUpperCase()}</Text>}
+            </View>
+          </View>
+
+          {driverInfo && (
+            <View style={styles.driverCard}>
+              <View style={styles.driverAvatar}>
+                <Text style={styles.avatarText}>{driverInfo.name?.[0] ?? 'D'}</Text>
+              </View>
+              <View>
+                <Text style={styles.driverName}>{driverInfo.name ?? 'Driver'}</Text>
+                {driverInfo.vehicle && <Text style={styles.driverVehicle}>{driverInfo.vehicle}</Text>}
+              </View>
+            </View>
+          )}
+          
+          <SafeAreaView edges={['bottom']}>
+            <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+              <Text style={styles.backText}>Close</Text>
+            </TouchableOpacity>
+          </SafeAreaView>
+        </View>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#07101f' },
+  container: { flex: 1, backgroundColor: '#ffffff' },
   mapContainer: { flex: 1 },
   map: { flex: 1 },
   markerContainer: {
-    backgroundColor: 'rgba(7,16,31,0.9)',
-    padding: 6,
-    borderRadius: 20,
+    backgroundColor: '#ffffff',
+    padding: 10,
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
+    borderColor: '#e5e7eb',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  sheetContainer: {
+    backgroundColor: '#ffffff',
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
   },
   sheet: {
-    padding: 20,
-    backgroundColor: 'rgba(7,16,31,0.96)',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    padding: 24,
+    backgroundColor: '#ffffff',
   },
-  status: { color: '#fff', fontSize: 18, fontWeight: '700' },
-  driver: { color: 'rgba(255,255,255,0.7)', marginTop: 6 },
-  rideId: { color: 'rgba(255,255,255,0.4)', marginTop: 4, fontSize: 12 },
-  backBtn: {
-    marginTop: 16,
-    backgroundColor: '#5DCAA5',
-    borderRadius: 14,
-    minHeight: 48,
+  sheetHandle: {
+    width: 32,
+    height: 4,
+    backgroundColor: '#d1d5db',
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: 24,
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  status: { color: '#000000', fontSize: 18, fontWeight: '600' },
+  rideId: { color: '#6b7280', marginTop: 4, fontSize: 13, fontWeight: '500' },
+  driverCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    padding: 16,
+    backgroundColor: '#f9fafb',
+    borderRadius: 12,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  driverAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#e5e7eb',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  backText: { fontWeight: '800', color: '#07101f' },
+  avatarText: { color: '#374151', fontSize: 18, fontWeight: '600' },
+  driverName: { color: '#002b5b', fontSize: 16, fontWeight: '600' },
+  driverVehicle: { color: '#6b7280', marginTop: 2, fontSize: 14, fontWeight: '400' },
+  backBtn: {
+    backgroundColor: '#00B241',
+    borderRadius: 8,
+    minHeight: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backText: { fontWeight: '700', color: '#ffffff', fontSize: 16 },
 });

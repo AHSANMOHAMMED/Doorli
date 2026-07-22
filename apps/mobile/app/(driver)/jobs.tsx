@@ -187,7 +187,7 @@ export default function DriverJobs() {
       </View>
 
       {isLoading ? (
-        <ActivityIndicator color="#2563eb" style={{ marginTop: 48 }} />
+        <ActivityIndicator color="#00B241" style={{ marginTop: 48 }} />
       ) : !isOnline ? (
         <View style={styles.center}>
           <Text style={styles.offlineTitle}>You are offline</Text>
@@ -255,14 +255,14 @@ const styles = StyleSheet.create({
   },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between' },
   orderNumber: { fontWeight: '700', color: '#0f172a' },
-  status: { color: '#2563eb', fontWeight: '500', textTransform: 'capitalize' },
+  status: { color: '#00B241', fontWeight: '500', textTransform: 'capitalize' },
   vendor: { marginTop: 6, color: '#64748b' },
   address: { marginTop: 4, color: '#94a3b8', fontSize: 13 },
   total: { marginTop: 4, fontWeight: '600' },
   fee: { marginTop: 2, fontSize: 12, color: '#64748b' },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
-  actionBtn: { backgroundColor: '#2563eb', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10 },
+  actionBtn: { backgroundColor: '#00B241', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10 },
   actionText: { color: '#fff', fontWeight: '600', fontSize: 13 },
-  navBtn: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: '#2563eb' },
-  navText: { color: '#2563eb', fontWeight: '600', fontSize: 13 },
+  navBtn: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: '#00B241' },
+  navText: { color: '#00B241', fontWeight: '600', fontSize: 13 },
 });

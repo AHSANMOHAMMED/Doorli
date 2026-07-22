@@ -4,12 +4,7 @@ import { apiClient } from './axios';
 type NotificationsModule = typeof import('expo-notifications');
 
 function loadNotifications(): NotificationsModule | null {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    return require('expo-notifications') as NotificationsModule;
-  } catch {
-    return null;
-  }
+  return null;
 }
 
 /**

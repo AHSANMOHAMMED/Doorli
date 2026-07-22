@@ -1,11 +1,11 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
   extensions = [postgis]
 }
 
@@ -127,20 +127,41 @@ model User {
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
-  addresses            Address[]
-  vendor               Vendor?
-  driver               Driver?
-  loyaltyPoints        LoyaltyPoint?
-  ordersAsCustomer     Order[]          @relation("CustomerOrders")
-  ordersAsDriver       Order[]          @relation("DriverOrders")
-  bookings             Booking[]
-  serviceRequests      ServiceRequest[] @relation("CustomerServiceRequests")
-  assignedServiceJobs  ServiceRequest[] @relation("ProviderServiceRequests")
-  reviews              Review[]
-  payments             Payment[]
-  notifications        Notification[]
-  ridesAsCustomer      RideRequest[]    @relation("CustomerRides")
-  deviceTokens         DeviceToken[]
+  addresses           Address[]
+  vendor              Vendor?
+  driver              Driver?
+  loyaltyPoints       LoyaltyPoint?
+  ordersAsCustomer    Order[]          @relation("CustomerOrders")
+  ordersAsDriver      Order[]          @relation("DriverOrders")
+  bookings            Booking[]
+  serviceRequests     ServiceRequest[] @relation("CustomerServiceRequests")
+  assignedServiceJobs ServiceRequest[] @relation("ProviderServiceRequests")
+  reviews             Review[]
+  payments            Payment[]
+  notifications       Notification[]
+  ridesAsCustomer     RideRequest[]    @relation("CustomerRides")
+  deviceTokens        DeviceToken[]
+
+  // Forum Domain Relations
+  threads            Thread[]
+  posts              Post[]
+  moderatedForums    ForumModerator[]   @relation("UserAsModerator")
+  grantedModerations ForumModerator[]   @relation("UserGrantedModerator")
+  reputationRecords  ReputationRecord[]
+  forumBans          ForumBan[]
+
+  // Emergency Domain Relations
+  reportedIncidents Incident[]  @relation("IncidentReporter")
+  sentAlerts        Alert[]     @relation("AlertSender")
+  sosRecords        SOSRecord[]
+  dispatches        Dispatch[]  @relation("IncidentResponder")
+
+  // GovTech Relations
+  taxPayments TaxPayment[]
+  licenses    License[]
+  permits     Permit[]
+  complaints  Complaint[]
+  documents   DocumentVault[]
 
   @@index([role])
   @@index([createdAt])
@@ -220,8 +241,8 @@ model Product {
   imageUrl      String?  @map("image_url")
   isAvailable   Boolean  @default(true) @map("is_available")
   prepTimeMins  Int?     @map("prep_time_mins")
-  addons        Json?    // [{name, price}] for food customization
-  allergens     Json?    // string[]
+  addons        Json? // [{name, price}] for food customization
+  allergens     Json? // string[]
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
@@ -229,21 +250,25 @@ model Product {
   orderItems OrderItem[]
   aliases    ProductAlias[]
 
+  @@unique([vendorId, barcode])
   @@index([vendorId])
   @@index([isAvailable])
   @@index([category])
   @@index([barcode])
-  @@unique([vendorId, barcode])
   @@map("products")
 }
 
-/** Vendor-local / supplier / slang names that map to a catalog product */
+/**
+ * Vendor-local / supplier / slang names that map to a catalog product
+ */
 model ProductAlias {
   id        String   @id @default(uuid()) @db.Uuid
   vendorId  String   @map("vendor_id") @db.Uuid
   productId String   @map("product_id") @db.Uuid
   alias     String   @db.VarChar(200)
-  /** Normalized form used for exact matching */
+  /**
+   * Normalized form used for exact matching
+   */
   aliasKey  String   @map("alias_key") @db.VarChar(220)
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -262,22 +287,24 @@ enum SupplierPurchaseStatus {
   cancelled
 }
 
-/** Supplier invoice import → stock purchase batch */
+/**
+ * Supplier invoice import → stock purchase batch
+ */
 model SupplierPurchase {
-  id             String                  @id @default(uuid()) @db.Uuid
-  vendorId       String                  @map("vendor_id") @db.Uuid
-  supplierName   String?                 @map("supplier_name") @db.VarChar(200)
-  invoiceNumber  String?                 @map("invoice_number") @db.VarChar(100)
-  invoiceDate    DateTime?               @map("invoice_date")
-  sourceFilename String?                 @map("source_filename") @db.VarChar(255)
-  sourceType     String                  @map("source_type") @db.VarChar(20) // csv | xlsx | pdf | text
-  status         SupplierPurchaseStatus  @default(draft)
-  totalAmount    Decimal?                @map("total_amount") @db.Decimal(12, 2)
-  rawExtract     Json?                   @map("raw_extract")
+  id             String                 @id @default(uuid()) @db.Uuid
+  vendorId       String                 @map("vendor_id") @db.Uuid
+  supplierName   String?                @map("supplier_name") @db.VarChar(200)
+  invoiceNumber  String?                @map("invoice_number") @db.VarChar(100)
+  invoiceDate    DateTime?              @map("invoice_date")
+  sourceFilename String?                @map("source_filename") @db.VarChar(255)
+  sourceType     String                 @map("source_type") @db.VarChar(20) // csv | xlsx | pdf | text
+  status         SupplierPurchaseStatus @default(draft)
+  totalAmount    Decimal?               @map("total_amount") @db.Decimal(12, 2)
+  rawExtract     Json?                  @map("raw_extract")
   notes          String?
-  confirmedAt    DateTime?               @map("confirmed_at")
-  createdAt      DateTime                @default(now()) @map("created_at")
-  updatedAt      DateTime                @updatedAt @map("updated_at")
+  confirmedAt    DateTime?              @map("confirmed_at")
+  createdAt      DateTime               @default(now()) @map("created_at")
+  updatedAt      DateTime               @updatedAt @map("updated_at")
 
   vendor Vendor                 @relation(fields: [vendorId], references: [id], onDelete: Cascade)
   items  SupplierPurchaseItem[]
@@ -288,25 +315,29 @@ model SupplierPurchase {
 }
 
 model SupplierPurchaseItem {
-  id               String   @id @default(uuid()) @db.Uuid
-  purchaseId       String   @map("purchase_id") @db.Uuid
-  lineNo           Int      @map("line_no")
-  invoiceName      String   @map("invoice_name") @db.VarChar(300)
-  barcode          String?  @db.VarChar(64)
-  sku              String?  @db.VarChar(64)
-  quantity         Decimal  @db.Decimal(12, 3)
-  unit             String?  @db.VarChar(40)
-  unitCost         Decimal? @map("unit_cost") @db.Decimal(12, 4)
-  lineTotal        Decimal? @map("line_total") @db.Decimal(12, 2)
-  /** matched | create_new | skip | needs_review */
-  action           String   @default("needs_review") @db.VarChar(20)
-  productId        String?  @map("product_id") @db.Uuid
-  matchConfidence  Int      @default(0) @map("match_confidence")
-  matchMethod      String?  @map("match_method") @db.VarChar(40)
-  /** Save invoiceName as ProductAlias on confirm when true */
-  saveAsAlias      Boolean  @default(true) @map("save_as_alias")
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
+  id              String   @id @default(uuid()) @db.Uuid
+  purchaseId      String   @map("purchase_id") @db.Uuid
+  lineNo          Int      @map("line_no")
+  invoiceName     String   @map("invoice_name") @db.VarChar(300)
+  barcode         String?  @db.VarChar(64)
+  sku             String?  @db.VarChar(64)
+  quantity        Decimal  @db.Decimal(12, 3)
+  unit            String?  @db.VarChar(40)
+  unitCost        Decimal? @map("unit_cost") @db.Decimal(12, 4)
+  lineTotal       Decimal? @map("line_total") @db.Decimal(12, 2)
+  /**
+   * matched | create_new | skip | needs_review
+   */
+  action          String   @default("needs_review") @db.VarChar(20)
+  productId       String?  @map("product_id") @db.Uuid
+  matchConfidence Int      @default(0) @map("match_confidence")
+  matchMethod     String?  @map("match_method") @db.VarChar(40)
+  /**
+   * Save invoiceName as ProductAlias on confirm when true
+   */
+  saveAsAlias     Boolean  @default(true) @map("save_as_alias")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
   purchase SupplierPurchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
 
@@ -351,13 +382,13 @@ model Order {
 }
 
 model OrderItem {
-  id        String  @id @default(uuid()) @db.Uuid
-  orderId   String  @map("order_id") @db.Uuid
-  productId String  @map("product_id") @db.Uuid
-  quantity  Int
-  unitPrice Decimal @map("unit_price") @db.Decimal(10, 2)
+  id         String  @id @default(uuid()) @db.Uuid
+  orderId    String  @map("order_id") @db.Uuid
+  productId  String  @map("product_id") @db.Uuid
+  quantity   Int
+  unitPrice  Decimal @map("unit_price") @db.Decimal(10, 2)
   totalPrice Decimal @map("total_price") @db.Decimal(10, 2)
-  notes     String?
+  notes      String?
 
   order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id])
@@ -367,27 +398,27 @@ model OrderItem {
 }
 
 model Booking {
-  id             String        @id @default(uuid()) @db.Uuid
-  bookingNumber  String        @unique @map("booking_number") @db.VarChar(20)
-  customerId     String        @map("customer_id") @db.Uuid
-  vendorId       String        @map("vendor_id") @db.Uuid
-  bookingType    BookingType   @map("booking_type")
-  checkInDate    DateTime?     @map("check_in_date") @db.Date
-  checkOutDate   DateTime?     @map("check_out_date") @db.Date
-  eventDate      DateTime?     @map("event_date") @db.Date
-  startTime      DateTime?     @map("start_time") @db.Time
-  endTime        DateTime?     @map("end_time") @db.Time
-  guestCount     Int?          @map("guest_count")
-  totalAmount    Decimal       @map("total_amount") @db.Decimal(10, 2)
-  depositAmount  Decimal?      @map("deposit_amount") @db.Decimal(10, 2)
-  status         BookingStatus @default(pending)
-  requirements   String?
-  durationMins   Int?          @map("duration_mins")
-  roomType       String?       @map("room_type") @db.VarChar(100)
-  amenities      Json?
-  contractUrl    String?       @map("contract_url")
-  createdAt      DateTime      @default(now()) @map("created_at")
-  updatedAt      DateTime      @updatedAt @map("updated_at")
+  id            String        @id @default(uuid()) @db.Uuid
+  bookingNumber String        @unique @map("booking_number") @db.VarChar(20)
+  customerId    String        @map("customer_id") @db.Uuid
+  vendorId      String        @map("vendor_id") @db.Uuid
+  bookingType   BookingType   @map("booking_type")
+  checkInDate   DateTime?     @map("check_in_date") @db.Date
+  checkOutDate  DateTime?     @map("check_out_date") @db.Date
+  eventDate     DateTime?     @map("event_date") @db.Date
+  startTime     DateTime?     @map("start_time") @db.Time
+  endTime       DateTime?     @map("end_time") @db.Time
+  guestCount    Int?          @map("guest_count")
+  totalAmount   Decimal       @map("total_amount") @db.Decimal(10, 2)
+  depositAmount Decimal?      @map("deposit_amount") @db.Decimal(10, 2)
+  status        BookingStatus @default(pending)
+  requirements  String?
+  durationMins  Int?          @map("duration_mins")
+  roomType      String?       @map("room_type") @db.VarChar(100)
+  amenities     Json?
+  contractUrl   String?       @map("contract_url")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
 
   customer User   @relation(fields: [customerId], references: [id])
   vendor   Vendor @relation(fields: [vendorId], references: [id])
@@ -426,23 +457,23 @@ model ServiceRequest {
 }
 
 model Driver {
-  id                  String      @id @default(uuid()) @db.Uuid
-  userId              String      @unique @map("user_id") @db.Uuid
-  vehicleType         VehicleType @map("vehicle_type")
-  vehicleNumber       String?     @map("vehicle_number") @db.VarChar(20)
-  licenseNumber       String?     @map("license_number") @db.VarChar(50)
-  isOnline            Boolean     @default(false) @map("is_online")
-  location            Unsupported("GEOGRAPHY(POINT, 4326)")?
-  currentLatitude     Decimal?    @map("current_latitude") @db.Decimal(10, 8)
-  currentLongitude    Decimal?    @map("current_longitude") @db.Decimal(11, 8)
-  lastLocationUpdate  DateTime?   @map("last_location_update")
-  totalDeliveries     Int         @default(0) @map("total_deliveries")
-  avgRating           Decimal     @default(0) @map("avg_rating") @db.Decimal(3, 2)
-  earningsToday       Decimal     @default(0) @map("earnings_today") @db.Decimal(10, 2)
-  createdAt           DateTime    @default(now()) @map("created_at")
-  updatedAt           DateTime    @updatedAt @map("updated_at")
+  id                 String                                 @id @default(uuid()) @db.Uuid
+  userId             String                                 @unique @map("user_id") @db.Uuid
+  vehicleType        VehicleType                            @map("vehicle_type")
+  vehicleNumber      String?                                @map("vehicle_number") @db.VarChar(20)
+  licenseNumber      String?                                @map("license_number") @db.VarChar(50)
+  isOnline           Boolean                                @default(false) @map("is_online")
+  location           Unsupported("GEOGRAPHY(POINT, 4326)")?
+  currentLatitude    Decimal?                               @map("current_latitude") @db.Decimal(10, 8)
+  currentLongitude   Decimal?                               @map("current_longitude") @db.Decimal(11, 8)
+  lastLocationUpdate DateTime?                              @map("last_location_update")
+  totalDeliveries    Int                                    @default(0) @map("total_deliveries")
+  avgRating          Decimal                                @default(0) @map("avg_rating") @db.Decimal(3, 2)
+  earningsToday      Decimal                                @default(0) @map("earnings_today") @db.Decimal(10, 2)
+  createdAt          DateTime                               @default(now()) @map("created_at")
+  updatedAt          DateTime                               @updatedAt @map("updated_at")
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   rides RideRequest[] @relation("DriverRides")
 
   @@index([isOnline])
@@ -492,14 +523,14 @@ model Payment {
 }
 
 model Notification {
-  id        String   @id @default(uuid()) @db.Uuid
-  userId    String   @map("user_id") @db.Uuid
-  title     String   @db.VarChar(200)
-  body      String
-  type      String   @db.VarChar(80)
-  data      Json?
-  isRead    Boolean  @default(false) @map("is_read")
-  sentAt    DateTime @default(now()) @map("sent_at")
+  id     String   @id @default(uuid()) @db.Uuid
+  userId String   @map("user_id") @db.Uuid
+  title  String   @db.VarChar(200)
+  body   String
+  type   String   @db.VarChar(80)
+  data   Json?
+  isRead Boolean  @default(false) @map("is_read")
+  sentAt DateTime @default(now()) @map("sent_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -509,22 +540,22 @@ model Notification {
 }
 
 model RideRequest {
-  id              String      @id @default(uuid()) @db.Uuid
-  customerId      String      @map("customer_id") @db.Uuid
-  driverId        String?     @map("driver_id") @db.Uuid
-  pickupLat       Decimal     @db.Decimal(10, 8)
-  pickupLng       Decimal     @db.Decimal(11, 8)
-  dropoffLat      Decimal     @db.Decimal(10, 8)
-  dropoffLng      Decimal     @db.Decimal(11, 8)
-  status          RideStatus  @default(searching)
-  baseFare        Decimal     @map("base_fare") @db.Decimal(10, 2)
-  returnPremium   Decimal     @default(0) @map("return_premium") @db.Decimal(10, 2)
-  totalFare       Decimal     @map("total_fare") @db.Decimal(10, 2)
-  createdAt       DateTime    @default(now()) @map("created_at")
-  updatedAt       DateTime    @updatedAt @map("updated_at")
+  id            String     @id @default(uuid()) @db.Uuid
+  customerId    String     @map("customer_id") @db.Uuid
+  driverId      String?    @map("driver_id") @db.Uuid
+  pickupLat     Decimal    @db.Decimal(10, 8)
+  pickupLng     Decimal    @db.Decimal(11, 8)
+  dropoffLat    Decimal    @db.Decimal(10, 8)
+  dropoffLng    Decimal    @db.Decimal(11, 8)
+  status        RideStatus @default(searching)
+  baseFare      Decimal    @map("base_fare") @db.Decimal(10, 2)
+  returnPremium Decimal    @default(0) @map("return_premium") @db.Decimal(10, 2)
+  totalFare     Decimal    @map("total_fare") @db.Decimal(10, 2)
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
 
-  customer        User        @relation("CustomerRides", fields: [customerId], references: [id])
-  driver          Driver?     @relation("DriverRides", fields: [driverId], references: [id])
+  customer User    @relation("CustomerRides", fields: [customerId], references: [id])
+  driver   Driver? @relation("DriverRides", fields: [driverId], references: [id])
 
   @@index([customerId])
   @@index([driverId])
@@ -533,14 +564,14 @@ model RideRequest {
 }
 
 model GeographicZone {
-  id              String      @id @default(uuid()) @db.Uuid
-  name            String      @db.VarChar(100)
-  city            String?     @db.VarChar(80)
-  demandLevel     Int         @default(1) @map("demand_level")
-  boundaries      Unsupported("GEOGRAPHY(POLYGON, 4326)")?
-  isActive        Boolean     @default(true) @map("is_active")
-  createdAt       DateTime    @default(now()) @map("created_at")
-  updatedAt       DateTime    @updatedAt @map("updated_at")
+  id          String                                   @id @default(uuid()) @db.Uuid
+  name        String                                   @db.VarChar(100)
+  city        String?                                  @db.VarChar(80)
+  demandLevel Int                                      @default(1) @map("demand_level")
+  boundaries  Unsupported("GEOGRAPHY(POLYGON, 4326)")?
+  isActive    Boolean                                  @default(true) @map("is_active")
+  createdAt   DateTime                                 @default(now()) @map("created_at")
+  updatedAt   DateTime                                 @updatedAt @map("updated_at")
 
   @@map("geographic_zones")
 }
@@ -566,15 +597,15 @@ model PromoCode {
 }
 
 model FlashSale {
-  id           String   @id @default(uuid()) @db.Uuid
-  vendorId     String   @map("vendor_id") @db.Uuid
-  productId    String?  @map("product_id") @db.Uuid
-  title        String   @db.VarChar(150)
-  discountPct  Int      @map("discount_pct")
-  startsAt     DateTime @map("starts_at")
-  endsAt       DateTime @map("ends_at")
-  isActive     Boolean  @default(true) @map("is_active")
-  createdAt    DateTime @default(now()) @map("created_at")
+  id          String   @id @default(uuid()) @db.Uuid
+  vendorId    String   @map("vendor_id") @db.Uuid
+  productId   String?  @map("product_id") @db.Uuid
+  title       String   @db.VarChar(150)
+  discountPct Int      @map("discount_pct")
+  startsAt    DateTime @map("starts_at")
+  endsAt      DateTime @map("ends_at")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
 
   @@index([vendorId, isActive])
   @@map("flash_sales")
@@ -626,4 +657,304 @@ model DeviceToken {
 
   @@index([userId])
   @@map("device_tokens")
+}
+
+// ==========================================
+// Community Forums Domain
+// ==========================================
+
+model Forum {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @db.VarChar(100)
+  description String?
+  category    String   @db.VarChar(50)
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  threads    Thread[]
+  moderators ForumModerator[]
+
+  @@map("forums")
+}
+
+model Thread {
+  id        String   @id @default(uuid()) @db.Uuid
+  forumId   String   @map("forum_id") @db.Uuid
+  authorId  String   @map("author_id") @db.Uuid
+  title     String   @db.VarChar(200)
+  content   String
+  isPinned  Boolean  @default(false) @map("is_pinned")
+  isLocked  Boolean  @default(false) @map("is_locked")
+  viewCount Int      @default(0) @map("view_count")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  forum  Forum  @relation(fields: [forumId], references: [id], onDelete: Cascade)
+  author User   @relation(fields: [authorId], references: [id])
+  posts  Post[]
+
+  @@index([forumId])
+  @@index([authorId])
+  @@map("threads")
+}
+
+model Post {
+  id        String   @id @default(uuid()) @db.Uuid
+  threadId  String   @map("thread_id") @db.Uuid
+  authorId  String   @map("author_id") @db.Uuid
+  parentId  String?  @map("parent_id") @db.Uuid
+  content   String
+  isDeleted Boolean  @default(false) @map("is_deleted")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  thread  Thread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  author  User   @relation(fields: [authorId], references: [id])
+  parent  Post?  @relation("PostReplies", fields: [parentId], references: [id])
+  replies Post[] @relation("PostReplies")
+
+  @@index([threadId])
+  @@index([authorId])
+  @@index([parentId])
+  @@map("posts")
+}
+
+model ForumModerator {
+  id        String   @id @default(uuid()) @db.Uuid
+  forumId   String   @map("forum_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  grantedBy String   @map("granted_by") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  forum   Forum @relation(fields: [forumId], references: [id], onDelete: Cascade)
+  user    User  @relation("UserAsModerator", fields: [userId], references: [id])
+  granter User  @relation("UserGrantedModerator", fields: [grantedBy], references: [id])
+
+  @@unique([forumId, userId])
+  @@map("forum_moderators")
+}
+
+model ReputationRecord {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  points    Int
+  reason    String   @db.VarChar(200)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("reputation_records")
+}
+
+model ForumBan {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  forumId   String?   @map("forum_id") @db.Uuid // null = global ban
+  reason    String    @db.VarChar(200)
+  expiresAt DateTime? @map("expires_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("forum_bans")
+}
+
+// ==========================================
+// Emergency Response Domain
+// ==========================================
+
+model Incident {
+  id          String                                 @id @default(uuid()) @db.Uuid
+  reporterId  String                                 @map("reporter_id") @db.Uuid
+  type        String                                 @db.VarChar(50) // fire, medical, police, etc.
+  description String?
+  latitude    Decimal                                @db.Decimal(10, 8)
+  longitude   Decimal                                @db.Decimal(11, 8)
+  location    Unsupported("GEOGRAPHY(POINT, 4326)")?
+  status      ServiceRequestStatus                   @default(open)
+  mediaUrls   Json?                                  @map("media_urls")
+  isAnonymous Boolean                                @default(false) @map("is_anonymous")
+  createdAt   DateTime                               @default(now()) @map("created_at")
+  updatedAt   DateTime                               @updatedAt @map("updated_at")
+
+  reporter   User       @relation("IncidentReporter", fields: [reporterId], references: [id])
+  dispatches Dispatch[]
+
+  @@index([reporterId])
+  @@index([status])
+  @@map("incidents")
+}
+
+model Alert {
+  id        String                                   @id @default(uuid()) @db.Uuid
+  senderId  String                                   @map("sender_id") @db.Uuid
+  type      String                                   @db.VarChar(50)
+  priority  String                                   @db.VarChar(20) // info, warning, critical
+  message   String
+  geofence  Unsupported("GEOGRAPHY(POLYGON, 4326)")?
+  status    String                                   @default("active") @db.VarChar(20)
+  createdAt DateTime                                 @default(now()) @map("created_at")
+  expiresAt DateTime?                                @map("expires_at")
+
+  sender User @relation("AlertSender", fields: [senderId], references: [id])
+
+  @@index([senderId])
+  @@map("emergency_alerts")
+}
+
+model SOSRecord {
+  id           String                                 @id @default(uuid()) @db.Uuid
+  userId       String                                 @map("user_id") @db.Uuid
+  latitude     Decimal                                @db.Decimal(10, 8)
+  longitude    Decimal                                @db.Decimal(11, 8)
+  location     Unsupported("GEOGRAPHY(POINT, 4326)")?
+  status       String                                 @default("active") @db.VarChar(20)
+  recordingUrl String?                                @map("recording_url")
+  createdAt    DateTime                               @default(now()) @map("created_at")
+  resolvedAt   DateTime?                              @map("resolved_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("sos_records")
+}
+
+model Dispatch {
+  id           String    @id @default(uuid()) @db.Uuid
+  incidentId   String    @map("incident_id") @db.Uuid
+  responderId  String    @map("responder_id") @db.Uuid
+  status       String    @default("assigned") @db.VarChar(20)
+  dispatchedAt DateTime  @default(now()) @map("dispatched_at")
+  arrivedAt    DateTime? @map("arrived_at")
+  completedAt  DateTime? @map("completed_at")
+
+  incident  Incident @relation(fields: [incidentId], references: [id])
+  responder User     @relation("IncidentResponder", fields: [responderId], references: [id])
+
+  @@index([incidentId])
+  @@index([responderId])
+  @@map("dispatches")
+}
+
+// -----------------------------------------
+// GovTech Domain
+// -----------------------------------------
+
+model GovernmentService {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  description String
+  category    String // e.g., "tax", "permit", "license"
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  permits     Permit[]
+  licenses    License[]
+  taxPayments TaxPayment[]
+  complaints  Complaint[]
+
+  @@map("government_services")
+}
+
+model TaxPayment {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  serviceId String   @map("service_id") @db.Uuid
+  amount    Decimal  @db.Decimal(10, 2)
+  status    String   @default("pending") @db.VarChar(20) // pending, completed, failed
+  taxPeriod String   @map("tax_period") @db.VarChar(50) // e.g., "2023-Q1"
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user    User              @relation(fields: [userId], references: [id])
+  service GovernmentService @relation(fields: [serviceId], references: [id])
+
+  @@index([userId])
+  @@map("tax_payments")
+}
+
+model License {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  serviceId String    @map("service_id") @db.Uuid
+  licenseNo String    @unique @map("license_no") @db.VarChar(100)
+  status    String    @default("active") @db.VarChar(20) // active, expired, suspended
+  issuedAt  DateTime  @default(now()) @map("issued_at")
+  expiresAt DateTime? @map("expires_at")
+
+  user    User              @relation(fields: [userId], references: [id])
+  service GovernmentService @relation(fields: [serviceId], references: [id])
+
+  @@index([userId])
+  @@map("licenses")
+}
+
+model Permit {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  serviceId String    @map("service_id") @db.Uuid
+  permitNo  String    @unique @map("permit_no") @db.VarChar(100)
+  status    String    @default("pending") @db.VarChar(20) // pending, approved, rejected
+  issuedAt  DateTime? @map("issued_at")
+  expiresAt DateTime? @map("expires_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  user    User              @relation(fields: [userId], references: [id])
+  service GovernmentService @relation(fields: [serviceId], references: [id])
+
+  @@index([userId])
+  @@map("permits")
+}
+
+model Complaint {
+  id          String                                 @id @default(uuid()) @db.Uuid
+  userId      String                                 @map("user_id") @db.Uuid
+  serviceId   String?                                @map("service_id") @db.Uuid
+  title       String
+  description String
+  status      String                                 @default("open") @db.VarChar(20) // open, in_progress, resolved, closed
+  category    String                                 @db.VarChar(50) // e.g., "infrastructure", "sanitation"
+  location    Unsupported("GEOGRAPHY(POINT, 4326)")?
+  createdAt   DateTime                               @default(now()) @map("created_at")
+  updatedAt   DateTime                               @updatedAt @map("updated_at")
+
+  user    User               @relation(fields: [userId], references: [id])
+  service GovernmentService? @relation(fields: [serviceId], references: [id])
+
+  @@index([userId])
+  @@map("complaints")
+}
+
+model DocumentVault {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  documentName String   @map("document_name")
+  documentType String   @map("document_type") // e.g., "id_card", "tax_return", "proof_of_address"
+  fileUrl      String   @map("file_url") // S3/GCS URL
+  isVerified   Boolean  @default(false) @map("is_verified")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("document_vaults")
+}
+
+model PublicConsultation {
+  id          String   @id @default(uuid()) @db.Uuid
+  title       String
+  description String
+  status      String   @default("open") @db.VarChar(20) // open, closed
+  startDate   DateTime @map("start_date")
+  endDate     DateTime @map("end_date")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("public_consultations")
 }

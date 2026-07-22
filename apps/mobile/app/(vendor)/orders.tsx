@@ -48,7 +48,7 @@ export default function VendorOrders() {
   if (isLoading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator color="#2563eb" />
+        <ActivityIndicator color="#00B241" />
       </View>
     );
   }
@@ -117,12 +117,12 @@ const styles = StyleSheet.create({
   },
   header: { flexDirection: 'row', justifyContent: 'space-between' },
   orderNumber: { fontWeight: '700', color: '#0f172a' },
-  status: { color: '#2563eb', fontWeight: '500' },
+  status: { color: '#00B241', fontWeight: '500' },
   total: { marginTop: 8, fontWeight: '600' },
   line: { color: '#64748b', marginTop: 4, fontSize: 14 },
   actions: { flexDirection: 'row', gap: 8, marginTop: 12 },
   actionBtn: {
-    backgroundColor: '#2563eb',
+    backgroundColor: '#00B241',
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 10,

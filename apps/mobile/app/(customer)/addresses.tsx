@@ -11,13 +11,16 @@ import {
 } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { GlassCard } from '../../components/GlassCard';
-import { GlassButton } from '../../components/GlassButton';
 import { fetchAddresses, createAddress, DEFAULT_LOCATION } from '../../lib/api';
-import { MapPin } from 'lucide-react-native';
+import { MapPin, ArrowLeft } from 'lucide-react-native';
+import { useRouter, Stack } from 'expo-router';
+
+const PRIMARY = '#00B241';
+const ON_SURFACE = '#002b5b';
 
 export default function AddressesScreen() {
   const queryClient = useQueryClient();
+  const router = useRouter();
   const [label, setLabel] = useState('Home');
   const [addressLine, setAddressLine] = useState('');
   const [saving, setSaving] = useState(false);
@@ -54,91 +57,230 @@ export default function AddressesScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <Text style={styles.title}>Addresses</Text>
-      <Text style={styles.subtitle}>Saved places for faster checkout</Text>
+      <Stack.Screen options={{ headerShown: false }} />
+      
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <ArrowLeft color={ON_SURFACE} size={24} />
+        </TouchableOpacity>
+        <Text style={styles.title}>My Addresses</Text>
+        <View style={{ width: 40 }} />
+      </View>
 
-      <GlassCard style={styles.form}>
-        <TextInput
-          style={styles.input}
-          placeholder="Label (Home, Work…)"
-          placeholderTextColor="rgba(255,255,255,0.4)"
-          value={label}
-          onChangeText={setLabel}
-        />
-        <TextInput
-          style={[styles.input, { minHeight: 72 }]}
-          placeholder="Street address"
-          placeholderTextColor="rgba(255,255,255,0.4)"
-          value={addressLine}
-          onChangeText={setAddressLine}
-          multiline
-        />
-        <GlassButton
-          title={saving ? 'Saving…' : 'Save address'}
-          onPress={handleSave}
-          disabled={saving}
-        />
-      </GlassCard>
+      <View style={styles.formContainer}>
+        <Text style={styles.sectionTitle}>Add New Address</Text>
+        <View style={styles.formCard}>
+          <TextInput
+            style={styles.input}
+            placeholder="Label (e.g. Home, Work)"
+            placeholderTextColor="#9ca3af"
+            value={label}
+            onChangeText={setLabel}
+          />
+          <TextInput
+            style={[styles.input, { minHeight: 80, textAlignVertical: 'top' }]}
+            placeholder="Street address"
+            placeholderTextColor="#9ca3af"
+            value={addressLine}
+            onChangeText={setAddressLine}
+            multiline
+          />
+          <TouchableOpacity 
+            style={[styles.saveButton, saving && styles.saveButtonDisabled]} 
+            onPress={handleSave}
+            disabled={saving}
+          >
+            <Text style={styles.saveButtonText}>{saving ? 'Saving...' : 'Save Address'}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
 
-      {isLoading ? (
-        <ActivityIndicator color="#0ea5e9" style={{ marginTop: 24 }} />
-      ) : (
-        <FlatList
-          data={data ?? []}
-          keyExtractor={(a) => a.id}
-          refreshing={isRefetching}
-          onRefresh={refetch}
-          contentContainerStyle={styles.list}
-          ListEmptyComponent={
-            <View style={styles.empty}>
-              <MapPin color="rgba(255,255,255,0.5)" size={36} />
-              <Text style={styles.emptyText}>No saved addresses yet</Text>
-            </View>
-          }
-          renderItem={({ item }) => (
-            <GlassCard style={styles.card}>
-              <View style={styles.row}>
-                <MapPin color="#5DCAA5" size={16} />
-                <Text style={styles.label}>{item.label}</Text>
-                {item.isDefault && <Text style={styles.default}>Default</Text>}
+      <View style={{ flex: 1, paddingHorizontal: 16 }}>
+        <Text style={styles.sectionTitle}>Saved Addresses</Text>
+        {isLoading ? (
+          <ActivityIndicator color={PRIMARY} style={{ marginTop: 24 }} />
+        ) : (
+          <FlatList
+            data={data ?? []}
+            keyExtractor={(a) => a.id}
+            refreshing={isRefetching}
+            onRefresh={refetch}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.list}
+            ListEmptyComponent={
+              <View style={styles.empty}>
+                <MapPin color="#d1d5db" size={48} />
+                <Text style={styles.emptyTitle}>No saved addresses</Text>
+                <Text style={styles.emptyText}>Add your first address above</Text>
               </View>
-              <Text style={styles.line}>{item.addressLine}</Text>
-              {item.city ? <Text style={styles.city}>{item.city}</Text> : null}
-            </GlassCard>
-          )}
-        />
-      )}
+            }
+            renderItem={({ item }) => (
+              <View style={styles.card}>
+                <View style={styles.cardHeader}>
+                  <View style={styles.iconWrapper}>
+                    <MapPin color={PRIMARY} size={20} />
+                  </View>
+                  <Text style={styles.label}>{item.label}</Text>
+                  {item.isDefault && (
+                    <View style={styles.defaultBadge}>
+                      <Text style={styles.defaultBadgeText}>Default</Text>
+                    </View>
+                  )}
+                </View>
+                <View style={styles.cardContent}>
+                  <Text style={styles.line}>{item.addressLine}</Text>
+                  {item.city ? <Text style={styles.city}>{item.city}</Text> : null}
+                </View>
+              </View>
+            )}
+          />
+        )}
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: 'transparent', paddingHorizontal: 16 },
-  title: { fontSize: 28, fontWeight: '800', color: '#fff', marginTop: 8 },
-  subtitle: { color: 'rgba(255,255,255,0.65)', marginTop: 6, marginBottom: 16 },
-  form: { padding: 14, gap: 10, marginBottom: 16 },
-  input: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderRadius: 12,
-    paddingHorizontal: 14,
+  container: { 
+    flex: 1, 
+    backgroundColor: '#f9fafb' 
+  },
+  header: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-between',
+    paddingHorizontal: 16, 
     paddingVertical: 12,
-    color: '#fff',
+    backgroundColor: '#ffffff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6'
+  },
+  backBtn: { 
+    width: 40, height: 40, 
+    borderRadius: 20, 
+    backgroundColor: '#f3f4f6', 
+    alignItems: 'center', 
+    justifyContent: 'center' 
+  },
+  title: { color: ON_SURFACE, fontSize: 18, fontWeight: '700' },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: ON_SURFACE,
+    marginBottom: 12,
+  },
+  formContainer: {
+    padding: 16,
+  },
+  formCard: {
+    backgroundColor: '#ffffff',
+    padding: 16,
+    borderRadius: 16,
+    shadowColor: '#002b5b',
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
-    minHeight: 48,
+    borderColor: '#f3f4f6',
+    gap: 12,
+  },
+  input: {
+    backgroundColor: '#f9fafb',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    color: ON_SURFACE,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    fontSize: 15,
+  },
+  saveButton: {
+    backgroundColor: PRIMARY,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  saveButtonDisabled: {
+    backgroundColor: '#9ca3af',
+  },
+  saveButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '700',
   },
   list: { paddingBottom: 100 },
-  card: { padding: 16, marginBottom: 10 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  label: { color: '#fff', fontWeight: '700', flex: 1 },
-  default: {
-    color: '#FAC775',
+  card: { 
+    backgroundColor: '#ffffff',
+    padding: 16, 
+    borderRadius: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
+    borderWidth: 1,
+    borderColor: '#f3f4f6',
+  },
+  cardHeader: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 12 
+  },
+  iconWrapper: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0, 178, 65, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  label: { 
+    color: ON_SURFACE, 
+    fontWeight: '700', 
+    fontSize: 16,
+    flex: 1 
+  },
+  defaultBadge: {
+    backgroundColor: 'rgba(0, 178, 65, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  defaultBadgeText: {
+    color: PRIMARY,
     fontSize: 11,
     fontWeight: '700',
     textTransform: 'uppercase',
   },
-  line: { color: 'rgba(255,255,255,0.8)', marginTop: 8 },
-  city: { color: 'rgba(255,255,255,0.45)', marginTop: 4, fontSize: 13 },
-  empty: { alignItems: 'center', paddingTop: 40, gap: 12 },
-  emptyText: { color: 'rgba(255,255,255,0.5)' },
+  cardContent: {
+    marginLeft: 48,
+  },
+  line: { 
+    color: '#4b5563', 
+    fontSize: 14,
+    marginTop: 4 
+  },
+  city: { 
+    color: '#9ca3af', 
+    marginTop: 2, 
+    fontSize: 13 
+  },
+  empty: { 
+    alignItems: 'center', 
+    paddingTop: 40, 
+    gap: 12 
+  },
+  emptyTitle: { 
+    color: ON_SURFACE,
+    fontSize: 18,
+    fontWeight: '700',
+    marginTop: 8,
+  },
+  emptyText: { 
+    color: '#6b7280',
+    fontSize: 14,
+  },
 });

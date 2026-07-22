@@ -84,7 +84,7 @@ export default function StockScreen() {
       </View>
 
       {isLoading ? (
-        <ActivityIndicator style={{ marginTop: 40 }} color="#2563eb" />
+        <ActivityIndicator style={{ marginTop: 40 }} color="#00B241" />
       ) : (
         <FlatList
           data={data?.items ?? []}
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
   },
-  back: { color: '#2563eb', fontWeight: '600' },
+  back: { color: '#00B241', fontWeight: '600' },
   title: { fontSize: 18, fontWeight: '800', color: '#0f172a' },
   banner: {
     marginHorizontal: 16,

@@ -1,7 +1,6 @@
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import type { Vendor } from '../lib/api';
 import { formatPrice } from '../lib/api';
-import { GlassCard } from './GlassCard';
 import { Star, Clock } from 'lucide-react-native';
 
 interface Props {
@@ -12,7 +11,7 @@ interface Props {
 export function VendorCard({ vendor, onPress }: Props) {
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={styles.container}>
-      <GlassCard style={styles.card}>
+      <View style={styles.card}>
         <View style={styles.header}>
           <View style={styles.avatar}>
             {vendor.logoUrl ? (
@@ -29,11 +28,11 @@ export function VendorCard({ vendor, onPress }: Props) {
               <Text style={styles.rating}>{Number(vendor.avgRating).toFixed(1)}</Text>
               <Text style={styles.reviews}>({vendor.totalReviews})</Text>
               <Text style={styles.dot}>·</Text>
-              <Text style={styles.category}>{vendor.category}</Text>
+              <Text style={styles.category} numberOfLines={1}>{vendor.category}</Text>
             </View>
 
             <View style={styles.detailsRow}>
-              <Clock color="rgba(255,255,255,0.7)" size={12} />
+              <Clock color="#6b7280" size={12} />
               <Text style={[styles.detailText, { color: vendor.isOpen ? '#10b981' : '#ef4444' }]}>
                 {vendor.isOpen ? 'Open' : 'Closed'}
               </Text>
@@ -54,7 +53,7 @@ export function VendorCard({ vendor, onPress }: Props) {
             </View>
           </View>
         </View>
-      </GlassCard>
+      </View>
     </TouchableOpacity>
   );
 }
@@ -66,25 +65,31 @@ const styles = StyleSheet.create({
   },
   card: {
     padding: 16,
+    backgroundColor: '#ffffff',
+    borderRadius: 18,
+    shadowColor: '#002b5b',
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   header: { flexDirection: 'row', alignItems: 'flex-start' },
   avatar: {
     width: 48,
     height: 48,
     borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: '#e9ecef',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: { fontSize: 20, fontWeight: 'bold', color: '#fff' },
+  avatarText: { fontSize: 20, fontWeight: 'bold', color: '#002b5b' },
   image: { width: 48, height: 48, borderRadius: 12 },
   info: { flex: 1, marginLeft: 12 },
-  name: { fontSize: 16, fontWeight: '600', color: '#fff' },
+  name: { fontSize: 16, fontWeight: '600', color: '#002b5b' },
   metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 4 },
-  rating: { fontSize: 13, fontWeight: '600', color: '#fff' },
-  reviews: { fontSize: 13, color: 'rgba(255,255,255,0.7)' },
-  dot: { fontSize: 13, color: 'rgba(255,255,255,0.4)' },
-  category: { fontSize: 13, color: 'rgba(255,255,255,0.8)', textTransform: 'capitalize' },
+  rating: { fontSize: 13, fontWeight: '600', color: '#002b5b' },
+  reviews: { fontSize: 13, color: '#6b7280' },
+  dot: { fontSize: 13, color: '#9ca3af' },
+  category: { fontSize: 13, color: '#4b5563', textTransform: 'capitalize', flex: 1 },
   detailsRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6, gap: 4 },
-  detailText: { fontSize: 12, color: 'rgba(255,255,255,0.7)' },
+  detailText: { fontSize: 12, color: '#6b7280' },
 });

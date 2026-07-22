@@ -2,7 +2,6 @@ import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import type { Product } from '../lib/api';
 import { formatPrice } from '../lib/api';
 import { Plus } from 'lucide-react-native';
-import { GlassCard } from './GlassCard';
 
 interface Props {
   product: Product;
@@ -13,62 +12,108 @@ export function ProductCard({ product, onAdd }: Props) {
   const price = product.discountPrice ?? product.price;
 
   return (
-    <GlassCard style={styles.card}>
-      <View style={styles.imageContainer}>
-        {product.imageUrl ? (
-          <Image source={{ uri: product.imageUrl }} style={styles.image} />
-        ) : (
-          <Text style={styles.avatarText}>{product.name.charAt(0)}</Text>
-        )}
-      </View>
-      
+    <View style={styles.card}>
       <View style={styles.info}>
-        <Text style={styles.name} numberOfLines={2}>{product.name}</Text>
-        {product.unit && <Text style={styles.unit}>Per {product.unit}</Text>}
+        <Text style={styles.name} numberOfLines={1}>{product.name}</Text>
+        {product.description && (
+          <Text style={styles.description} numberOfLines={2}>
+            {product.description}
+          </Text>
+        )}
+        {!product.description && product.unit && (
+          <Text style={styles.description} numberOfLines={1}>
+            Per {product.unit}
+          </Text>
+        )}
         <Text style={styles.price}>{formatPrice(price)}</Text>
       </View>
       
-      <TouchableOpacity style={styles.addBtn} onPress={onAdd}>
-        <Plus color="#fff" size={20} />
-      </TouchableOpacity>
-    </GlassCard>
+      <View style={styles.imageContainer}>
+        <Image 
+          source={{ uri: product.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=300&auto=format&fit=crop' }} 
+          style={styles.image} 
+        />
+        <TouchableOpacity style={styles.addBtn} onPress={onAdd}>
+          <Plus color="#ffffff" size={20} />
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 16,
+    gap: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+    marginBottom: 16,
   },
+  info: { 
+    flex: 1, 
+    justifyContent: 'center' 
+  },
+  name: { 
+    fontSize: 18, 
+    fontWeight: '600', 
+    color: '#191c1d', 
+    marginBottom: 4 
+  },
+  description: { 
+    fontSize: 14, 
+    color: '#3d4a3c', 
+    marginBottom: 12,
+    lineHeight: 20
+  },
+  price: { 
+    fontSize: 18, 
+    fontWeight: '600', 
+    color: '#006e25' 
+  }, 
   imageContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
+    width: 112,
+    height: 112,
+    position: 'relative',
   },
   image: {
     width: '100%',
     height: '100%',
+    borderRadius: 12,
     resizeMode: 'cover',
   },
-  avatarText: { fontSize: 24, fontWeight: '700', color: '#fff' },
-  info: { flex: 1, marginLeft: 16, justifyContent: 'center' },
-  name: { fontSize: 16, fontWeight: '700', color: '#fff', marginBottom: 4 },
-  unit: { fontSize: 13, color: 'rgba(255,255,255,0.7)', marginBottom: 4 },
-  price: { fontSize: 15, fontWeight: '800', color: '#0ea5e9' }, // Teal/Blue hint
-  addBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(14, 165, 233, 0.3)', // Glassy primary
+  placeholderImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 12,
+    backgroundColor: '#e9ecef',
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(14, 165, 233, 0.5)',
+  },
+  avatarText: { 
+    fontSize: 32, 
+    fontWeight: '700', 
+    color: '#006e25' 
+  },
+  addBtn: {
+    position: 'absolute',
+    bottom: -8,
+    right: -8,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#00b241', 
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#00b241',
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
 });

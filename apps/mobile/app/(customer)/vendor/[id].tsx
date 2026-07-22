@@ -1,7 +1,7 @@
+import React, { useState } from 'react';
 import {
   View,
   Text,
-  FlatList,
   StyleSheet,
   ActivityIndicator,
   Alert,
@@ -9,21 +9,38 @@ import {
   ScrollView,
   ImageBackground,
   Platform,
+  Image,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProductCard } from '../../../components/ProductCard';
-import { GlassCard } from '../../../components/GlassCard';
 import { fetchVendor, fetchVendorReviews, formatPrice, Product } from '../../../lib/api';
 import { useCartStore } from '../../../store/cart';
-import { Star, MapPin, Clock, ArrowLeft, CalendarDays, Wrench } from 'lucide-react-native';
+import { 
+  Star, 
+  ArrowLeft, 
+  Heart, 
+  Share2, 
+  Clock,
+  Bike
+} from 'lucide-react-native';
+
+const PRIMARY = '#006e25';
+const PRIMARY_CONTAINER = '#00b241';
+const ON_SURFACE = '#191c1d';
+const ON_SURFACE_VARIANT = '#3d4a3c';
+const SURFACE = '#f8f9fa';
 
 export default function VendorDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  
   const addItem = useCartStore((s) => s.addItem);
+  const cartCount = useCartStore((s) => s.totalItems());
+  const cartTotal = useCartStore((s) => s.subtotal());
+  const [activeTab, setActiveTab] = useState('Popular');
 
   const { data: vendor, isLoading } = useQuery({
     queryKey: ['vendor', id],
@@ -47,229 +64,378 @@ export default function VendorDetailScreen() {
       name: product.name,
       price,
       unit: product.unit ?? null,
+      imageUrl: product.imageUrl ?? null,
     });
-    Alert.alert('Added to cart', `${product.name} added`);
+    // Removed Alert to match smoother UX, relying on cart indicator
   }
 
   if (isLoading || !vendor) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator color="#2563eb" size="large" />
+        <ActivityIndicator color={PRIMARY} size="large" />
       </View>
     );
   }
 
-  const isBookable = ['hotel', 'hall', 'beauty'].includes(vendor.category);
-  const isService = vendor.category === 'service';
-  
-  // Use a generic placeholder or the vendor's actual banner
-  const bannerImage = vendor.bannerUrl ? { uri: vendor.bannerUrl } : { uri: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=1000&auto=format&fit=crop' };
+  const bannerImage = vendor.bannerUrl 
+    ? { uri: vendor.bannerUrl } 
+    : { uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBvMZhghRpqyr-rqBmlkEGZD2qzWYzZ6us8m3qrgUEfxsVY6FJUdw0WmuxskI_ejcPUqCyrLfkbQ9WFHXX37URdhBRTIpd6_TB1o_53aSTKt_6KR8GXnD4UlFHk_XotyLLdc2vLLNTdhU6wij7uA5A9nWRabguj4KA7F5mbHyFYDD0UmkGT5X32uoSNKa7MsRJr2N4-rkItftFU6NKRYO038zvy0Se3cNzS4TqzgIyzmhGHrduGnjorLyZj8iUX5AYqT7RrihYCBww' };
+    
+  const logoImage = vendor.logoUrl 
+    ? { uri: vendor.logoUrl } 
+    : { uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCPUcbQkpB4mSXypwdGv0_4u_xqIAcCu_og1IcYYqVdR2Bzi12yuPqdGr0c-m-vM_JfFFYuBUv4BwfPfOqEAYCMlYTpVbxD_zLCOGMqpSAnnPlYyMELDRZzgOfZOzJ0GBCeraid7Qjw8ZTZdJ6ab0wbnb84q-WbbuabCBwnjELYd8eOZZe3Gczcah-CHQSYyZFT_0KXsDRT-sJR0i8Gs3qDKbr6TGaZIOp6tkLe3j0e9hOulSievi-KthOAt--esG5IWKwxwxXMEkM' };
+
+  const tabs = ['Popular', 'Main Course', 'Organic Bowls', 'Drinks', 'Sides'];
 
   return (
     <View style={styles.container}>
+      {/* Top Action Bar (Overlaying Hero) */}
+      <View style={[styles.topActionBar, { top: Math.max(insets.top, 16) }]}>
+        <TouchableOpacity style={styles.iconButton} onPress={() => router.back()}>
+          <ArrowLeft color={ON_SURFACE} size={24} />
+        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <TouchableOpacity style={styles.iconButton}>
+            <Heart color={ON_SURFACE} size={24} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.iconButton}>
+            <Share2 color={ON_SURFACE} size={24} />
+          </TouchableOpacity>
+        </View>
+      </View>
+
       <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
-        <ImageBackground source={bannerImage} style={styles.banner}>
-          <View style={styles.overlay} />
-          <SafeAreaView edges={['top']} style={styles.navRow}>
-            <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-              <ArrowLeft color="#1e293b" size={24} />
-            </TouchableOpacity>
-          </SafeAreaView>
-          <View style={styles.bannerContent}>
-            <Text style={styles.bannerCategory}>{vendor.category}</Text>
-            <Text style={styles.bannerTitle}>{vendor.businessName}</Text>
-          </View>
+        {/* Hero Banner */}
+        <ImageBackground source={bannerImage} style={styles.heroBanner}>
+          <View style={styles.heroGradient} />
         </ImageBackground>
 
-        <View style={styles.content}>
-          <GlassCard style={styles.infoCard}>
-            <View style={styles.infoRow}>
-              <Star color="#f59e0b" fill="#f59e0b" size={18} />
-              <Text style={styles.ratingText}>{Number(vendor.avgRating).toFixed(1)}</Text>
-              <Text style={styles.reviewsText}>({vendor.totalReviews} reviews)</Text>
-            </View>
-            
-            <View style={styles.infoRow}>
-              <Clock color="rgba(255,255,255,0.7)" size={16} />
-              <Text style={[styles.statusText, { color: vendor.isOpen ? '#10b981' : '#ef4444' }]}>
-                {vendor.isOpen ? 'Open Now' : 'Closed'}
-              </Text>
-              {vendor.minOrderAmount && (
-                <Text style={styles.minOrderText}>· Min {formatPrice(Number(vendor.minOrderAmount))}</Text>
-              )}
-            </View>
-
-            {vendor.addressLine && (
-              <View style={styles.infoRow}>
-                <MapPin color="rgba(255,255,255,0.7)" size={16} />
-                <Text style={styles.addressText} numberOfLines={2}>{vendor.addressLine}</Text>
+        {/* Content Section */}
+        <View style={styles.mainContent}>
+          {/* Info Overlay Card */}
+          <View style={styles.infoCard}>
+            <View style={styles.infoTopRow}>
+              <View style={{ flex: 1 }}>
+                <View style={styles.topRatedBadge}>
+                  <Text style={styles.topRatedText}>TOP RATED</Text>
+                </View>
+                <Text style={styles.vendorName}>{vendor.businessName}</Text>
+                <Text style={styles.vendorTags}>{vendor.category} • Organic • Bowls</Text>
               </View>
-            )}
-
-            {vendor.description && <Text style={styles.desc}>{vendor.description}</Text>}
-          </GlassCard>
-
-          {(isBookable || isService) && (
-            <View style={styles.actionRow}>
-              {isBookable && (
-                <TouchableOpacity
-                  style={styles.actionBtnPrimary}
-                  onPress={() => router.push(`/(customer)/vendor/${vendor.id}/book`)}
-                >
-                  <CalendarDays color="#fff" size={20} />
-                  <Text style={styles.actionBtnText}>Book Now</Text>
-                </TouchableOpacity>
-              )}
-              {isService && (
-                <TouchableOpacity
-                  style={styles.actionBtnPrimary}
-                  onPress={() => router.push(`/(customer)/vendor/${vendor.id}/request`)}
-                >
-                  <Wrench color="#fff" size={20} />
-                  <Text style={styles.actionBtnText}>Request Service</Text>
-                </TouchableOpacity>
-              )}
+              <View style={styles.logoContainer}>
+                <Image source={logoImage} style={styles.logoImage} />
+              </View>
             </View>
-          )}
 
-          <Text style={styles.sectionTitle}>Products</Text>
-          <View style={styles.productsList}>
-            {vendor.products?.map((item: any) => (
-              <ProductCard key={item.id} product={item} onAdd={() => handleAdd(item)} />
-            ))}
-            {(!vendor.products || vendor.products.length === 0) && (
-              <GlassCard style={styles.emptyCard}>
-                <Text style={styles.empty}>No products available right now.</Text>
-              </GlassCard>
-            )}
+            <View style={styles.statsRow}>
+              <View style={styles.statItem}>
+                <View style={styles.statIconRow}>
+                  <Star color={PRIMARY} size={20} fill={PRIMARY} />
+                  <Text style={styles.statValue}>{vendor.avgRating ? Number(vendor.avgRating).toFixed(1) : '4.8'}</Text>
+                </View>
+                <Text style={styles.statLabel}>{vendor.totalReviews ?? '500+'} Reviews</Text>
+              </View>
+              
+              <View style={styles.statDivider} />
+              
+              <View style={styles.statItem}>
+                <View style={styles.statIconRow}>
+                  <Clock color={ON_SURFACE} size={20} />
+                  <Text style={[styles.statValue, { color: ON_SURFACE }]}>20-35</Text>
+                </View>
+                <Text style={styles.statLabel}>mins</Text>
+              </View>
+              
+              <View style={styles.statDivider} />
+              
+              <View style={styles.statItem}>
+                <View style={styles.statIconRow}>
+                  <Bike color="#914c00" size={20} />
+                  <Text style={[styles.statValue, { color: '#914c00' }]}>Free</Text>
+                </View>
+                <Text style={styles.statLabel}>Delivery</Text>
+              </View>
+            </View>
           </View>
 
-          {reviews && reviews.length > 0 && (
-            <View style={styles.reviewsSection}>
-              <Text style={styles.sectionTitle}>Customer Reviews ({reviews.length})</Text>
-              {reviews.slice(0, 5).map((r: any) => (
-                <GlassCard key={r.id} style={styles.reviewCard}>
-                  <View style={styles.reviewStarsRow}>
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star key={i} color={i < r.rating ? '#f59e0b' : 'rgba(255,255,255,0.2)'} fill={i < r.rating ? '#f59e0b' : 'transparent'} size={14} />
-                    ))}
-                  </View>
-                  {r.comment && <Text style={styles.reviewComment}>{r.comment}</Text>}
-                </GlassCard>
+          {/* Menu Tabs */}
+          <View style={styles.tabsWrapper}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsContainer}>
+              {tabs.map((tab) => (
+                <TouchableOpacity 
+                  key={tab} 
+                  style={[styles.tabButton, activeTab === tab && styles.tabButtonActive]}
+                  onPress={() => setActiveTab(tab)}
+                >
+                  <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
+                    {tab}
+                  </Text>
+                </TouchableOpacity>
               ))}
-            </View>
-          )}
+            </ScrollView>
+          </View>
+
+          {/* Product Sections */}
+          <View style={styles.productsSection}>
+            <Text style={styles.sectionTitle}>Popular Items</Text>
+            
+            {vendor.products?.length ? vendor.products.map((item: any) => (
+              <ProductCard key={item.id} product={item} onAdd={() => handleAdd(item)} />
+            )) : (
+              <Text style={{ textAlign: 'center', marginTop: 32, color: ON_SURFACE_VARIANT }}>
+                No products available at the moment.
+              </Text>
+            )}
+            
+
+          </View>
         </View>
       </ScrollView>
+
+      {/* Floating Cart Summary */}
+      {cartCount > 0 && (
+        <View style={styles.floatingCartWrapper}>
+          <TouchableOpacity 
+            style={styles.floatingCartBtn}
+            onPress={() => router.push('/(customer)/cart')}
+            activeOpacity={0.9}
+          >
+            <View style={styles.cartLeftGroup}>
+              <View style={styles.cartBadge}>
+                <Text style={styles.cartBadgeText}>{cartCount}</Text>
+              </View>
+              <Text style={styles.cartText}>View Cart</Text>
+            </View>
+            <Text style={styles.cartPrice}>{formatPrice(cartTotal)}</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: 'transparent' },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  banner: {
-    height: 280,
-    width: '100%',
-    justifyContent: 'space-between',
+  container: {
+    flex: 1,
+    backgroundColor: SURFACE,
   },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.5)', // Darker overlay for better contrast
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  navRow: {
+  topActionBar: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    zIndex: 50,
     flexDirection: 'row',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'android' ? 16 : 0,
   },
-  backBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.1)', // Glass back btn
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.9)',
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
-  bannerContent: {
-    padding: 24,
-    paddingBottom: 32,
+  heroBanner: {
+    height: 288,
+    width: '100%',
   },
-  bannerCategory: {
-    color: 'rgba(255,255,255,0.9)',
-    fontSize: 13,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 4,
+  heroGradient: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.3)',
   },
-  bannerTitle: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: '#fff',
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 8,
-  },
-  content: {
-    flex: 1,
-    backgroundColor: 'transparent',
-    marginTop: -20,
+  mainContent: {
     paddingHorizontal: 16,
-    paddingTop: 24,
-    paddingBottom: 40,
+    marginTop: -64,
+    paddingBottom: 100,
   },
   infoCard: {
-    padding: 16,
-    marginBottom: 24,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-    gap: 8,
-  },
-  ratingText: { fontSize: 16, fontWeight: '700', color: '#fff' },
-  reviewsText: { fontSize: 14, color: 'rgba(255,255,255,0.7)' },
-  statusText: { fontSize: 14, fontWeight: '600' },
-  minOrderText: { fontSize: 14, color: 'rgba(255,255,255,0.7)' },
-  addressText: { fontSize: 14, color: 'rgba(255,255,255,0.8)', flex: 1, lineHeight: 20 },
-  desc: { fontSize: 14, color: 'rgba(255,255,255,0.8)', lineHeight: 22, marginTop: 8, paddingTop: 12, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)' },
-  actionRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
-  actionBtnPrimary: {
-    flex: 1,
-    flexDirection: 'row',
-    backgroundColor: 'rgba(37, 99, 235, 0.4)',
+    backgroundColor: '#ffffff',
+    borderRadius: 24,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 4,
     borderWidth: 1,
-    borderColor: 'rgba(37, 99, 235, 0.8)',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
+    borderColor: 'rgba(188, 203, 183, 0.1)',
   },
-  actionBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#fff',
+  infoTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  topRatedBadge: {
+    backgroundColor: 'rgba(0,178,65,0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+    alignSelf: 'flex-start',
+    marginBottom: 8,
+  },
+  topRatedText: {
+    color: PRIMARY,
+    fontSize: 10,
+    fontWeight: '600',
+    letterSpacing: 1,
+  },
+  vendorName: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: ON_SURFACE,
+    marginBottom: 8,
+  },
+  vendorTags: {
+    fontSize: 14,
+    color: ON_SURFACE_VARIANT,
+  },
+  logoContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(188, 203, 183, 0.2)',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  logoImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 24,
+    paddingTop: 24,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(188, 203, 183, 0.2)',
+  },
+  statItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  statIconRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 4,
+  },
+  statValue: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: PRIMARY,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: ON_SURFACE_VARIANT,
+  },
+  statDivider: {
+    width: 1,
+    height: 32,
+    backgroundColor: 'rgba(188, 203, 183, 0.3)',
+  },
+  tabsWrapper: {
+    marginTop: 24,
     marginBottom: 16,
   },
-  productsList: {
-    gap: 12,
-    marginBottom: 32,
+  tabsContainer: {
+    gap: 8,
+    paddingRight: 16,
   },
-  emptyCard: {
-    padding: 24,
+  tabButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 8,
+    borderRadius: 32,
+    backgroundColor: '#e7e8e9', 
+  },
+  tabButtonActive: {
+    backgroundColor: PRIMARY,
+    shadowColor: PRIMARY,
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: ON_SURFACE_VARIANT,
+  },
+  tabTextActive: {
+    color: '#ffffff',
+  },
+  productsSection: {
+    marginTop: 16,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: ON_SURFACE,
+    marginBottom: 16,
+  },
+  floatingCartWrapper: {
+    position: 'absolute',
+    bottom: 24,
+    left: 16,
+    right: 16,
+    zIndex: 50,
+  },
+  floatingCartBtn: {
+    backgroundColor: PRIMARY,
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    shadowColor: PRIMARY,
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 8,
   },
-  empty: { textAlign: 'center', color: 'rgba(255,255,255,0.6)', fontSize: 15 },
-  reviewsSection: { marginBottom: 20 },
-  reviewCard: {
-    marginBottom: 12,
-    padding: 16,
+  cartLeftGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
-  reviewStarsRow: { flexDirection: 'row', gap: 2, marginBottom: 8 },
-  reviewComment: { fontSize: 15, color: '#fff', lineHeight: 22 },
+  cartBadge: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cartBadgeText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  cartText: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  cartPrice: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: '700',
+  },
 });

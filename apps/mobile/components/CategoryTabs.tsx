@@ -1,15 +1,14 @@
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
-import { BlurView } from 'expo-blur';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image } from 'react-native';
 import type { VendorCategory } from '@doorli/types';
 
-const CATEGORIES: { key: VendorCategory | 'all'; label: string; emoji: string }[] = [
-  { key: 'all', label: 'All', emoji: '🏪' },
-  { key: 'grocery', label: 'Grocery', emoji: '🛒' },
-  { key: 'restaurant', label: 'Food', emoji: '🍽️' },
-  { key: 'hotel', label: 'Hotels', emoji: '🏨' },
-  { key: 'hall', label: 'Halls', emoji: '🎉' },
-  { key: 'beauty', label: 'Beauty', emoji: '💈' },
-  { key: 'service', label: 'Services', emoji: '🔧' },
+const CATEGORIES: { key: VendorCategory | 'all'; label: string; image: string }[] = [
+  { key: 'all', label: 'All', image: 'https://images.unsplash.com/photo-1550547660-d9450f859349?q=80&w=200&auto=format&fit=crop' },
+  { key: 'restaurant', label: 'Food', image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?q=80&w=200&auto=format&fit=crop' },
+  { key: 'grocery', label: 'Grocery', image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=200&auto=format&fit=crop' },
+  { key: 'hotel', label: 'Hotels', image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=200&auto=format&fit=crop' },
+  { key: 'hall', label: 'Halls', image: 'https://images.unsplash.com/photo-1519167758481-83f54085356e?q=80&w=200&auto=format&fit=crop' },
+  { key: 'service', label: 'Services', image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?q=80&w=200&auto=format&fit=crop' },
+  { key: 'beauty', label: 'Beauty', image: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=200&auto=format&fit=crop' },
 ];
 
 interface Props {
@@ -29,18 +28,14 @@ export function CategoryTabs({ selected, onSelect }: Props) {
           key={cat.key}
           style={[styles.chipWrapper, selected === cat.key && styles.chipWrapperActive]}
           onPress={() => onSelect(cat.key)}
-          activeOpacity={0.7}
+          activeOpacity={0.8}
         >
-          <BlurView
-            intensity={20}
-            tint="dark"
-            style={[styles.chip, selected === cat.key && styles.chipActive]}
-          >
-            <Text style={styles.emoji}>{cat.emoji}</Text>
+          <View style={[styles.chip, selected === cat.key && styles.chipActive]}>
+            <Image source={{ uri: cat.image }} style={styles.image} />
             <Text style={[styles.label, selected === cat.key && styles.labelActive]}>
               {cat.label}
             </Text>
-          </BlurView>
+          </View>
         </TouchableOpacity>
       ))}
     </ScrollView>
@@ -55,24 +50,41 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   chipWrapper: {
-    borderRadius: 20,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 24,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+    backgroundColor: '#ffffff',
+    marginVertical: 4,
   },
   chipWrapperActive: {
-    borderColor: 'rgba(14, 165, 233, 0.8)',
+    backgroundColor: '#00B241',
   },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    gap: 8,
+    padding: 6,
+    paddingRight: 16,
+    borderRadius: 24,
+    overflow: 'hidden',
   },
-  chipActive: { backgroundColor: 'rgba(14, 165, 233, 0.4)' },
-  emoji: { fontSize: 14 },
-  label: { fontSize: 14, fontWeight: '600', color: 'rgba(255,255,255,0.7)' },
-  labelActive: { color: '#fff' },
+  chipActive: { 
+    // Additional styling for active state if needed 
+  },
+  image: { 
+    width: 28, 
+    height: 28, 
+    borderRadius: 14 
+  },
+  label: { 
+    fontSize: 14, 
+    fontWeight: '600', 
+    color: '#374151' 
+  },
+  labelActive: { 
+    color: '#ffffff' 
+  },
 });

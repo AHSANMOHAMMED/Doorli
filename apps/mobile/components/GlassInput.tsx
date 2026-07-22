@@ -1,5 +1,4 @@
 import { TextInput, TextInputProps, StyleSheet, View } from 'react-native';
-import { BlurView } from 'expo-blur';
 
 interface GlassInputProps extends TextInputProps {
   icon?: React.ReactNode;
@@ -8,30 +7,35 @@ interface GlassInputProps extends TextInputProps {
 export function GlassInput({ style, icon, ...props }: GlassInputProps) {
   return (
     <View style={styles.container}>
-      <BlurView intensity={20} tint="dark" style={styles.blurContainer}>
+      <View style={styles.inputContainer}>
         {icon && <View style={styles.iconContainer}>{icon}</View>}
         <TextInput
           style={[styles.input, style]}
-          placeholderTextColor="rgba(255,255,255,0.5)"
+          placeholderTextColor="#9ca3af"
           {...props}
         />
-      </BlurView>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 16,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
     marginBottom: 16,
+    shadowColor: '#002b5b',
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
-  blurContainer: {
+  inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    overflow: 'hidden',
   },
   iconContainer: {
     paddingLeft: 16,
@@ -41,7 +45,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 16,
     paddingHorizontal: 16,
-    color: '#fff',
+    color: '#002b5b',
     fontSize: 16,
   },
 });

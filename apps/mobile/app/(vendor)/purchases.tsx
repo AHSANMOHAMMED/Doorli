@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 26, fontWeight: '800', color: '#0f172a' },
   sub: { color: '#64748b', marginTop: 8, marginBottom: 16, lineHeight: 20 },
   upload: {
-    backgroundColor: '#2563eb',
+    backgroundColor: '#00B241',
     borderRadius: 16,
     minHeight: 56,
     flexDirection: 'row',
@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
     minHeight: 40,
     justifyContent: 'center',
   },
-  chipOn: { backgroundColor: '#2563eb' },
+  chipOn: { backgroundColor: '#00B241' },
   chipText: { fontSize: 12, fontWeight: '700', color: '#475569', textTransform: 'capitalize' },
   chipTextOn: { color: '#fff' },
   importBtn: {

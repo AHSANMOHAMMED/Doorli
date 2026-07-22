@@ -51,7 +51,7 @@ export default function VendorAdminScreen() {
       </View>
 
       {(stockQ.isLoading || salesQ.isLoading) && (
-        <ActivityIndicator style={{ marginTop: 24 }} color="#2563eb" />
+        <ActivityIndicator style={{ marginTop: 24 }} color="#00B241" />
       )}
 
       <View style={styles.stats}>
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
   },
-  back: { color: '#2563eb', fontWeight: '600' },
+  back: { color: '#00B241', fontWeight: '600' },
   title: { fontSize: 18, fontWeight: '800', color: '#0f172a' },
   stats: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, marginTop: 8 },
   stat: {
@@ -181,5 +181,5 @@ const styles = StyleSheet.create({
   cardTitle: { fontWeight: '700', color: '#0f172a' },
   cardMeta: { fontSize: 12, color: '#94a3b8', marginTop: 4 },
   cardAmt: { fontWeight: '800', color: '#059669', marginTop: 8 },
-  reprint: { fontSize: 11, color: '#2563eb', marginTop: 6 },
+  reprint: { fontSize: 11, color: '#00B241', marginTop: 6 },
 });

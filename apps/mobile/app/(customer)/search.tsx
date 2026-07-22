@@ -42,7 +42,7 @@ export default function SearchScreen() {
       <Text style={styles.title}>Search</Text>
       <View style={styles.inputWrap}>
         <GlassInput
-          icon={<Search color="rgba(255,255,255,0.5)" size={18} />}
+          icon={<Search color="#00B241" size={20} />}
           placeholder="Shop name, category, or city..."
           value={query}
           onChangeText={setQuery}
@@ -51,7 +51,7 @@ export default function SearchScreen() {
       </View>
       <CategoryTabs selected={category} onSelect={setCategory} />
       {isLoading ? (
-        <ActivityIndicator style={styles.loader} color="#0ea5e9" />
+        <ActivityIndicator style={styles.loader} color="#00B241" />
       ) : (
         <FlatList
           data={filtered}
@@ -75,16 +75,16 @@ export default function SearchScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: 'transparent' },
+  container: { flex: 1, backgroundColor: '#f9fafb' },
   title: {
     fontSize: 28,
     fontWeight: '800',
-    color: '#fff',
+    color: '#002b5b',
     paddingHorizontal: 16,
     paddingTop: 8,
   },
   inputWrap: { paddingHorizontal: 16, marginTop: 12 },
   loader: { marginTop: 40 },
-  list: { paddingHorizontal: 16, paddingBottom: 100 },
-  empty: { textAlign: 'center', color: 'rgba(255,255,255,0.5)', marginTop: 40, padding: 16 },
+  list: { paddingBottom: 100 },
+  empty: { textAlign: 'center', color: '#6b7280', marginTop: 40, padding: 16 },
 });

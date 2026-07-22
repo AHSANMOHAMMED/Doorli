@@ -9,7 +9,8 @@ import {
   Platform,
   Alert,
 } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
+const MapView = ({ children, style }: any) => <View style={[style, { backgroundColor: '#1e293b', alignItems: 'center', justifyContent: 'center' }]}><Text style={{color: '#94a3b8', marginBottom: 10}}>Interactive Map (Dev Client Required)</Text><View style={{flexDirection:'row', gap: 20}}>{children}</View></View>;
+const Marker = ({ children }: any) => <View>{children}</View>;
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -47,7 +48,7 @@ export default function NavigateScreen() {
   if (isLoading || !order) {
     return (
       <SafeAreaView style={styles.container}>
-        <ActivityIndicator color="#2563eb" style={{ marginTop: 48 }} />
+        <ActivityIndicator color="#00B241" style={{ marginTop: 48 }} />
       </SafeAreaView>
     );
   }
@@ -105,7 +106,7 @@ export default function NavigateScreen() {
             coordinate={{ latitude: vendorLat, longitude: vendorLng }}
             title="Pickup"
             description={order.vendor?.businessName}
-            pinColor="#2563eb"
+            pinColor="#00B241"
           />
           <Marker
             coordinate={{ latitude: dropLat, longitude: dropLng }}
@@ -180,7 +181,7 @@ const styles = StyleSheet.create({
     marginTop: -12,
   },
   orderNumber: { fontSize: 18, fontWeight: '800', color: '#0f172a' },
-  status: { color: '#2563eb', marginTop: 4, textTransform: 'capitalize', fontWeight: '600' },
+  status: { color: '#00B241', marginTop: 4, textTransform: 'capitalize', fontWeight: '600' },
   total: { fontWeight: '700', marginTop: 4, color: '#0f172a' },
   card: {
     backgroundColor: '#fff',
@@ -195,7 +196,7 @@ const styles = StyleSheet.create({
   address: { fontSize: 15, color: '#0f172a', marginTop: 4 },
   mapBtn: {
     marginTop: 10,
-    backgroundColor: '#2563eb',
+    backgroundColor: '#00B241',
     padding: 12,
     borderRadius: 10,
     alignItems: 'center',

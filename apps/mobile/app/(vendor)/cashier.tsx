@@ -270,7 +270,7 @@ export default function CashierScreen() {
         <View style={styles.footerActions}>
           {lastReceipt && (
             <TouchableOpacity style={styles.printBtn} onPress={() => printReceipt(lastReceipt)}>
-              <Printer color="#2563eb" size={20} />
+              <Printer color="#00B241" size={20} />
             </TouchableOpacity>
           )}
           <TouchableOpacity
@@ -333,13 +333,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
   },
-  back: { color: '#2563eb', fontWeight: '600' },
+  back: { color: '#00B241', fontWeight: '600' },
   title: { fontSize: 18, fontWeight: '800', color: '#0f172a' },
   scanBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#2563eb',
+    backgroundColor: '#00B241',
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 12,

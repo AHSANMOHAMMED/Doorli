@@ -78,7 +78,7 @@ export default function JobOfferScreen() {
         </View>
 
         <View style={styles.locationRow}>
-          <Navigation color="#3B82F6" size={20} />
+          <Navigation color="#00B241" size={20} />
           <View style={styles.locationTextContainer}>
             <Text style={styles.locationTitle}>Dropoff</Text>
             <Text style={styles.locationDesc}>{String(dropoff)}</Text>

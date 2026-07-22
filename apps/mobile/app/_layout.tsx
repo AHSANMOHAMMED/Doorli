@@ -7,6 +7,7 @@ if (Platform.OS === 'web') {
 }
 import { StatusBar } from 'expo-status-bar';
 import { useAuthStore } from '../store/auth';
+import { loadLanguage } from '../lib/i18n';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider, DarkTheme } from '@react-navigation/native';
 import { GradientBackground } from '../components/GradientBackground';
@@ -18,6 +19,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     loadSession();
+    loadLanguage();
   }, []);
 
   return (

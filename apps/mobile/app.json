@@ -25,7 +25,9 @@
       "infoPlist": {
         "NSCameraUsageDescription": "Doorli scans product barcodes at the cashier to add items to the bill.",
         "NSLocationWhenInUseUsageDescription": "Doorli shares your location while online so customers can track deliveries.",
-        "UIBackgroundModes": ["location"]
+        "UIBackgroundModes": [
+          "location"
+        ]
       }
     },
     "android": {
@@ -34,7 +36,11 @@
         "backgroundColor": "#2563eb"
       },
       "package": "app.doorli.mobile",
-      "permissions": ["CAMERA", "ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"]
+      "permissions": [
+        "CAMERA",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"

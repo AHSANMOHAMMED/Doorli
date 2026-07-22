@@ -67,6 +67,36 @@ app.use(
   })
 );
 
+// Forum service proxy
+app.use(
+  ['/api/v1/forums', '/api/v1/threads'],
+  createProxyMiddleware({
+    target: process.env.FORUM_SERVICE_URL || 'http://localhost:8087',
+    changeOrigin: true,
+    pathRewrite: (path) => path.replace(/^\/api\/v1/, ''),
+  })
+);
+
+// Emergency service proxy
+app.use(
+  ['/api/v1/incidents', '/api/v1/alerts', '/api/v1/sos'],
+  createProxyMiddleware({
+    target: process.env.EMERGENCY_SERVICE_URL || 'http://localhost:8088',
+    changeOrigin: true,
+    pathRewrite: (path) => path.replace(/^\/api\/v1/, ''),
+  })
+);
+
+// Gov service proxy
+app.use(
+  '/api/v1/gov',
+  createProxyMiddleware({
+    target: process.env.GOV_SERVICE_URL || 'http://localhost:8089',
+    changeOrigin: true,
+    pathRewrite: (path) => path.replace(/^\/api\/v1\/gov/, '/api/v1/gov'),
+  })
+);
+
 server.listen(env.API_PORT, () => {
   console.log(`Doorli API running on http://localhost:${env.API_PORT}`);
   console.log(`Swagger docs at http://localhost:${env.API_PORT}/api/docs`);

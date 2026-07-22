@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
   statBox: { flex: 1, backgroundColor: '#fff', padding: 16, borderRadius: 12, alignItems: 'center' },
   statLabel: { color: '#6b7280', fontSize: 12, marginBottom: 4 },
   statValue: { fontSize: 18, fontWeight: 'bold', color: '#111827' },
-  jobsBtn: { margin: 16, backgroundColor: '#2563eb', padding: 16, borderRadius: 12, alignItems: 'center' },
+  jobsBtn: { margin: 16, backgroundColor: '#00B241', padding: 16, borderRadius: 12, alignItems: 'center' },
   jobsBtnText: { color: '#fff', fontWeight: '700' },
   offerBanner: { marginHorizontal: 16, padding: 12, backgroundColor: '#ecfdf5', borderRadius: 12, flexDirection: 'row', justifyContent: 'space-between' },
   offerText: { color: '#065f46', fontWeight: '600' },

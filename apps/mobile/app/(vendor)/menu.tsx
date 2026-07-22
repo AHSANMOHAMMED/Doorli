@@ -163,7 +163,7 @@ export default function VendorMenu() {
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container}>
-        <ActivityIndicator color="#2563eb" style={{ marginTop: 48 }} />
+        <ActivityIndicator color="#00B241" style={{ marginTop: 48 }} />
       </SafeAreaView>
     );
   }
@@ -260,14 +260,14 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8fafc' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
   title: { fontSize: 22, fontWeight: 'bold', color: '#0f172a' },
-  addBtn: { backgroundColor: '#2563eb', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10 },
+  addBtn: { backgroundColor: '#00B241', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10 },
   addBtnText: { color: '#fff', fontWeight: '600' },
   empty: { padding: 32, alignItems: 'center' },
   emptyText: { color: '#64748b', textAlign: 'center' },
   card: { backgroundColor: '#fff', marginHorizontal: 16, marginBottom: 12, padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#e2e8f0' },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between' },
   productName: { fontWeight: '600', fontSize: 16, color: '#0f172a' },
-  price: { fontWeight: '600', color: '#2563eb' },
+  price: { fontWeight: '600', color: '#00B241' },
   desc: { color: '#64748b', fontSize: 14, marginTop: 4 },
   stock: { color: '#94a3b8', fontSize: 13, marginTop: 4 },
   actions: { flexDirection: 'row', gap: 8, marginTop: 12 },
@@ -285,6 +285,6 @@ const styles = StyleSheet.create({
   modalActions: { flexDirection: 'row', gap: 12, marginTop: 8 },
   cancelBtn: { flex: 1, padding: 14, borderRadius: 12, backgroundColor: '#f1f5f9', alignItems: 'center' },
   cancelText: { color: '#64748b', fontWeight: '600' },
-  saveBtn: { flex: 1, padding: 14, borderRadius: 12, backgroundColor: '#2563eb', alignItems: 'center' },
+  saveBtn: { flex: 1, padding: 14, borderRadius: 12, backgroundColor: '#00B241', alignItems: 'center' },
   saveText: { color: '#fff', fontWeight: '600' },
 });
