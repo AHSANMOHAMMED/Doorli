@@ -217,7 +217,6 @@ model Vendor {
   orders            Order[]
   bookings          Booking[]
   reviews           Review[]
-  supplierPurchases SupplierPurchase[]
 
   @@index([category])
   @@index([latitude, longitude])
@@ -281,69 +280,6 @@ model ProductAlias {
   @@map("product_aliases")
 }
 
-enum SupplierPurchaseStatus {
-  draft
-  confirmed
-  cancelled
-}
-
-/**
- * Supplier invoice import → stock purchase batch
- */
-model SupplierPurchase {
-  id             String                 @id @default(uuid()) @db.Uuid
-  vendorId       String                 @map("vendor_id") @db.Uuid
-  supplierName   String?                @map("supplier_name") @db.VarChar(200)
-  invoiceNumber  String?                @map("invoice_number") @db.VarChar(100)
-  invoiceDate    DateTime?              @map("invoice_date")
-  sourceFilename String?                @map("source_filename") @db.VarChar(255)
-  sourceType     String                 @map("source_type") @db.VarChar(20) // csv | xlsx | pdf | text
-  status         SupplierPurchaseStatus @default(draft)
-  totalAmount    Decimal?               @map("total_amount") @db.Decimal(12, 2)
-  rawExtract     Json?                  @map("raw_extract")
-  notes          String?
-  confirmedAt    DateTime?              @map("confirmed_at")
-  createdAt      DateTime               @default(now()) @map("created_at")
-  updatedAt      DateTime               @updatedAt @map("updated_at")
-
-  vendor Vendor                 @relation(fields: [vendorId], references: [id], onDelete: Cascade)
-  items  SupplierPurchaseItem[]
-
-  @@index([vendorId, status])
-  @@index([createdAt])
-  @@map("supplier_purchases")
-}
-
-model SupplierPurchaseItem {
-  id              String   @id @default(uuid()) @db.Uuid
-  purchaseId      String   @map("purchase_id") @db.Uuid
-  lineNo          Int      @map("line_no")
-  invoiceName     String   @map("invoice_name") @db.VarChar(300)
-  barcode         String?  @db.VarChar(64)
-  sku             String?  @db.VarChar(64)
-  quantity        Decimal  @db.Decimal(12, 3)
-  unit            String?  @db.VarChar(40)
-  unitCost        Decimal? @map("unit_cost") @db.Decimal(12, 4)
-  lineTotal       Decimal? @map("line_total") @db.Decimal(12, 2)
-  /**
-   * matched | create_new | skip | needs_review
-   */
-  action          String   @default("needs_review") @db.VarChar(20)
-  productId       String?  @map("product_id") @db.Uuid
-  matchConfidence Int      @default(0) @map("match_confidence")
-  matchMethod     String?  @map("match_method") @db.VarChar(40)
-  /**
-   * Save invoiceName as ProductAlias on confirm when true
-   */
-  saveAsAlias     Boolean  @default(true) @map("save_as_alias")
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
-
-  purchase SupplierPurchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
-
-  @@index([purchaseId])
-  @@map("supplier_purchase_items")
-}
 
 model Order {
   id                    String        @id @default(uuid()) @db.Uuid

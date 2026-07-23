@@ -22,7 +22,7 @@ import recommendationsRouter from '../modules/recommendations/recommendations.ro
 import flashSalesRouter from '../modules/flash-sales/flash-sales.routes.js';
 import ridesRouter from '../modules/rides/rides.routes.js';
 import posRouter from '../modules/pos/pos.routes.js';
-import purchasesRouter from '../modules/purchases/purchases.routes.js';
+import erpWebhooksRouter from '../modules/erp-webhooks/erp-webhooks.routes.js';
 
 const router = Router();
 
@@ -72,6 +72,6 @@ router.use('/api/v1/recommendations', recommendationsRouter);
 router.use('/api/v1/flash-sales', flashSalesRouter);
 router.use('/api/v1/rides', ridesRouter);
 router.use('/api/v1/pos', posRouter);
-router.use('/api/v1/purchases', purchasesRouter);
+router.use('/api/v1/erp-webhooks', erpWebhooksRouter);
 
 export default router;
