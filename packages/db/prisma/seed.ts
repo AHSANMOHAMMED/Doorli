@@ -278,7 +278,7 @@ async function main() {
   // Link demo grocery vendor to ERP tenant id for inventory/order bridge demos
   await prisma.vendor.update({
     where: { userId: vendorUser.id },
-    data: { erpTenantId: 'doorli-demo-tenant' },
+    data: { erpTenantId: '11111111-1111-4111-a111-111111111111' },
   });
 
   const groceryProducts = [

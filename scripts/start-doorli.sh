@@ -100,6 +100,8 @@ echo "Migrating ERP DB..."
   npm run db:migrate >>/tmp/doorli-logs/erp-migrate.log 2>&1 \
     || npm run db:push -- --force >>/tmp/doorli-logs/erp-migrate.log 2>&1 \
     || echo "WARNING: ERP schema sync failed — see /tmp/doorli-logs/erp-migrate.log"
+  echo "Seeding ERP DB..."
+  npm run db:seed >>/tmp/doorli-logs/erp-seed.log 2>&1 || echo "WARNING: ERP seeding failed"
 )
 
 # Root .env points at doorli_db — override so ERP keeps its own DB.
