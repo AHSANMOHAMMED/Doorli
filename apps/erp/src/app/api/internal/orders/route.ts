@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { eq } from 'drizzle-orm';
-import { sales, saleItems, payments } from '@/lib/db/schema';
+import { sales, saleItems, payments, items as itemsSchema } from '@/lib/db/schema';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(req: Request) {
@@ -34,6 +34,23 @@ export async function POST(req: Request) {
 
       // 2. Insert Sale Items
       if (items && items.length > 0) {
+        // First, ensure all items exist in the ERP's inventory catalog.
+        // For a marketplace integration, we auto-create the stub items if they don't exist yet.
+        const itemsToUpsert = items.map((item: any) => ({
+          id: item.productId,
+          tenantId,
+          name: item.name || 'Marketplace Item',
+          type: 'product', // basic default
+          category: 'marketplace', // generic category
+          status: 'active',
+          trackInventory: false,
+          basePrice: String(item.price),
+        }));
+
+        await tx.insert(itemsSchema)
+          .values(itemsToUpsert)
+          .onConflictDoNothing({ target: itemsSchema.id });
+
         const saleItemsData = items.map((item: any) => ({
           tenantId,
           saleId: newSale.id,
