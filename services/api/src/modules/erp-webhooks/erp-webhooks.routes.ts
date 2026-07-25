@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { prisma } from '@doorli/db';
 
 const router = Router();
-const ERP_INTERNAL_SECRET = process.env.ERP_INTERNAL_SECRET || 'doorli_internal_sync_secret';
+const ERP_INTERNAL_SECRET = process.env.ERP_INTERNAL_SECRET || 'DOORLI_ENTERPRISE_SECRET_2026_xyz';
 
 // Basic middleware to ensure only the internal ERP can hit these webhooks
 function requireErpSecret(req: Request, res: Response, next: any) {
@@ -38,6 +38,33 @@ router.post('/stock-update', requireErpSecret, async (req: Request, res: Respons
     return res.json({ success: true });
   } catch (error: any) {
     console.error('[ERP Webhook] Stock update error:', error.message);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * POST /api/v1/erp-webhooks/order-status
+ * Called by the ERP when an order status is updated (e.g. to Completed/Delivered)
+ */
+router.post('/order-status', requireErpSecret, async (req: Request, res: Response) => {
+  const { marketplace_order_id, status } = req.body;
+
+  if (!marketplace_order_id || !status) {
+    return res.status(400).json({ error: 'Invalid payload' });
+  }
+
+  try {
+    // Map ERP status to Marketplace enum if needed, assuming they match (e.g. Delivered -> delivered)
+    const newStatus = status.toLowerCase();
+    
+    await prisma.order.update({
+      where: { id: marketplace_order_id },
+      data: { status: newStatus as any },
+    });
+    console.log(`[ERP Webhook] Updated order ${marketplace_order_id} to ${newStatus}`);
+    return res.json({ success: true });
+  } catch (error: any) {
+    console.error('[ERP Webhook] Order status update error:', error.message);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
