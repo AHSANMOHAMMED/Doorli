@@ -10,15 +10,15 @@
     "test": "echo \"No tests yet\""
   },
   "dependencies": {
-    "@doorli/types": "*",
     "@doorli/db": "*",
+    "@doorli/types": "*",
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.110.0",
     "date-fns": "^4.4.0",
     "lucide-react": "^1.23.0",
-    "next": "^14.2.21",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "next": "14.2.35",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
     "recharts": "^3.9.2"
   },
   "devDependencies": {
@@ -27,7 +27,7 @@
     "@types/react-dom": "^18.3.5",
     "autoprefixer": "^10.4.20",
     "eslint": "^8.57.1",
-    "eslint-config-next": "^14.2.21",
+    "eslint-config-next": "14.2.35",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.7.2"
