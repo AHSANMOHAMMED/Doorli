@@ -18,6 +18,9 @@ jobs:
         with:
           fetch-depth: 2
 
+      - name: Verify lockfile exists
+        run: test -f package-lock.json || (echo "package-lock.json is required for npm ci" && exit 1)
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
