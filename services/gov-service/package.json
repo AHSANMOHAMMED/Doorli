@@ -15,7 +15,9 @@
     "@doorli/db": "^0.1.0",
     "@doorli/types": "*",
     "bullmq": "^5.34.3",
+    "cors": "^2.8.5",
     "dotenv": "^16.4.7",
+    "express": "^4.21.2",
     "ioredis": "^5.4.2"
   },
   "devDependencies": {

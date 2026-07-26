@@ -3,7 +3,7 @@ import { PrismaClient } from '@doorli/db';
 
 const prisma = new PrismaClient();
 
-export const getServices = async (req: Request, res: Response) => {
+export const getServices = async (_req: Request, res: Response) => {
   try {
     const services = await prisma.governmentService.findMany({
       where: { isActive: true },
@@ -78,7 +78,11 @@ export const fileComplaint = async (req: Request, res: Response) => {
 
 export const getMyDocuments = async (req: Request, res: Response) => {
   try {
-    const { userId } = req.params;
+    const userId = Array.isArray(req.params.userId) ? req.params.userId[0] : req.params.userId;
+    if (!userId) {
+      res.status(400).json({ error: 'userId required' });
+      return;
+    }
     const docs = await prisma.documentVault.findMany({
       where: { userId },
     });
