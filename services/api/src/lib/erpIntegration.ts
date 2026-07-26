@@ -2,50 +2,174 @@ import axios from 'axios';
 
 /**
  * Marketplace → ERP bridge.
- * - Embedded Retail Smart ERP (OCI today): ERP_API_URL ends with /erp/api/internal
- * - Doorli Enterprise OS (Frappe): ERP_API_URL contains doorli_core.api.create_order
+ *
+ * Doorli runs two ERPs at once and routes *per vendor* (never from one global URL):
+ * - `simple`     → embedded Retail Smart ERP (Next app on the marketplace node).
+ * - `enterprise` → isolated Frappe/ERPNext company (Doorli Enterprise OS).
+ *
+ * All settings are read once and validated so a misconfigured node fails loudly
+ * instead of silently pointing every vendor at the wrong backend.
  */
-function erpBaseUrl(): string {
-  return (
-    process.env.ERP_API_URL ||
-    process.env.ERP_SERVICE_URL ||
-    'http://127.0.0.1:3010/api/internal'
+
+export type ErpProvider = 'simple' | 'enterprise';
+
+export interface ErpOrderItem {
+  productId: string;
+  /** Optional stock-keeping unit; preferred for stable cross-system identity. */
+  sku?: string;
+  name?: string;
+  quantity: number;
+  price: number;
+}
+
+export interface SyncOrderInput {
+  provider: ErpProvider;
+  /** Marketplace vendor id — half of the stable product identity. */
+  vendorId: string;
+  /** Remote tenant/company identifier stored on the vendor. */
+  erpTenantId: string;
+  items: ErpOrderItem[];
+  customerInfo?: { name?: string; phone?: string };
+  totalAmount: number;
+  /** Marketplace order id — also used as the idempotency key. */
+  marketplaceOrderId: string;
+  marketplaceOrderNumber?: string;
+}
+
+export interface SyncOrderResult {
+  success: boolean;
+  erpOrderId?: string;
+  message?: string;
+  /** HTTP status from the ERP (when reachable), for logging/telemetry. */
+  status?: number;
+}
+
+export interface ProvisionVendorInput {
+  vendorId: string;
+  businessName: string;
+  adminEmail?: string;
+  phone?: string;
+  currency?: string;
+}
+
+export interface ProvisionVendorResult {
+  success: boolean;
+  companyId?: string;
+  message?: string;
+  status?: number;
+}
+
+const REQUEST_TIMEOUT_MS = 8000;
+
+/** Shared secret used for both embedded and Enterprise auth. Never defaulted in prod. */
+function erpSecret(): string {
+  return (process.env.ERP_INTERNAL_SECRET || 'doorli_internal_sync_secret').replace(
+    /^Bearer\s+/i,
+    '',
   );
 }
 
-function erpSecretRaw(): string {
-  return process.env.ERP_INTERNAL_SECRET || 'doorli_internal_sync_secret';
+/** Embedded Retail Smart ERP internal base, e.g. http://host/erp/api/internal */
+function embeddedBaseUrl(): string {
+  return (
+    process.env.ERP_EMBEDDED_URL ||
+    process.env.ERP_API_URL ||
+    process.env.ERP_SERVICE_URL ||
+    'http://127.0.0.1:3010/api/internal'
+  ).replace(/\/$/, '');
 }
 
-function authHeaderValue(): string {
-  const secret = erpSecretRaw();
-  return secret.startsWith('Bearer ') ? secret : `Bearer ${secret}`;
+/** Enterprise Frappe create_order method URL. */
+function enterpriseCreateOrderUrl(): string | null {
+  const url = process.env.ERP_ENTERPRISE_URL || '';
+  return url ? url.replace(/\/$/, '') : null;
 }
 
-function isEnterpriseFrappe(url: string): boolean {
-  return /doorli_core\.api|enterprise\.doorli/i.test(url);
+/** Enterprise Frappe provision_vendor method URL (derived from create_order if unset). */
+function enterpriseProvisionUrl(): string | null {
+  if (process.env.ERP_ENTERPRISE_PROVISION_URL) {
+    return process.env.ERP_ENTERPRISE_PROVISION_URL.replace(/\/$/, '');
+  }
+  const create = enterpriseCreateOrderUrl();
+  if (!create) return null;
+  return create.replace(/create_order$/, 'provision_vendor');
+}
+
+/** Stable product identity across systems: vendor-scoped SKU (fallback productId). */
+function productRef(vendorId: string, item: ErpOrderItem): string {
+  return `${vendorId}:${item.sku || item.productId}`;
 }
 
 export class ErpIntegrationService {
-  /** Sync marketplace order → embedded ERP or Enterprise OS. */
-  static async syncOrderToErp(orderPayload: {
-    tenantId: string;
-    items: Array<{ productId: string; name?: string; quantity: number; price: number }>;
-    customerInfo?: { name?: string; phone?: string };
-    totalAmount: number;
-    marketplaceOrderId?: string;
-    marketplaceOrderNumber?: string;
-  }): Promise<{ success: boolean; erpOrderId?: string; message?: string }> {
-    const url = erpBaseUrl();
+  /**
+   * Sync a marketplace/POS order to the vendor's ERP.
+   * Routing is decided by the caller-provided `provider`, not by sniffing a URL.
+   */
+  static async syncOrderToErp(input: SyncOrderInput): Promise<SyncOrderResult> {
+    if (!input.marketplaceOrderId) {
+      return { success: false, message: 'marketplaceOrderId is required for idempotency' };
+    }
+    try {
+      if (input.provider === 'enterprise') {
+        return await syncToEnterpriseOs(input);
+      }
+      return await syncToEmbeddedErp(input);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'ERP unreachable';
+      console.error(`[ERP] sync failed (${input.provider}):`, message);
+      return { success: false, message: 'ERP unreachable' };
+    }
+  }
+
+  /**
+   * Provision an isolated Frappe Company for an Enterprise vendor.
+   * Returns the canonical Company name to persist as the vendor's erpTenantId.
+   */
+  static async provisionEnterpriseVendor(
+    input: ProvisionVendorInput,
+  ): Promise<ProvisionVendorResult> {
+    const url = enterpriseProvisionUrl();
+    if (!url) {
+      return { success: false, message: 'ERP_ENTERPRISE_URL is not configured' };
+    }
 
     try {
-      if (isEnterpriseFrappe(url)) {
-        return await syncToEnterpriseOs(url, orderPayload);
+      const response = await axios.post(
+        url,
+        {
+          vendor_id: input.vendorId,
+          business_name: input.businessName,
+          admin_email: input.adminEmail || '',
+          phone: input.phone || '',
+          currency: input.currency || 'LKR',
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            // Custom header: Frappe reserves Authorization for its own token/OAuth auth.
+            'X-Doorli-Secret': erpSecret(),
+          },
+          timeout: REQUEST_TIMEOUT_MS,
+          validateStatus: () => true,
+        },
+      );
+
+      const payload = response.data?.message ?? response.data;
+      if (response.status >= 400 || payload?.status === 'error') {
+        const message = payload?.message || `Provisioning failed (${response.status})`;
+        console.error('[ERP] provision rejected:', response.status, payload);
+        return { success: false, message, status: response.status };
       }
-      return await syncToEmbeddedErp(url, orderPayload);
+
+      const companyId = payload?.company || payload?.company_name || payload?.erp_tenant_id;
+      if (!companyId) {
+        return { success: false, message: 'Provisioning returned no Company id', status: response.status };
+      }
+      return { success: true, companyId: String(companyId), status: response.status };
     } catch (error) {
-      console.error('Failed to sync order to ERP:', error);
-      return { success: false, message: 'ERP unreachable' };
+      const message = error instanceof Error ? error.message : 'ERP unreachable';
+      console.error('[ERP] provision error:', message);
+      return { success: false, message: 'Enterprise ERP unreachable' };
     }
   }
 
@@ -64,87 +188,104 @@ export class ErpIntegrationService {
   }
 }
 
-async function syncToEmbeddedErp(
-  baseUrl: string,
-  orderPayload: {
-    tenantId: string;
-    items: Array<{ productId: string; name?: string; quantity: number; price: number }>;
-    customerInfo?: { name?: string; phone?: string };
-    totalAmount: number;
-  },
-): Promise<{ success: boolean; erpOrderId?: string; message?: string }> {
-  const endpoint = baseUrl.replace(/\/$/, '').endsWith('/orders')
-    ? baseUrl
-    : `${baseUrl.replace(/\/$/, '')}/orders`;
+async function syncToEmbeddedErp(input: SyncOrderInput): Promise<SyncOrderResult> {
+  const base = embeddedBaseUrl();
+  const endpoint = base.endsWith('/orders') ? base : `${base}/orders`;
 
   const response = await axios.post(
     endpoint,
     {
-      tenantId: orderPayload.tenantId,
-      items: orderPayload.items,
-      customerInfo: orderPayload.customerInfo,
-      totalAmount: orderPayload.totalAmount,
+      tenantId: input.erpTenantId,
+      idempotencyKey: input.marketplaceOrderId,
+      marketplaceOrderId: input.marketplaceOrderId,
+      marketplaceOrderNumber: input.marketplaceOrderNumber,
+      items: input.items.map((item) => ({
+        productId: item.productId,
+        productRef: productRef(input.vendorId, item),
+        sku: item.sku,
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+      })),
+      customerInfo: input.customerInfo,
+      totalAmount: input.totalAmount,
     },
     {
       headers: {
         'Content-Type': 'application/json',
-        'x-internal-secret': erpSecretRaw().replace(/^Bearer\s+/i, ''),
+        'x-internal-secret': erpSecret(),
+        'Idempotency-Key': input.marketplaceOrderId,
       },
-      timeout: 8000,
+      timeout: REQUEST_TIMEOUT_MS,
       validateStatus: () => true,
     },
   );
 
   if (response.status >= 400 || response.data?.success === false) {
-    console.error('Embedded ERP sync rejected:', response.status, response.data);
-    return { success: false, message: response.data?.error || 'ERP rejected' };
+    console.error('[ERP] embedded sync rejected:', response.status, response.data);
+    return {
+      success: false,
+      message: response.data?.error || `Embedded ERP rejected (${response.status})`,
+      status: response.status,
+    };
   }
 
   return {
     success: true,
     erpOrderId: response.data?.invoiceNo || response.data?.id,
     message: 'Synced to embedded ERP',
+    status: response.status,
   };
 }
 
-async function syncToEnterpriseOs(
-  createOrderUrl: string,
-  orderPayload: {
-    tenantId: string;
-    items: Array<{ productId: string; name?: string; quantity: number; price: number }>;
-    customerInfo?: { name?: string; phone?: string };
-    totalAmount: number;
-    marketplaceOrderId?: string;
-    marketplaceOrderNumber?: string;
-  },
-): Promise<{ success: boolean; erpOrderId?: string; message?: string }> {
+async function syncToEnterpriseOs(input: SyncOrderInput): Promise<SyncOrderResult> {
+  const url = enterpriseCreateOrderUrl();
+  if (!url) {
+    return { success: false, message: 'ERP_ENTERPRISE_URL is not configured' };
+  }
+
   const frappePayload = {
-    marketplace_order_id: orderPayload.marketplaceOrderId || orderPayload.marketplaceOrderNumber,
-    vendor_id: orderPayload.tenantId,
-    customer_name: orderPayload.customerInfo?.name || 'Walk-in Customer',
-    customer_phone: orderPayload.customerInfo?.phone || '',
-    items: orderPayload.items.map((item) => ({
+    idempotency_key: input.marketplaceOrderId,
+    marketplace_order_id: input.marketplaceOrderId,
+    marketplace_order_number: input.marketplaceOrderNumber,
+    company: input.erpTenantId,
+    vendor_id: input.vendorId,
+    customer_name: input.customerInfo?.name || 'Walk-in Customer',
+    customer_phone: input.customerInfo?.phone || '',
+    total_amount: input.totalAmount,
+    items: input.items.map((item) => ({
+      item_code: productRef(input.vendorId, item),
       item_name: item.name || item.productId,
       qty: item.quantity,
       price: item.price,
     })),
-    total_amount: orderPayload.totalAmount,
   };
 
-  const response = await axios.post(createOrderUrl, frappePayload, {
+  const response = await axios.post(url, frappePayload, {
     headers: {
       'Content-Type': 'application/json',
-      Authorization: authHeaderValue(),
+      // Custom header: Frappe reserves Authorization for its own token/OAuth auth.
+      'X-Doorli-Secret': erpSecret(),
+      'Idempotency-Key': input.marketplaceOrderId,
     },
-    timeout: 8000,
+    timeout: REQUEST_TIMEOUT_MS,
     validateStatus: () => true,
   });
 
-  if (response.status >= 400 || response.data?.message?.status === 'error') {
-    console.error('Enterprise OS sync rejected:', response.status, response.data);
-    return { success: false, message: response.data?.message?.message || 'ERP rejected' };
+  const payload = response.data?.message ?? response.data;
+  if (response.status >= 400 || payload?.status === 'error') {
+    console.error('[ERP] enterprise sync rejected:', response.status, payload);
+    return {
+      success: false,
+      message: payload?.message || `Enterprise ERP rejected (${response.status})`,
+      status: response.status,
+    };
   }
 
-  const erpOrderId = response.data?.message?.erp_order_id;
-  return { success: true, erpOrderId, message: 'Injected into Enterprise OS' };
+  return {
+    success: true,
+    erpOrderId: payload?.erp_order_id || payload?.sales_order,
+    message: 'Injected into Enterprise OS',
+    status: response.status,
+  };
 }

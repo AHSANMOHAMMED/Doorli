@@ -32,6 +32,13 @@ const envSchema = z.object({
   OTP_TTL_SECONDS: z.coerce.number().default(300),
   ERP_INTERNAL_SECRET: z.string().default('doorli_internal_sync_secret'),
   ERP_SERVICE_URL: z.string().default('http://localhost:3010'),
+  // Embedded Retail Smart ERP internal base (simple vendors). Falls back to ERP_SERVICE_URL.
+  ERP_EMBEDDED_URL: optionalEmpty(z.string()).optional(),
+  // Enterprise Frappe create_order method URL (enterprise vendors), e.g.
+  // https://enterprise.doorli.me/api/method/doorli_core.api.create_order
+  ERP_ENTERPRISE_URL: optionalEmpty(z.string()).optional(),
+  // Enterprise Frappe provision_vendor method URL (derived from ERP_ENTERPRISE_URL if unset).
+  ERP_ENTERPRISE_PROVISION_URL: optionalEmpty(z.string()).optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '@doorli/db';
 import { authenticateToken } from '../../middleware/authenticateToken.js';
 import { AppError } from '../../middleware/errorHandler.js';
+import { ErpIntegrationService } from '../../lib/erpIntegration.js';
 
 const adminRouter = Router();
 adminRouter.use(authenticateToken);
@@ -289,9 +290,13 @@ adminRouter.post('/vendors', async (req, res, next) => {
   try {
     requireAdmin(req);
     const body = z.object({
-      businessName: z.string(),
+      businessName: z.string().min(1),
       email: z.string().email(),
       phone: z.string().optional(),
+      // Admin explicitly chooses the ERP tier for the new vendor.
+      // `simple` uses the embedded Retail Smart ERP; `enterprise` provisions Frappe.
+      tier: z.enum(['none', 'simple', 'enterprise']).default('simple'),
+      // For simple/none vendors an admin may pass an existing embedded tenant id.
       erpTenantId: z.string().optional(),
     }).parse(req.body);
 
@@ -306,19 +311,63 @@ adminRouter.post('/vendors', async (req, res, next) => {
       }
     });
 
-    // Create vendor
+    // Simple/none vendors link to the embedded ERP immediately (if given a tenant).
+    // Enterprise vendors start `pending` and are provisioned against Frappe below.
     const vendor = await prisma.vendor.create({
       data: {
         userId: user.id,
         businessName: body.businessName,
         category: 'service', // default
         phone: body.phone,
-        erpTenantId: body.erpTenantId,
+        erpProvider: body.tier,
+        erpTenantId: body.tier === 'enterprise' ? null : body.erpTenantId,
+        erpProvisionStatus:
+          body.tier === 'enterprise'
+            ? 'pending'
+            : body.tier === 'simple' && body.erpTenantId
+              ? 'provisioned'
+              : 'none',
         isVerified: true,
       }
     });
 
-    res.json({ success: true, data: vendor });
+    if (body.tier !== 'enterprise') {
+      return res.json({ success: true, data: vendor });
+    }
+
+    // Enterprise: provision an isolated Frappe Company and store its canonical name.
+    const provision = await ErpIntegrationService.provisionEnterpriseVendor({
+      vendorId: vendor.id,
+      businessName: body.businessName,
+      adminEmail: body.email,
+      phone: body.phone,
+    });
+
+    if (!provision.success || !provision.companyId) {
+      const failed = await prisma.vendor.update({
+        where: { id: vendor.id },
+        data: {
+          erpProvisionStatus: 'failed',
+          erpProvisionError: (provision.message || 'Provisioning failed').slice(0, 500),
+        },
+      });
+      return res.status(502).json({
+        success: false,
+        error: provision.message || 'Enterprise provisioning failed',
+        data: failed,
+      });
+    }
+
+    const provisioned = await prisma.vendor.update({
+      where: { id: vendor.id },
+      data: {
+        erpTenantId: provision.companyId.slice(0, 50),
+        erpProvisionStatus: 'provisioned',
+        erpProvisionError: null,
+      },
+    });
+
+    res.json({ success: true, data: provisioned });
   } catch (err) {
     next(err);
   }

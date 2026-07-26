@@ -326,16 +326,24 @@ async function syncOrderToErpIfLinked(orderId: string) {
       customer: { select: { fullName: true, phone: true } },
     },
   });
-  if (!order?.vendor.erpTenantId || order.erpOrderId) return;
+  if (!order || order.erpOrderId) return;
+
+  const provider = order.vendor.erpProvider;
+  // Only sync vendors explicitly linked to an ERP; enterprise vendors must be provisioned.
+  if (provider === 'none' || !order.vendor.erpTenantId) return;
+  if (provider === 'enterprise' && order.vendor.erpProvisionStatus !== 'provisioned') return;
 
   const result = await ErpIntegrationService.syncOrderToErp({
-    tenantId: order.vendor.erpTenantId,
+    provider,
+    vendorId: order.vendorId,
+    erpTenantId: order.vendor.erpTenantId,
     marketplaceOrderId: order.id,
     marketplaceOrderNumber: order.orderNumber,
     totalAmount: Number(order.totalAmount),
     customerInfo: { name: order.customer.fullName, phone: order.customer.phone ?? undefined },
     items: order.items.map((i) => ({
       productId: i.productId,
+      sku: i.product.sku ?? undefined,
       name: i.product.name,
       quantity: i.quantity,
       price: Number(i.unitPrice),

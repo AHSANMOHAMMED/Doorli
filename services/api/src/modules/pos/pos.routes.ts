@@ -169,6 +169,7 @@ posRouter.post('/sale', async (req: Request, res: Response, next: NextFunction) 
       return {
         productId: p.id,
         name: p.name,
+        sku: p.sku ?? undefined,
         barcode: p.barcode,
         quantity: line.quantity,
         unitPrice,
@@ -239,21 +240,35 @@ posRouter.post('/sale', async (req: Request, res: Response, next: NextFunction) 
       });
     });
 
-    if (vendor.erpTenantId) {
+    const canSyncErp =
+      vendor.erpProvider !== 'none' &&
+      !!vendor.erpTenantId &&
+      (vendor.erpProvider !== 'enterprise' || vendor.erpProvisionStatus === 'provisioned');
+
+    if (canSyncErp) {
       try {
-        await ErpIntegrationService.syncOrderToErp({
-          tenantId: vendor.erpTenantId,
+        const result = await ErpIntegrationService.syncOrderToErp({
+          provider: vendor.erpProvider as 'simple' | 'enterprise',
+          vendorId: vendor.id,
+          erpTenantId: vendor.erpTenantId!,
           marketplaceOrderId: order.id,
           marketplaceOrderNumber: order.orderNumber,
           totalAmount: Number(order.totalAmount),
           customerInfo: { name: input.customerName || 'Walk-in' },
           items: priced.map((i) => ({
             productId: i.productId,
+            sku: i.sku,
             name: i.name,
             quantity: i.quantity,
             price: i.unitPrice,
           })),
         });
+        if (result.success && result.erpOrderId) {
+          await prisma.order.update({
+            where: { id: order.id },
+            data: { erpOrderId: String(result.erpOrderId).slice(0, 50) },
+          });
+        }
       } catch {
         // soft-fail ERP
       }

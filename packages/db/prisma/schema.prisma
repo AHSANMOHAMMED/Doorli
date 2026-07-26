@@ -50,6 +50,24 @@ enum OrderType {
   pos
 }
 
+/// Which ERP backend a vendor is wired to.
+/// - none: not linked to any ERP
+/// - simple: embedded Retail Smart ERP (Next app on the marketplace node)
+/// - enterprise: isolated Frappe/ERPNext company (Doorli Enterprise OS)
+enum ErpProvider {
+  none
+  simple
+  enterprise
+}
+
+/// Provisioning lifecycle for an enterprise vendor's ERP company.
+enum ErpProvisionStatus {
+  none
+  pending
+  provisioned
+  failed
+}
+
 enum PaymentMethod {
   card
   wallet
@@ -208,6 +226,9 @@ model Vendor {
   deliveryRadiusKm Int            @default(5) @map("delivery_radius_km")
   minOrderAmount   Decimal?       @map("min_order_amount") @db.Decimal(10, 2)
   erpTenantId      String?        @map("erp_tenant_id") @db.VarChar(50)
+  erpProvider        ErpProvider        @default(none) @map("erp_provider")
+  erpProvisionStatus ErpProvisionStatus @default(none) @map("erp_provision_status")
+  erpProvisionError  String?            @map("erp_provision_error") @db.Text
   createdAt        DateTime       @default(now()) @map("created_at")
   updatedAt        DateTime       @updatedAt @map("updated_at")
 
