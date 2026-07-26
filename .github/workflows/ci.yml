@@ -30,8 +30,30 @@ jobs:
       - name: Verify lockfile exists
         run: test -f package-lock.json || (echo "package-lock.json is required for npm ci" && exit 1)
 
-      - name: Validate lockfile
+      - name: Validate lockfile JSON
         run: node -e "const fs=require('fs'); JSON.parse(fs.readFileSync('package-lock.json','utf8')); console.log('package-lock.json is valid JSON')"
+
+      - name: Validate workspace versions are semver
+        run: |
+          node -e "
+          const fs=require('fs');
+          const path=require('path');
+          const semver=/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
+          const roots=['apps','services','packages'];
+          for (const r of roots){
+            if(!fs.existsSync(r)) continue;
+            for (const d of fs.readdirSync(r)){
+              const pj=path.join(r,d,'package.json');
+              if(!fs.existsSync(pj)) continue;
+              const j=JSON.parse(fs.readFileSync(pj,'utf8'));
+              if(!j.version || !semver.test(j.version)){
+                console.error('Invalid version in ' + pj + ': ' + j.version);
+                process.exit(1);
+              }
+            }
+          }
+          console.log('All workspace versions are valid semver');
+          "
 
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
