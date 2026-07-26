@@ -3,7 +3,7 @@ import { PrismaClient } from '@doorli/db';
 
 const prisma = new PrismaClient();
 
-export const getIncidents = async (req: Request, res: Response) => {
+export const getIncidents = async (_req: Request, res: Response) => {
   try {
     const incidents = await prisma.incident.findMany({
       orderBy: { createdAt: 'desc' },
@@ -35,7 +35,7 @@ export const reportIncident = async (req: Request, res: Response) => {
   }
 };
 
-export const getAlerts = async (req: Request, res: Response) => {
+export const getAlerts = async (_req: Request, res: Response) => {
   try {
     const alerts = await prisma.alert.findMany({
       where: { status: 'active' },

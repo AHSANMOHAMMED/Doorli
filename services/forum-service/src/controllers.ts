@@ -3,7 +3,7 @@ import { PrismaClient } from '@doorli/db';
 
 const prisma = new PrismaClient();
 
-export const getForums = async (req: Request, res: Response) => {
+export const getForums = async (_req: Request, res: Response) => {
   try {
     const forums = await prisma.forum.findMany({ where: { isActive: true } });
     res.json({ data: forums });
@@ -26,7 +26,7 @@ export const createForum = async (req: Request, res: Response) => {
 
 export const getThreads = async (req: Request, res: Response) => {
   try {
-    const { forumId } = req.params;
+    const forumId = String(req.params.forumId);
     const threads = await prisma.thread.findMany({
       where: { forumId },
       orderBy: { createdAt: 'desc' },
@@ -40,7 +40,7 @@ export const getThreads = async (req: Request, res: Response) => {
 
 export const createThread = async (req: Request, res: Response) => {
   try {
-    const { forumId } = req.params;
+    const forumId = String(req.params.forumId);
     // In real app, authorId comes from authenticated user context (JWT)
     const { title, content, authorId } = req.body;
     
@@ -55,7 +55,7 @@ export const createThread = async (req: Request, res: Response) => {
 
 export const getPosts = async (req: Request, res: Response) => {
   try {
-    const { threadId } = req.params;
+    const threadId = String(req.params.threadId);
     const posts = await prisma.post.findMany({
       where: { threadId, isDeleted: false },
       orderBy: { createdAt: 'asc' },
@@ -69,7 +69,7 @@ export const getPosts = async (req: Request, res: Response) => {
 
 export const createPost = async (req: Request, res: Response) => {
   try {
-    const { threadId } = req.params;
+    const threadId = String(req.params.threadId);
     const { content, authorId, parentId } = req.body;
 
     const post = await prisma.post.create({

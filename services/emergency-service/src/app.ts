@@ -13,7 +13,7 @@ export function createApp() {
   app.use('/', emergencyRoutes);
 
   // Health check
-  app.get('/health/live', (req, res) => {
+  app.get('/health/live', (_req, res) => {
     res.status(200).json({ status: 'ok', service: 'emergency-service' });
   });
 

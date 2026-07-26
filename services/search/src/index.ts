@@ -112,7 +112,7 @@ app.get('/api/search/products', async (req: Request, res: Response): Promise<any
       }
     });
 
-    const hits = result.hits.hits.map(hit => hit._source);
+    const hits = result.hits.hits.map((hit: { _source?: unknown }) => hit._source);
     
     res.status(200).json({
       results: hits,
