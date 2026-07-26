@@ -27,9 +27,6 @@ jobs:
           node-version: 22
           cache: 'npm'
 
-      - name: Verify lockfile exists
-        run: test -f package-lock.json || (echo "package-lock.json is required for npm ci" && exit 1)
-
       - name: Validate lockfile JSON
         run: node -e "const fs=require('fs'); JSON.parse(fs.readFileSync('package-lock.json','utf8')); console.log('package-lock.json is valid JSON')"
 
