@@ -17,3 +17,7 @@ For HTTPS on the marketplace:
 - Current marketplace SSH key cannot log in to that host
 - After opening 80/443 and deploying with `scripts/init-site.sh`, `doorli_core` installs with the site
 - Point marketplace `ERP_API_URL` at Enterprise only when that node is live; until then keep OCI `.env` on embedded `/erp/api/internal`
+
+## CI note
+- Marketplace turbo build excludes `@doorli/erp` until Next 15 monorepo dual-React `/404` prerender is fixed.
+- Deployed OCI ERP continues to run from the existing VM build.
