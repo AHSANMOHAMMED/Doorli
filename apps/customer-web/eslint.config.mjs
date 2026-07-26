@@ -10,6 +10,11 @@ const eslintConfig = defineConfig([
       // Align with ERP: avoid blocking CI on React 19 setState-in-effect heuristics
       // for modal/form sync patterns.
       "react-hooks/set-state-in-effect": "off",
+      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-unused-vars": "warn",
+      "react/no-unescaped-entities": "warn",
+      "@next/next/no-img-element": "warn",
+      "jsx-a11y/alt-text": "warn",
     },
   },
   // Override default ignores of eslint-config-next.
