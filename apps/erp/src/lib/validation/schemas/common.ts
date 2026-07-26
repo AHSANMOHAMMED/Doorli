@@ -22,7 +22,7 @@ export const dateStringSchema = z.string().regex(
 export const optionalDateString = dateStringSchema.nullish()
 
 /** ISO datetime string */
-export const isoDateTimeSchema = z.iso.datetime({ message: 'Invalid datetime format' })
+export const isoDateTimeSchema = z.string().datetime({ message: 'Invalid datetime format' })
 
 /** Time string in HH:MM format */
 export const timeStringSchema = z.string().regex(
@@ -31,7 +31,7 @@ export const timeStringSchema = z.string().regex(
 )
 
 /** Email with normalization */
-export const emailSchema = z.email('Invalid email format').max(255).transform(v => v.toLowerCase().trim())
+export const emailSchema = z.string().email('Invalid email format').max(255).transform(v => v.toLowerCase().trim())
 
 /** Phone number (7-15 digits, allows formatting chars).
  *  Normalizes to digits-only with optional leading '+' for consistent storage. */
