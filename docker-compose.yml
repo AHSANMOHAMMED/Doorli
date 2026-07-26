@@ -1,95 +1,38 @@
+version: "3.8"
 
 services:
-  postgres:
-    image: postgis/postgis:16-3.4
-    container_name: doorli-postgres
+  super-admin:
+    build:
+      context: .
+      dockerfile: apps/super-admin/Dockerfile
+    ports:
+      - "3006:3000"
     environment:
-      POSTGRES_USER: doorli_user
-      POSTGRES_PASSWORD: doorli_password
-      POSTGRES_DB: doorli_db
+      - NODE_ENV=production
+    depends_on:
+      - api
+
+  api:
+    build:
+      context: .
+      dockerfile: services/api/Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - DATABASE_URL=postgresql://user:pass@db:5432/doorli?schema=public
+
+  db:
+    image: postgres:15-alpine
     ports:
       - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./docker/postgres-init:/docker-entrypoint-initdb.d:ro
-    restart: unless-stopped
-
-  redis:
-    image: redis:7-alpine
-    container_name: doorli-redis
-    ports:
-      - "6379:6379"
-    command: redis-server --appendonly yes
-    volumes:
-      - redis_data:/data
-    restart: unless-stopped
-
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.3.2
-    container_name: doorli-zookeeper
-    ports:
-      - "2181:2181"
     environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-    restart: unless-stopped
-
-  kafka:
-    image: confluentinc/cp-kafka:7.3.2
-    container_name: doorli-kafka
-    ports:
-      - "9092:9092"
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-    depends_on:
-      - zookeeper
-    restart: unless-stopped
-
-  elasticsearch:
-    image: elasticsearch:8.10.2
-    container_name: doorli-elasticsearch
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-    ports:
-      - "9200:9200"
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=pass
+      - POSTGRES_DB=doorli
     volumes:
-      - es_data:/usr/share/elasticsearch/data
-    restart: unless-stopped
-
-  minio:
-    image: minio/minio:latest
-    container_name: doorli-minio
-    environment:
-      - MINIO_ROOT_USER=doorli_admin
-      - MINIO_ROOT_PASSWORD=doorli_password_123
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    command: server /data --console-address ":9001"
-    volumes:
-      - minio_data:/data
-    restart: unless-stopped
-
-  minio-setup:
-    image: minio/mc:latest
-    container_name: doorli-minio-setup
-    depends_on:
-      - minio
-    entrypoint: >
-      /bin/sh -c "
-      /usr/bin/mc alias set doorli http://minio:9000 doorli_admin doorli_password_123;
-      /usr/bin/mc mb doorli/doorli-media --ignore-existing;
-      /usr/bin/mc anonymous set public doorli/doorli-media;
-      exit 0;
-      "
+      - pgdata:/var/lib/postgresql/data
 
 volumes:
-  postgres_data:
-  redis_data:
-  es_data:
-  minio_data:
+  pgdata:

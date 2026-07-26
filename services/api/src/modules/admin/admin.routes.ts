@@ -61,6 +61,22 @@ adminRouter.get('/vendors', async (req, res, next) => {
   }
 });
 
+adminRouter.get('/vendors/:id', async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    const vendor = await prisma.vendor.findUnique({
+      where: { id: req.params.id },
+      include: {
+        user: { select: { fullName: true, email: true, phone: true } },
+      }
+    });
+    if (!vendor) throw new AppError(404, 'Vendor not found');
+    res.json({ success: true, data: vendor });
+  } catch (err) {
+    next(err);
+  }
+});
+
 adminRouter.patch('/vendors/:id/verify', async (req, res, next) => {
   try {
     requireAdmin(req);
@@ -159,6 +175,29 @@ adminRouter.get('/users', async (req, res, next) => {
   }
 });
 
+adminRouter.get('/users/:id', async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    const user = await prisma.user.findUnique({
+      where: { id: req.params.id },
+      select: {
+        id: true,
+        fullName: true,
+        phone: true,
+        email: true,
+        role: true,
+        isActive: true,
+        isVerified: true,
+        createdAt: true,
+      }
+    });
+    if (!user) throw new AppError(404, 'User not found');
+    res.json({ success: true, data: user });
+  } catch (err) {
+    next(err);
+  }
+});
+
 adminRouter.patch('/users/:id', async (req, res, next) => {
   try {
     requireAdmin(req);
@@ -179,4 +218,254 @@ adminRouter.patch('/users/:id', async (req, res, next) => {
   }
 });
 
+
+adminRouter.get('/orders/:id', async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    const order = await prisma.order.findUnique({
+      where: { id: req.params.id },
+      include: {
+        vendor: { select: { businessName: true } },
+        customer: { select: { fullName: true, phone: true, email: true, createdAt: true } },
+        items: true,
+      }
+    });
+    if (!order) {
+      return res.status(404).json({ success: false, error: 'Order not found' });
+    }
+    res.json({ success: true, data: order });
+  } catch (err) {
+    next(err);
+  }
+});
+
+adminRouter.post('/broadcasts', async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    // Mock dispatching broadcast
+    res.json({ success: true, message: 'Broadcast dispatched successfully' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+adminRouter.post('/maintenance', async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    // Mock scheduling maintenance
+    res.json({ success: true, message: 'Maintenance window scheduled successfully' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+
+adminRouter.post('/users', async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    const body = z.object({
+      fullName: z.string(),
+      email: z.string().email(),
+      phone: z.string().optional(),
+      role: z.enum(['customer', 'vendor', 'driver', 'admin', 'analyst', 'support']).optional().default('customer'),
+    }).parse(req.body);
+
+    const user = await prisma.user.create({
+      data: {
+        fullName: body.fullName,
+        email: body.email,
+        phone: body.phone,
+        role: (body.role === "analyst" || body.role === "support") ? "admin" : (body.role as any),
+        isVerified: true,
+      },
+    });
+    res.json({ success: true, data: user });
+  } catch (err) {
+    next(err);
+  }
+});
+
+adminRouter.post('/vendors', async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    const body = z.object({
+      businessName: z.string(),
+      email: z.string().email(),
+      phone: z.string().optional(),
+      erpTenantId: z.string().optional(),
+    }).parse(req.body);
+
+    // Create user first
+    const user = await prisma.user.create({
+      data: {
+        fullName: body.businessName + " Admin",
+        email: body.email,
+        phone: body.phone,
+        role: 'vendor',
+        isVerified: true,
+      }
+    });
+
+    // Create vendor
+    const vendor = await prisma.vendor.create({
+      data: {
+        userId: user.id,
+        businessName: body.businessName,
+        category: 'service', // default
+        phone: body.phone,
+        erpTenantId: body.erpTenantId,
+        isVerified: true,
+      }
+    });
+
+    res.json({ success: true, data: vendor });
+  } catch (err) {
+    next(err);
+  }
+});
+
+
+adminRouter.get('/permissions', async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    // Return mock permissions matrix
+    res.json({
+      success: true,
+      data: {
+        globalView: true,
+        createDelete: false,
+        vendorManagement: true,
+        userAccounts: true,
+        orders: true,
+        forceErpSync: false,
+        globalBroadcasts: true,
+        systemSettings: false,
+        bypassMfa: false,
+        deleteEntities: false,
+        auditExport: true,
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+adminRouter.patch('/permissions', async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    // Mock save
+    res.json({ success: true, message: 'Permissions updated successfully' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+adminRouter.get('/audits', async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    // Mock audit logs
+    const logs = [
+      { id: '1', action: 'USER_LOGIN', user: 'admin@doorli.com', ip: '192.168.1.1', timestamp: new Date().toISOString(), status: 'SUCCESS' },
+      { id: '2', action: 'UPDATE_PERMISSIONS', user: 'superadmin@doorli.com', ip: '10.0.0.5', timestamp: new Date(Date.now() - 3600000).toISOString(), status: 'SUCCESS' },
+      { id: '3', action: 'DELETE_VENDOR', user: 'support@doorli.com', ip: '192.168.1.100', timestamp: new Date(Date.now() - 7200000).toISOString(), status: 'DENIED' },
+    ];
+    res.json({ success: true, data: logs });
+  } catch (err) {
+    next(err);
+  }
+});
+
+adminRouter.get('/api-keys', async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    const keys = [
+      { id: 'key_1', name: 'Production Mobile App', prefix: 'pk_live_...', createdAt: new Date().toISOString(), lastUsed: new Date().toISOString() },
+      { id: 'key_2', name: 'Staging Environment', prefix: 'pk_test_...', createdAt: new Date(Date.now() - 86400000 * 5).toISOString(), lastUsed: new Date(Date.now() - 86400000 * 2).toISOString() }
+    ];
+    res.json({ success: true, data: keys });
+  } catch (err) {
+    next(err);
+  }
+});
+
+adminRouter.post('/api-keys', async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    res.json({ success: true, message: 'API key generated successfully', data: { key: 'pk_live_' + Math.random().toString(36).substring(7) } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+
+adminRouter.get('/db-stats', async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    res.json({
+      success: true,
+      data: {
+        tables: [
+          { name: 'Orders', status: 'Optimal', health: 98 },
+          { name: 'Users', status: 'Optimal', health: 95 },
+          { name: 'Logs', status: 'Fragmented', health: 65 },
+        ],
+        slowQueries: [
+          { query: 'SELECT * FROM transactions...', time: '452ms', ago: '2m ago', pid: '8842', critical: false },
+          { query: 'UPDATE users SET last_login...', time: '1.2s', ago: '5m ago', pid: '1201', critical: true },
+          { query: 'SELECT COUNT(*) FROM logs...', time: '188ms', ago: '12m ago', pid: '4402', critical: false },
+          { query: 'DELETE FROM temp_sessions...', time: '210ms', ago: '15m ago', pid: '9918', critical: false }
+        ]
+      }
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+adminRouter.post('/db-optimize', async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    res.json({ success: true, message: 'Optimization task queued' });
+  } catch (e) {
+    next(e);
+  }
+});
+
+adminRouter.get('/traffic-routing', async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    res.json({
+      success: true,
+      data: {
+        regions: [
+          { id: 'NA-EAST', status: 'ACTIVE', load: 45, routing: 100 },
+          { id: 'EU-WEST', status: 'DEGRADED', load: 88, routing: 50 },
+        ]
+      }
+    });
+  } catch (e) {
+    next(e);
+  }
+});
 export default adminRouter;
+
+adminRouter.get('/diagnostics', async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    res.json({
+      success: true,
+      data: {
+        taskId: '#DRL-DIAG-004921',
+        logs: [
+          { time: '[14:32:01]', level: 'SUCCESS', msg: 'Database connectivity check: primary-cluster-A reachable (12ms)' },
+          { time: '[14:32:05]', level: 'SUCCESS', msg: 'SSL verification complete for *.doorli-platform.net - Valid until 2025-08-12' },
+          { time: '[14:32:10]', level: 'RUNNING', msg: 'Initiating handshake with Global API Edge (Frankfurt Node)' },
+          { time: '[14:32:12]', level: 'WARNING', msg: 'ERP_LINK_7: Latency spike detected (840ms). Baseline is 120ms. Retrying...' },
+          { time: '[14:32:15]', level: 'INFO', msg: 'GET /api/v2/health - 200 OK' }
+        ]
+      }
+    });
+  } catch (e) {
+    next(e);
+  }
+});

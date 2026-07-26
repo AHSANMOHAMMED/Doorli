@@ -1,0 +1,32 @@
+#cloud-config
+
+packages:
+  - git
+  - curl
+  - tar
+
+runcmd:
+  # Install Docker
+  - dnf install -y dnf-utils zip unzip
+  - dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo
+  - dnf install -y docker-ce docker-ce-cli containerd.io
+  - systemctl enable docker
+  - systemctl start docker
+  - usermod -aG docker opc
+
+  # Install Docker Compose
+  - curl -L "https://github.com/docker/compose/releases/download/v2.24.5/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+  - chmod +x /usr/local/bin/docker-compose
+  - ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+
+  # Setup firewall to allow standard HTTP/HTTPS and App Ports
+  - firewall-offline-cmd --add-port=80/tcp
+  - firewall-offline-cmd --add-port=443/tcp
+  - firewall-offline-cmd --add-port=3001/tcp
+  - firewall-offline-cmd --add-port=3006/tcp
+  - systemctl restart firewalld
+
+  # Pull and deploy doorli (example)
+  # In a real environment, you might clone the repo or pull images from OCIR
+  # - su - opc -c "git clone https://github.com/doorli/doorli.git /home/opc/doorli"
+  # - su - opc -c "cd /home/opc/doorli && docker-compose up -d --build"

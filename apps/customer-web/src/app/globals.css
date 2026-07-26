@@ -1,17 +1,19 @@
 @import "tailwindcss";
 
 :root {
-  --doorli-navy: #0a0f2e;
-  --doorli-navy-mid: #0c1a4a;
-  --doorli-deep: #061228;
+  --doorli-navy: #060b1c;
+  --doorli-navy-mid: #0a132e;
+  --doorli-deep: #030712;
   --doorli-blue: #185fa5;
   --doorli-sky: #378add;
   --doorli-teal: #1d9e75;
   --doorli-mint: #5dcaa5;
   --doorli-gold: #fac775;
+  --doorli-purple: #8b5cf6;
+  --doorli-pink: #ec4899;
   --doorli-text: #f4f7fb;
   --doorli-text-muted: #9bb4d0;
-  --background: #0a0f2e;
+  --background: #060b1c;
   --foreground: #f4f7fb;
 }
 
@@ -27,42 +29,70 @@ body {
   color: var(--foreground);
   font-family: var(--font-doorli-body), 'Manrope', system-ui, sans-serif;
   padding-top: env(safe-area-inset-top, 0px);
+  overflow-x: hidden;
 }
 
-.safe-bottom {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+/* Glassmorphism & Modern Utilities */
+.doorli-glass {
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.pb-tab-bar {
-  padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
+.doorli-glass-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
 }
 
-@media (min-width: 768px) {
-  .pb-tab-bar {
-    padding-bottom: 0;
-  }
+.doorli-cta-primary {
+  background: linear-gradient(135deg, #185fa5 0%, #378add 100%);
+  color: #ffffff;
+  font-weight: 600;
+  border-radius: 0.875rem;
+  box-shadow: 0 4px 20px rgba(24, 95, 165, 0.4);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.safe-fixed-bottom {
-  bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+.doorli-cta-primary:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 28px rgba(55, 138, 221, 0.55);
 }
 
-@media (min-width: 768px) {
-  .safe-fixed-bottom {
-    bottom: 2rem;
-  }
+.doorli-cta-ghost {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  color: #f4f7fb;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0.875rem;
+  transition: all 0.25s ease;
 }
 
-.font-display {
-  font-family: var(--font-doorli-display), 'Syne', system-ui, sans-serif;
+.doorli-cta-ghost:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+@keyframes doorli-float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-8px) rotate(1deg); }
+}
+
+.animate-doorli-float {
+  animation: doorli-float 6s ease-in-out infinite;
 }
 
 .doorli-hero-plane {
   background:
-    radial-gradient(ellipse 80% 60% at 15% 20%, rgba(24, 95, 165, 0.55), transparent 55%),
-    radial-gradient(ellipse 70% 50% at 85% 30%, rgba(29, 158, 117, 0.35), transparent 50%),
-    radial-gradient(ellipse 50% 40% at 60% 80%, rgba(250, 199, 117, 0.18), transparent 45%),
-    linear-gradient(160deg, #0a0f2e 0%, #0c1a4a 45%, #061228 100%);
+    radial-gradient(ellipse 90% 70% at 20% 10%, rgba(24, 95, 165, 0.6), transparent 60%),
+    radial-gradient(ellipse 80% 60% at 85% 25%, rgba(29, 158, 117, 0.45), transparent 55%),
+    radial-gradient(ellipse 60% 50% at 50% 85%, rgba(139, 92, 246, 0.25), transparent 50%),
+    linear-gradient(165deg, #060b1c 0%, #0a132e 50%, #030712 100%);
 }
 
 .doorli-orb {
