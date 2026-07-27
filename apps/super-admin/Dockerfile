@@ -4,7 +4,7 @@ WORKDIR /app
 # Turbo prune
 RUN npm install -g turbo
 COPY . .
-RUN turbo prune super-admin --docker
+RUN turbo prune @doorli/super-admin --docker
 
 FROM base AS installer
 WORKDIR /app
@@ -16,7 +16,7 @@ RUN npm install
 # Build the project
 COPY --from=base /app/out/full/ .
 COPY turbo.json turbo.json
-RUN npx turbo run build --filter=super-admin
+RUN npx turbo run build --filter=@doorli/super-admin
 
 FROM node:20-alpine AS runner
 WORKDIR /app
