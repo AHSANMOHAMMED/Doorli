@@ -857,7 +857,7 @@ git config --global user.email "ahsanmohammed828@gmail.com"
 ### Prerequisites
 
 - Node.js v20+
-- PostgreSQL 16 (with PostGIS extension)
+- PostgreSQL 15 (with PostGIS extension)
 - Redis 7
 - Docker (recommended)
 
@@ -876,6 +876,9 @@ cp .env.example .env
 
 # Start PostgreSQL + PostGIS and Redis
 docker compose up -d
+
+# Wait until the database healthcheck is healthy before migrating
+docker compose ps
 
 # Generate Prisma client and run migrations
 npm run db:generate
