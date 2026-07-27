@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   # DEPRECATED — live Super Admin is apps/admin at /admin (port 3005 via nginx).
   # Opt-in only: docker compose --profile deprecated up super-admin

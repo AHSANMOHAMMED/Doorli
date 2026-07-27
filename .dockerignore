@@ -1,0 +1,53 @@
+# Dependencies (reinstalled inside the image)
+node_modules/
+**/node_modules/
+.pnp
+.pnp.js
+
+# Build outputs (rebuilt inside the image)
+dist/
+build/
+.next/
+**/.next/
+out/
+.turbo/
+**/.turbo/
+*.tsbuildinfo
+
+# Git and VCS
+.git/
+.gitignore
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Logs and debug
+logs/
+*.log
+npm-debug.log*
+
+# OS and IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Testing and coverage
+coverage/
+**/__tests__/__snapshots__/
+
+# Expo web build artifacts
+.expo/
+dist-web/
+
+# Misc
+*.pem
+*.key
+README.md
+**/README.md
+deploy/
+deploy.sh
