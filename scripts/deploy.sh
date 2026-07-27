@@ -20,8 +20,27 @@ wait_for_db() {
   done
 }
 
+wait_for_api() {
+  local max_attempts=30
+  local attempt=1
+
+  while true; do
+    if curl -fsS http://localhost:3001/health >/dev/null 2>&1; then
+      return 0
+    fi
+
+    if [ "$attempt" -ge "$max_attempts" ]; then
+      echo "API did not become healthy in time." >&2
+      return 1
+    fi
+
+    attempt=$((attempt + 1))
+    sleep 2
+  done
+}
+
 docker compose up -d --build --force-recreate
 wait_for_db
 docker compose exec -T api sh -c "cd packages/db && npx prisma migrate deploy"
 docker compose exec -T api npm run seed --workspace=@doorli/db
-curl -fsS http://localhost:3001/health
+wait_for_api
