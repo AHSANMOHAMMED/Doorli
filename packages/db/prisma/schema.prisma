@@ -68,6 +68,14 @@ enum ErpProvisionStatus {
   failed
 }
 
+/// Marketplace → ERP order sync outcome.
+enum ErpSyncStatus {
+  pending
+  synced
+  failed
+  skipped
+}
+
 enum PaymentMethod {
   card
   wallet
@@ -320,6 +328,9 @@ model Order {
   estimatedDeliveryTime Int?          @map("estimated_delivery_time")
   specialInstructions   String?       @map("special_instructions")
   erpOrderId            String?       @map("erp_order_id") @db.VarChar(50)
+  erpSyncStatus         ErpSyncStatus? @map("erp_sync_status")
+  erpSyncError          String?       @map("erp_sync_error") @db.Text
+  erpSyncedAt           DateTime?     @map("erp_synced_at")
   createdAt             DateTime      @default(now()) @map("created_at")
   updatedAt             DateTime      @updatedAt @map("updated_at")
 

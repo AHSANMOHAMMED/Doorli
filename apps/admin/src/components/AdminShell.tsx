@@ -21,9 +21,13 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   }
 
   return (
-    <>
+    <div className="doorli-hero-plane relative flex min-h-screen">
+      <div className="doorli-orb doorli-orb--a" aria-hidden />
+      <div className="doorli-orb doorli-orb--b" aria-hidden />
       <Sidebar />
-      <main className="flex-1 p-8">{children}</main>
-    </>
+      <main className="relative z-10 min-w-0 flex-1 px-5 py-8 pt-16 sm:px-8 lg:pt-8">
+        <div className="mx-auto w-full max-w-7xl space-y-8">{children}</div>
+      </main>
+    </div>
   );
 }

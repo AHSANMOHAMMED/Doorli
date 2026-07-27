@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { apiFetch } from '@/lib/api';
-import { Package, Plus, Loader as Loader2 } from 'lucide-react';
+import { Package, Plus, Search } from 'lucide-react';
+import { PageHeader, Panel, EmptyState, LoadingBlock, ErrorNote, Badge } from '@/components/console';
 
 type Product = {
   id: string;
@@ -26,6 +27,7 @@ export default function ProductsPage() {
   const [price, setPrice] = useState('');
   const [category, setCategory] = useState('general');
   const [saving, setSaving] = useState(false);
+  const [query, setQuery] = useState('');
 
   useEffect(() => {
     if (authLoading || !profile) return;
@@ -82,52 +84,119 @@ export default function ProductsPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="p-8 flex items-center gap-2 text-slate-500">
-        <Loader2 className="animate-spin w-5 h-5" /> Loading products…
-      </div>
+      <>
+        <PageHeader title="Products" subtitle="Loading your catalogue…" />
+        <LoadingBlock rows={4} />
+      </>
     );
   }
 
+  const filtered = products.filter((p) =>
+    query.trim() ? p.name.toLowerCase().includes(query.trim().toLowerCase()) : true,
+  );
+
   return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-          <Package className="w-6 h-6" /> Products
-        </h1>
-        <p className="text-slate-500">{vendor?.businessName || 'Your catalog'}</p>
-      </div>
-      {error && <p className="text-amber-600 text-sm">{error}</p>}
+    <>
+      <PageHeader
+        title="Products"
+        subtitle={vendor?.businessName || 'Your catalogue'}
+        actions={<Badge tone="info">{products.length} items</Badge>}
+      />
 
-      <form onSubmit={addProduct} className="bg-white border rounded-2xl p-4 flex flex-wrap gap-3 items-end">
-        <label className="text-sm">
-          Name
-          <input className="block mt-1 border rounded-lg px-3 py-2" value={name} onChange={(e) => setName(e.target.value)} required />
-        </label>
-        <label className="text-sm">
-          Price (LKR)
-          <input className="block mt-1 border rounded-lg px-3 py-2" value={price} onChange={(e) => setPrice(e.target.value)} required />
-        </label>
-        <label className="text-sm">
-          Category
-          <input className="block mt-1 border rounded-lg px-3 py-2" value={category} onChange={(e) => setCategory(e.target.value)} />
-        </label>
-        <button type="submit" disabled={saving} className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 disabled:opacity-50">
-          <Plus className="w-4 h-4" /> Add
-        </button>
-      </form>
+      {error && <ErrorNote>{error}</ErrorNote>}
 
-      <div className="bg-white border rounded-2xl divide-y">
-        {products.map((p) => (
-          <div key={p.id} className="px-4 py-3 flex justify-between">
-            <div>
-              <p className="font-medium">{p.name}</p>
-              <p className="text-sm text-slate-500">{p.category}</p>
-            </div>
-            <p className="font-semibold">LKR {Number(p.price).toLocaleString()}</p>
-          </div>
-        ))}
-        {products.length === 0 && <p className="p-4 text-slate-500">No products yet.</p>}
-      </div>
-    </div>
+      <Panel title="Add a product" icon={<Plus size={17} />}>
+        <form onSubmit={addProduct} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_auto]">
+          <label className="block text-sm">
+            <span className="mb-1.5 block font-medium text-doorli-muted">Name</span>
+            <input
+              className="w-full px-3 py-2.5 text-sm"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Chicken kottu"
+              required
+            />
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1.5 block font-medium text-doorli-muted">Price (LKR)</span>
+            <input
+              className="w-full px-3 py-2.5 text-sm"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              inputMode="decimal"
+              placeholder="850"
+              required
+            />
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1.5 block font-medium text-doorli-muted">Category</span>
+            <input
+              className="w-full px-3 py-2.5 text-sm"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+            />
+          </label>
+          <button
+            type="submit"
+            disabled={saving}
+            className="inline-flex min-h-11 items-center justify-center gap-2 self-end rounded-xl bg-gradient-to-r from-[#185fa5] to-[#1d9e75] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#185fa5]/25 transition-all hover:brightness-110 disabled:opacity-50"
+          >
+            <Plus className="h-4 w-4" />
+            {saving ? 'Adding…' : 'Add'}
+          </button>
+        </form>
+      </Panel>
+
+      {products.length > 0 && (
+        <div className="relative max-w-xs">
+          <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-doorli-dim" />
+          <input
+            className="w-full py-2.5 pl-10 pr-3 text-sm"
+            placeholder="Search catalogue…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </div>
+      )}
+
+      {filtered.length === 0 ? (
+        <EmptyState
+          icon={<Package size={20} />}
+          title={products.length === 0 ? 'No products yet' : 'Nothing matches that search'}
+          desc={
+            products.length === 0
+              ? 'Add your first item above and it will appear in the marketplace straight away.'
+              : 'Try a different product name.'
+          }
+        />
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {filtered.map((p) => (
+            <article key={p.id} className="console-panel console-panel-hover flex flex-col gap-3 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h3 className="truncate font-semibold text-white">{p.name}</h3>
+                  <p className="mt-0.5 text-xs capitalize text-doorli-dim">{p.category || 'general'}</p>
+                </div>
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/[0.06] text-doorli-muted">
+                  <Package size={16} />
+                </span>
+              </div>
+              <div className="mt-auto flex items-end justify-between gap-3">
+                <p className="font-display text-lg font-bold text-white">
+                  LKR {Number(p.price).toLocaleString()}
+                </p>
+                <Badge tone={p.isAvailable === false ? 'neutral' : 'success'}>
+                  {p.isAvailable === false ? 'Hidden' : 'Live'}
+                </Badge>
+              </div>
+              {typeof p.stockQuantity === 'number' && (
+                <p className="text-xs text-doorli-dim">{p.stockQuantity} in stock</p>
+              )}
+            </article>
+          ))}
+        </div>
+      )}
+    </>
   );
 }

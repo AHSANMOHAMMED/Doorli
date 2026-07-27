@@ -1,13 +1,27 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Syne, Manrope } from "next/font/google";
 import "./globals.css";
 import AdminShell from "@/components/AdminShell";
 
-const inter = Inter({ subsets: ["latin"] });
+const display = Syne({
+  subsets: ["latin"],
+  weight: ["600", "700", "800"],
+  variable: "--font-doorli-display",
+});
+
+const body = Manrope({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-doorli-body",
+});
 
 export const metadata: Metadata = {
-  title: "Doorli Admin - Platform Overview",
-  description: "Enterprise administration dashboard for the Doorli ecosystem",
+  title: "Doorli Super Admin",
+  description: "Unified control plane for the Doorli marketplace and dual ERP backends",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#060b1c",
 };
 
 export default function RootLayout({
@@ -16,8 +30,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${inter.className} flex bg-slate-50 min-h-screen`}>
+    <html lang="en" className={`${display.variable} ${body.variable}`}>
+      <body className="min-h-screen antialiased">
         <AdminShell>{children}</AdminShell>
       </body>
     </html>

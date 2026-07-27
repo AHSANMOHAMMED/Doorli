@@ -13,8 +13,16 @@ const nextConfig: NextConfig = {
     root: monorepoRoot,
   },
   outputFileTracingRoot: monorepoRoot,
-  // Allow local hosts in Next.js 16+ dev (HMR / assets)
-  allowedDevOrigins: ['127.0.0.1', 'localhost'],
+  // Allow local hosts in Next.js 16+ dev (HMR / assets). Hosts missing from this
+  // list cannot fetch dev-only resources, which leaves client routes that suspend
+  // (e.g. useSearchParams on /login) stuck on their fallback forever. Deployed
+  // hostnames must therefore be listed too; ERP_DEV_ORIGINS is comma-separated.
+  allowedDevOrigins: [
+    '127.0.0.1',
+    'localhost',
+    'erp.doorli.me',
+    ...(process.env.ERP_DEV_ORIGINS?.split(',').map((h) => h.trim()).filter(Boolean) ?? []),
+  ],
   // Restrict image optimization to known domains
   images: {
     remotePatterns: [

@@ -14,6 +14,6 @@ docker-compose down
 docker-compose up -d --build
 
 echo "✅ Deployment completed successfully!"
-echo "🌐 Super Admin UI: http://doorli.me:3006"
-echo "🌐 API Backend: http://doorli.me:3001"
+echo "🌐 Super Admin (live): http://doorli.me/admin"
+echo "🌐 API Backend: http://doorli.me/api"
 echo "🌐 Customer Web: http://doorli.me"

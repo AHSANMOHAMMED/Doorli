@@ -11,6 +11,21 @@ import { AppError } from '../../middleware/errorHandler.js';
 
 const router = Router();
 
+// Public endpoint to get all products (for search/catalog)
+router.get('/', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const vendorId = req.query.vendorId as string;
+    if (!vendorId) {
+      res.status(400).json({ success: false, error: 'vendorId required' });
+      return;
+    }
+    const products = await getProductsByVendor(vendorId);
+    res.json({ success: true, data: { items: products } });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get('/vendor/:vendorId', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const products = await getProductsByVendor(req.params.vendorId as string);

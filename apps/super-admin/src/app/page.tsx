@@ -1,66 +1,34 @@
-"use client";
-import React from 'react';
-import Link from 'next/link';
+'use client';
 
-export default function SuperAdminDirectory() {
-  const pages = [
-    { title: "Doorli Super Admin Dashboard", path: "/doorli-super-admin-dashboard" },
-    { title: "Dashboard", path: "/dashboard" },
-    { title: "Global Orders (Finalized)", path: "/global-orders-finalized" },
-    { title: "Global Orders", path: "/global-orders" },
-    { title: "Order Detail", path: "/order-detail" },
-    { title: "Vendors Management", path: "/vendors-management" },
-    { title: "Vendor Detail", path: "/vendor-detail" },
-    { title: "User Management", path: "/user-management" },
-    { title: "User Management (Visual Variant)", path: "/user-management-visual-variant" },
-    { title: "User Management (Utility Variant)", path: "/user-management-utility-variant" },
-    { title: "User Detail", path: "/user-detail" },
-    { title: "User Detail (Editorial Variant)", path: "/user-detail-editorial-variant" },
-    { title: "User Detail (Dashboard Variant)", path: "/user-detail-dashboard-variant" },
-    { title: "Create Admin Entity", path: "/create-admin-entity" },
-    { title: "User Permissions & Access", path: "/user-permissions-access" },
-    { title: "Active Users Monitoring", path: "/active-users-monitoring" },
-    { title: "System Health Matrix", path: "/system-health-matrix" },
-    { title: "Global System Status", path: "/global-system-status" },
-    { title: "Regional Health Details", path: "/regional-health-details" },
-    { title: "Full System Diagnostics", path: "/full-system-diagnostics" },
-    { title: "ERP Synchronization Logs", path: "/erp-synchronization-logs" },
-    { title: "Regional Security Audits", path: "/regional-security-audits" },
-    { title: "Database Optimization Tools", path: "/database-optimization-tools" },
-    { title: "Traffic Rerouting Controls", path: "/traffic-rerouting-controls" },
-    { title: "System & Broadcasts", path: "/system-broadcasts" },
-    { title: "System & Broadcasts (Finalized)", path: "/system-broadcasts-finalized" },
-    { title: "Maintenance Countdown", path: "/maintenance-countdown" },
-    { title: "Active Maintenance Window", path: "/active-maintenance-window" },
-    { title: "Schedule Maintenance Window", path: "/schedule-maintenance-window" },
-    { title: "System Settings & Profile", path: "/system-settings-profile" },
-    { title: "Login", path: "/login" },
-  ];
+import { useEffect } from 'react';
+
+/**
+ * DEPRECATED — Doorli Super Admin now lives in apps/admin at /admin.
+ * This design-dump app is kept only so historical links do not 404 in local workspaces.
+ */
+export default function DeprecatedSuperAdmin() {
+  useEffect(() => {
+    const target = process.env.NEXT_PUBLIC_SUPER_ADMIN_URL || 'http://doorli.me/admin';
+    window.location.replace(target);
+  }, []);
 
   return (
-    <div className="min-h-screen bg-[#121212] text-[#e5e2e1] p-10 font-sans">
-      <div className="max-w-4xl mx-auto">
-        <header className="mb-10">
-          <div className="flex items-center gap-4 mb-4">
-            <span className="material-symbols-outlined text-[#E63946] text-4xl">security</span>
-            <h1 className="text-4xl font-bold tracking-tight">Command Center Directory</h1>
-          </div>
-          <p className="text-gray-400 text-lg">All 31 generated screens have been successfully ported to Next.js routes.</p>
-        </header>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {pages.map((page) => (
-            <Link 
-              key={page.path} 
-              href={page.path}
-              className="bg-[#1E1E1E] border border-[#333333] hover:border-[#E63946] rounded-xl p-4 transition-colors group flex items-center justify-between"
-            >
-              <span className="text-sm font-medium group-hover:text-white transition-colors">{page.title}</span>
-              <span className="material-symbols-outlined text-gray-600 group-hover:text-[#E63946] text-sm">arrow_forward</span>
-            </Link>
-          ))}
-        </div>
-      </div>
-    </div>
+    <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#060b1c] px-6 text-center text-[#f4f7fb]">
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#6b86a6]">Deprecated</p>
+      <h1 className="max-w-lg text-3xl font-bold tracking-tight">Doorli Super Admin moved</h1>
+      <p className="max-w-md text-sm text-[#9bb4d0]">
+        The unfinished design-kit screens in this app are retired. Use the live control plane at{' '}
+        <a className="text-[#5dcaa5] underline underline-offset-2" href="http://doorli.me/admin">
+          doorli.me/admin
+        </a>
+        .
+      </p>
+      <a
+        href="http://doorli.me/admin"
+        className="mt-2 rounded-xl bg-gradient-to-r from-[#185fa5] to-[#1d9e75] px-5 py-3 text-sm font-semibold text-white"
+      >
+        Open Super Admin
+      </a>
+    </main>
   );
 }

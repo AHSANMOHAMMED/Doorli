@@ -317,7 +317,7 @@ export async function getOrderById(id: string) {
 
 export { getDriverJobs };
 
-async function syncOrderToErpIfLinked(orderId: string) {
+async function syncOrderToErpIfLinked(orderId: string, opts: { force?: boolean } = {}) {
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     include: {
@@ -326,12 +326,39 @@ async function syncOrderToErpIfLinked(orderId: string) {
       customer: { select: { fullName: true, phone: true } },
     },
   });
-  if (!order || order.erpOrderId) return;
+  if (!order) return { success: false, message: 'Order not found' };
+  if (!opts.force && order.erpOrderId) {
+    return { success: true, erpOrderId: order.erpOrderId, message: 'Already synced' };
+  }
 
   const provider = order.vendor.erpProvider;
-  // Only sync vendors explicitly linked to an ERP; enterprise vendors must be provisioned.
-  if (provider === 'none' || !order.vendor.erpTenantId) return;
-  if (provider === 'enterprise' && order.vendor.erpProvisionStatus !== 'provisioned') return;
+  if (provider === 'none' || !order.vendor.erpTenantId) {
+    await prisma.order.update({
+      where: { id: order.id },
+      data: {
+        erpSyncStatus: 'skipped',
+        erpSyncError: 'Vendor is not linked to an ERP tenant',
+        erpSyncedAt: new Date(),
+      },
+    });
+    return { success: false, message: 'Vendor not linked to ERP' };
+  }
+  if (provider === 'enterprise' && order.vendor.erpProvisionStatus !== 'provisioned') {
+    await prisma.order.update({
+      where: { id: order.id },
+      data: {
+        erpSyncStatus: 'failed',
+        erpSyncError: 'Enterprise vendor is not provisioned yet',
+        erpSyncedAt: new Date(),
+      },
+    });
+    return { success: false, message: 'Enterprise vendor not provisioned' };
+  }
+
+  await prisma.order.update({
+    where: { id: order.id },
+    data: { erpSyncStatus: 'pending', erpSyncError: null },
+  });
 
   const result = await ErpIntegrationService.syncOrderToErp({
     provider,
@@ -353,10 +380,28 @@ async function syncOrderToErpIfLinked(orderId: string) {
   if (result.success && result.erpOrderId) {
     await prisma.order.update({
       where: { id: order.id },
-      data: { erpOrderId: String(result.erpOrderId).slice(0, 50) },
+      data: {
+        erpOrderId: String(result.erpOrderId).slice(0, 50),
+        erpSyncStatus: 'synced',
+        erpSyncError: null,
+        erpSyncedAt: new Date(),
+      },
     });
+    return result;
   }
+
+  await prisma.order.update({
+    where: { id: order.id },
+    data: {
+      erpSyncStatus: 'failed',
+      erpSyncError: (result.message || 'ERP sync failed').slice(0, 500),
+      erpSyncedAt: new Date(),
+    },
+  });
+  return result;
 }
+
+export { syncOrderToErpIfLinked };
 
 async function restoreStockForOrder(orderId: string) {
   const items = await prisma.orderItem.findMany({ where: { orderId } });

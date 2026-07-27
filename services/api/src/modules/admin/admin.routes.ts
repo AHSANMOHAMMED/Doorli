@@ -4,6 +4,7 @@ import { prisma } from '@doorli/db';
 import { authenticateToken } from '../../middleware/authenticateToken.js';
 import { AppError } from '../../middleware/errorHandler.js';
 import { ErpIntegrationService } from '../../lib/erpIntegration.js';
+import { syncOrderToErpIfLinked } from '../orders/orders.service.js';
 
 const adminRouter = Router();
 adminRouter.use(authenticateToken);
@@ -15,7 +16,17 @@ function requireAdmin(req: { user?: { role?: string } }) {
 adminRouter.get('/stats', async (req, res, next) => {
   try {
     requireAdmin(req);
-    const [vendors, pendingVendors, driversOnline, ordersToday, revenue] = await Promise.all([
+    const [
+      vendors,
+      pendingVendors,
+      driversOnline,
+      ordersToday,
+      revenue,
+      simpleVendors,
+      enterpriseVendors,
+      erpProvisionFailed,
+      erpSyncFailed,
+    ] = await Promise.all([
       prisma.vendor.count(),
       prisma.vendor.count({ where: { isVerified: false } }),
       prisma.driver.count({ where: { isOnline: true } }),
@@ -29,6 +40,10 @@ adminRouter.get('/stats', async (req, res, next) => {
         },
         _sum: { totalAmount: true },
       }),
+      prisma.vendor.count({ where: { erpProvider: 'simple' } }),
+      prisma.vendor.count({ where: { erpProvider: 'enterprise' } }),
+      prisma.vendor.count({ where: { erpProvisionStatus: 'failed' } }),
+      prisma.order.count({ where: { erpSyncStatus: 'failed' } }),
     ]);
 
     res.json({
@@ -39,6 +54,10 @@ adminRouter.get('/stats', async (req, res, next) => {
         activeDrivers: driversOnline,
         ordersToday,
         revenue30d: Number(revenue._sum.totalAmount ?? 0),
+        simpleVendors,
+        enterpriseVendors,
+        erpProvisionFailed,
+        erpSyncFailed,
       },
     });
   } catch (err) {
@@ -131,11 +150,25 @@ adminRouter.get('/infra', async (req, res, next) => {
         const t = setTimeout(() => controller.abort(), 2500);
         const res = await fetch(url, { signal: controller.signal });
         clearTimeout(t);
-        return { name, port, status: res.ok ? 'healthy' : 'degraded' as const };
+        return { name, port, status: res.ok ? 'healthy' : 'degraded' as const, url };
       } catch {
-        return { name, port, status: 'down' as const };
+        return { name, port, status: 'down' as const, url };
       }
     };
+
+    const embeddedBase = (
+      process.env.ERP_EMBEDDED_URL ||
+      process.env.ERP_API_URL ||
+      process.env.ERP_SERVICE_URL ||
+      'http://127.0.0.1:3010/api/internal'
+    ).replace(/\/$/, '');
+    // Retail Smart health is on the app root, not under /api/internal.
+    const embeddedHealth = embeddedBase.replace(/\/api\/internal$/, '') + '/';
+    const enterpriseCreate = (process.env.ERP_ENTERPRISE_URL || '').replace(/\/$/, '');
+    // Frappe ping is typically /api/method/frappe.ping on the same host.
+    const enterprisePing = enterpriseCreate
+      ? enterpriseCreate.replace(/\/api\/method\/.*$/, '') + '/api/method/frappe.ping'
+      : '';
 
     const services = await Promise.all([
       probe('Marketplace API Gateway', '4000', 'http://127.0.0.1:4000/health'),
@@ -145,6 +178,17 @@ adminRouter.get('/infra', async (req, res, next) => {
       probe('AI', '4006', 'http://127.0.0.1:4006/health'),
       probe('Notifications', '4007', 'http://127.0.0.1:4007/health'),
       probe('Ride-Hailing', '8085', 'http://127.0.0.1:8085/health'),
+      probe('Retail Smart ERP', '3010', embeddedHealth),
+      ...(enterprisePing
+        ? [probe('Enterprise ERP (Frappe)', '8000', enterprisePing)]
+        : [
+            {
+              name: 'Enterprise ERP (Frappe)',
+              port: '—',
+              status: 'down' as const,
+              url: 'ERP_ENTERPRISE_URL not configured',
+            },
+          ]),
     ]);
 
     res.json({ success: true, data: { services } });
@@ -373,6 +417,127 @@ adminRouter.post('/vendors', async (req, res, next) => {
   }
 });
 
+adminRouter.post('/vendors/:id/reprovision', async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    const vendor = await prisma.vendor.findUnique({
+      where: { id: req.params.id },
+      include: { user: { select: { email: true, phone: true } } },
+    });
+    if (!vendor) throw new AppError(404, 'Vendor not found');
+    if (vendor.erpProvider !== 'enterprise') {
+      throw new AppError(400, 'Only enterprise vendors can be reprovisioned');
+    }
+
+    await prisma.vendor.update({
+      where: { id: vendor.id },
+      data: { erpProvisionStatus: 'pending', erpProvisionError: null },
+    });
+
+    const provision = await ErpIntegrationService.provisionEnterpriseVendor({
+      vendorId: vendor.id,
+      businessName: vendor.businessName,
+      adminEmail: vendor.user?.email || undefined,
+      phone: vendor.phone || vendor.user?.phone || undefined,
+    });
+
+    if (!provision.success || !provision.companyId) {
+      const failed = await prisma.vendor.update({
+        where: { id: vendor.id },
+        data: {
+          erpProvisionStatus: 'failed',
+          erpProvisionError: (provision.message || 'Provisioning failed').slice(0, 500),
+        },
+      });
+      return res.status(502).json({
+        success: false,
+        error: provision.message || 'Enterprise provisioning failed',
+        data: failed,
+      });
+    }
+
+    const provisioned = await prisma.vendor.update({
+      where: { id: vendor.id },
+      data: {
+        erpTenantId: provision.companyId.slice(0, 50),
+        erpProvisionStatus: 'provisioned',
+        erpProvisionError: null,
+      },
+    });
+
+    res.json({ success: true, data: provisioned });
+  } catch (err) {
+    next(err);
+  }
+});
+
+adminRouter.get('/erp/sync-logs', async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    const status = typeof req.query.status === 'string' ? req.query.status : undefined;
+    const orders = await prisma.order.findMany({
+      where: {
+        OR: [
+          { erpSyncStatus: { not: null } },
+          { erpOrderId: { not: null } },
+          { vendor: { erpProvider: { in: ['simple', 'enterprise'] } } },
+        ],
+        ...(status ? { erpSyncStatus: status as 'pending' | 'synced' | 'failed' | 'skipped' } : {}),
+      },
+      include: {
+        vendor: {
+          select: {
+            businessName: true,
+            erpProvider: true,
+            erpTenantId: true,
+            erpProvisionStatus: true,
+          },
+        },
+        customer: { select: { fullName: true } },
+      },
+      orderBy: [{ erpSyncedAt: 'desc' }, { createdAt: 'desc' }],
+      take: 100,
+    });
+    res.json({ success: true, data: orders });
+  } catch (err) {
+    next(err);
+  }
+});
+
+adminRouter.post('/orders/:id/erp-resync', async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    const order = await prisma.order.findUnique({ where: { id: req.params.id } });
+    if (!order) throw new AppError(404, 'Order not found');
+
+    // Clear prior ERP id so a forced resync can create/reattach cleanly.
+    await prisma.order.update({
+      where: { id: order.id },
+      data: { erpOrderId: null, erpSyncStatus: 'pending', erpSyncError: null },
+    });
+
+    const result = await syncOrderToErpIfLinked(order.id, { force: true });
+    const updated = await prisma.order.findUnique({
+      where: { id: order.id },
+      include: {
+        vendor: { select: { businessName: true, erpProvider: true, erpTenantId: true } },
+      },
+    });
+
+    if (!result.success) {
+      return res.status(502).json({
+        success: false,
+        error: result.message || 'ERP resync failed',
+        data: updated,
+      });
+    }
+
+    res.json({ success: true, data: updated, message: result.message || 'Synced' });
+  } catch (err) {
+    next(err);
+  }
+});
+
 
 adminRouter.get('/permissions', async (req, res, next) => {
   try {
@@ -496,7 +661,6 @@ adminRouter.get('/traffic-routing', async (req, res, next) => {
     next(e);
   }
 });
-export default adminRouter;
 
 adminRouter.get('/diagnostics', async (req, res, next) => {
   try {
@@ -518,3 +682,5 @@ adminRouter.get('/diagnostics', async (req, res, next) => {
     next(e);
   }
 });
+
+export default adminRouter;

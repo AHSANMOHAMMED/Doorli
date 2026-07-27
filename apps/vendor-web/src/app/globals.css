@@ -244,3 +244,213 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* ==========================================================================
+   Vendor console theme
+   --------------------------------------------------------------------------
+   Everything below is scoped to `.doorli-console` (the dashboard shell) so the
+   public storefront pages — /, /explore, /cart — keep their light treatment.
+   ========================================================================== */
+
+.doorli-console {
+  color: var(--doorli-text);
+  background:
+    radial-gradient(ellipse 90% 55% at 12% 0%, rgba(24, 95, 165, 0.4), transparent 58%),
+    radial-gradient(ellipse 70% 45% at 92% 12%, rgba(29, 158, 117, 0.24), transparent 52%),
+    linear-gradient(165deg, #060b1c 0%, #0a132e 48%, #030712 100%);
+  background-attachment: fixed;
+}
+
+.doorli-console ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+}
+.doorli-console ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.doorli-console ::placeholder {
+  color: #6b86a6;
+}
+
+.doorli-console h1,
+.doorli-console h2,
+.doorli-console h3 {
+  font-family: var(--font-doorli-display), 'Syne', system-ui, sans-serif;
+  letter-spacing: -0.015em;
+  color: var(--doorli-text);
+}
+
+/* --- Console surfaces ---------------------------------------------------- */
+
+.console-panel {
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.028));
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 18px 44px -28px rgba(0, 0, 0, 0.85);
+}
+
+.console-panel-hover {
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+.console-panel-hover:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 26px 56px -30px rgba(0, 0, 0, 0.95);
+}
+
+/* --- Console tables ------------------------------------------------------ */
+
+.console-table thead th {
+  padding: 0.85rem 1.25rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6b86a6;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  white-space: nowrap;
+}
+
+.console-table tbody td {
+  padding: 0.95rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: var(--doorli-text);
+  vertical-align: middle;
+}
+
+.console-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.console-table tbody tr {
+  transition: background 0.15s ease;
+}
+
+.console-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.035);
+}
+
+/* --- Console controls ---------------------------------------------------- */
+
+/* `input` with no type attribute still renders as a text box, so match by
+   exclusion rather than listing the text-like types. */
+.doorli-console .input,
+.doorli-console input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']):not([type='color']):not([type='submit']):not([type='button']),
+.doorli-console select,
+.doorli-console textarea {
+  border-radius: 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--doorli-text);
+  transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.doorli-console .input:focus,
+.doorli-console input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']):focus,
+.doorli-console select:focus,
+.doorli-console textarea:focus {
+  outline: none;
+  border-color: rgba(55, 138, 221, 0.65);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 3px rgba(55, 138, 221, 0.16);
+}
+
+.doorli-console input[type='checkbox'],
+.doorli-console input[type='radio'] {
+  accent-color: var(--doorli-teal);
+}
+
+/* Native dropdown lists render with the OS palette, so the options need an
+   explicit dark background or they come out as white-on-white. */
+.doorli-console select option {
+  background: #0a132e;
+  color: var(--doorli-text);
+}
+
+.doorli-console .btn-secondary {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--doorli-text);
+}
+.doorli-console .btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.11);
+}
+
+.doorli-console .badge-success { background: rgba(29, 158, 117, 0.16); color: #5dcaa5; }
+.doorli-console .badge-warning { background: rgba(250, 199, 117, 0.16); color: #fac775; }
+.doorli-console .badge-error   { background: rgba(242, 102, 139, 0.16); color: #f2668b; }
+.doorli-console .badge-info    { background: rgba(55, 138, 221, 0.16); color: #7cb6ea; }
+.doorli-console .badge-neutral { background: rgba(255, 255, 255, 0.08); color: #9bb4d0; }
+
+/* --- Legacy utility bridge ------------------------------------------------
+   The dashboard pages were written against a light slate palette. Remapping
+   those utilities inside the console keeps every screen legible on the dark
+   shell; new work should use the console-* classes and the components in
+   src/components/console.tsx instead. */
+
+.doorli-console .card,
+.doorli-console .bg-white {
+  border-radius: 1rem;
+  border-color: rgba(255, 255, 255, 0.1);
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.028));
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 18px 44px -28px rgba(0, 0, 0, 0.85);
+  color: var(--doorli-text);
+}
+
+.doorli-console .bg-slate-50,
+.doorli-console .bg-slate-100 { background: rgba(255, 255, 255, 0.05); }
+.doorli-console .bg-slate-200 { background: rgba(255, 255, 255, 0.1); }
+.doorli-console .bg-slate-800,
+.doorli-console .bg-slate-900 { background: rgba(3, 7, 18, 0.72); }
+
+.doorli-console .hover\:bg-slate-50:hover,
+.doorli-console .hover\:bg-slate-100:hover { background: rgba(255, 255, 255, 0.07); }
+.doorli-console .hover\:bg-slate-200:hover { background: rgba(255, 255, 255, 0.13); }
+
+.doorli-console .text-slate-900,
+.doorli-console .text-slate-800 { color: var(--doorli-text); }
+.doorli-console .text-slate-700,
+.doorli-console .text-slate-600 { color: var(--doorli-text-muted); }
+.doorli-console .text-slate-500,
+.doorli-console .text-slate-400 { color: #6b86a6; }
+.doorli-console .hover\:text-slate-900:hover { color: var(--doorli-text); }
+
+.doorli-console .border-slate-50,
+.doorli-console .border-slate-100 { border-color: rgba(255, 255, 255, 0.07); }
+.doorli-console .border-slate-200,
+.doorli-console .border-slate-300 { border-color: rgba(255, 255, 255, 0.11); }
+
+.doorli-console .divide-slate-100 > * + *,
+.doorli-console .divide-slate-200 > * + * { border-color: rgba(255, 255, 255, 0.08); }
+
+/* Soft status tints: the -50 shades are near-white and blow out on navy. */
+.doorli-console .bg-red-50    { background: rgba(242, 102, 139, 0.12); }
+.doorli-console .bg-amber-50  { background: rgba(250, 199, 117, 0.12); }
+.doorli-console .bg-green-50,
+.doorli-console .bg-emerald-50 { background: rgba(29, 158, 117, 0.14); }
+.doorli-console .bg-blue-50   { background: rgba(55, 138, 221, 0.14); }
+.doorli-console .bg-purple-50 { background: rgba(167, 139, 250, 0.14); }
+
+.doorli-console .border-red-200   { border-color: rgba(242, 102, 139, 0.32); }
+.doorli-console .border-amber-200 { border-color: rgba(250, 199, 117, 0.32); }
+.doorli-console .border-blue-200  { border-color: rgba(55, 138, 221, 0.32); }
+
+.doorli-console .text-red-600,
+.doorli-console .text-red-700 { color: #f2668b; }
+.doorli-console .text-amber-600,
+.doorli-console .text-amber-700,
+.doorli-console .text-amber-800 { color: #fac775; }
+.doorli-console .text-green-600,
+.doorli-console .text-emerald-600,
+.doorli-console .text-emerald-700 { color: #5dcaa5; }
+.doorli-console .text-blue-600,
+.doorli-console .text-blue-700 { color: #7cb6ea; }
+.doorli-console .hover\:text-blue-700:hover { color: #a9d2f5; }
+.doorli-console .text-purple-600 { color: #b9a5fb; }
+
+.doorli-console .hover\:bg-red-50:hover { background: rgba(242, 102, 139, 0.14); }

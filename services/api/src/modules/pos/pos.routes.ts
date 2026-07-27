@@ -266,12 +266,42 @@ posRouter.post('/sale', async (req: Request, res: Response, next: NextFunction) 
         if (result.success && result.erpOrderId) {
           await prisma.order.update({
             where: { id: order.id },
-            data: { erpOrderId: String(result.erpOrderId).slice(0, 50) },
+            data: {
+              erpOrderId: String(result.erpOrderId).slice(0, 50),
+              erpSyncStatus: 'synced',
+              erpSyncError: null,
+              erpSyncedAt: new Date(),
+            },
+          });
+        } else {
+          await prisma.order.update({
+            where: { id: order.id },
+            data: {
+              erpSyncStatus: 'failed',
+              erpSyncError: (result.message || 'ERP sync failed').slice(0, 500),
+              erpSyncedAt: new Date(),
+            },
           });
         }
-      } catch {
-        // soft-fail ERP
+      } catch (err) {
+        await prisma.order.update({
+          where: { id: order.id },
+          data: {
+            erpSyncStatus: 'failed',
+            erpSyncError: (err instanceof Error ? err.message : 'ERP sync failed').slice(0, 500),
+            erpSyncedAt: new Date(),
+          },
+        }).catch(() => undefined);
       }
+    } else {
+      await prisma.order.update({
+        where: { id: order.id },
+        data: {
+          erpSyncStatus: 'skipped',
+          erpSyncError: 'Vendor is not linked to an ERP tenant',
+          erpSyncedAt: new Date(),
+        },
+      }).catch(() => undefined);
     }
 
     emitOrderEvent('order:pos_sale', [`vendor:${vendor.id}`], {

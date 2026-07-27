@@ -1,7 +1,10 @@
 version: "3.8"
 
 services:
+  # DEPRECATED — live Super Admin is apps/admin at /admin (port 3005 via nginx).
+  # Opt-in only: docker compose --profile deprecated up super-admin
   super-admin:
+    profiles: ["deprecated"]
     build:
       context: .
       dockerfile: apps/super-admin/Dockerfile
@@ -9,6 +12,7 @@ services:
       - "3006:3000"
     environment:
       - NODE_ENV=production
+      - NEXT_PUBLIC_SUPER_ADMIN_URL=http://doorli.me/admin
     depends_on:
       - api
 
