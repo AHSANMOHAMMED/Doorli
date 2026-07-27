@@ -20,7 +20,7 @@ wait_for_db() {
   done
 }
 
-docker compose up -d
+docker compose up -d --build --force-recreate
 wait_for_db
 docker compose exec -T api sh -c "cd packages/db && npx prisma migrate deploy"
 docker compose exec -T api npm run seed --workspace=@doorli/db
