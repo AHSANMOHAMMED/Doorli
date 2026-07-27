@@ -89,7 +89,7 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4 animate-slide-up">
         <StatCard
           label="Total Vendors"
           value={stats.totalVendors}
@@ -124,7 +124,7 @@ export default function AdminDashboard() {
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-3 animate-slide-up" style={{ animationDelay: '0.2s' }}>
         <StatCard
           label="Retail Smart vendors"
           value={stats.simpleVendors ?? 0}
@@ -149,81 +149,85 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <Panel
-          title="Infrastructure Status"
-          icon={<Activity size={17} />}
-          className="lg:col-span-2"
-          actions={
-            infra.length > 0 && (
-              <Badge tone={infra.every((s) => s.status === 'healthy') ? 'success' : 'warning'}>
-                {infra.filter((s) => s.status === 'healthy').length}/{infra.length} healthy
-              </Badge>
-            )
-          }
-        >
-          <div className="space-y-3">
-            {loadingInfra ? (
-              <>
-                <Skeleton className="h-16 w-full" />
-                <Skeleton className="h-16 w-full" />
-                <Skeleton className="h-16 w-full" />
-              </>
-            ) : infra.length === 0 ? (
-              <EmptyState
-                icon={<Activity size={20} />}
-                title="No service health yet"
-                desc="Sign in to load live status for the API, database, and ERP services."
-              />
-            ) : (
-              <>
-                {erpServices.length > 0 && (
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-doorli-dim">ERP backends</p>
-                )}
-                {erpServices.map((s) => (
-                  <ServiceRow key={s.name} {...s} />
-                ))}
-                {coreServices.length > 0 && (
-                  <p className="pt-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-doorli-dim">
-                    Marketplace services
-                  </p>
-                )}
-                {coreServices.map((s) => (
-                  <ServiceRow key={s.name} {...s} />
-                ))}
-              </>
-            )}
-          </div>
-        </Panel>
+        <div className="animate-slide-up" style={{ animationDelay: '0.4s' }}>
+          <Panel
+            title="Infrastructure Status"
+            icon={<Activity size={17} />}
+            className="lg:col-span-2 hover:scale-[1.01] transition-transform"
+            actions={
+              infra.length > 0 && (
+                <Badge tone={infra.every((s) => s.status === 'healthy') ? 'success' : 'warning'}>
+                  {infra.filter((s) => s.status === 'healthy').length}/{infra.length} healthy
+                </Badge>
+              )
+            }
+          >
+            <div className="space-y-3">
+              {loadingInfra ? (
+                <>
+                  <Skeleton className="h-16 w-full" />
+                  <Skeleton className="h-16 w-full" />
+                  <Skeleton className="h-16 w-full" />
+                </>
+              ) : infra.length === 0 ? (
+                <EmptyState
+                  icon={<Activity size={20} />}
+                  title="No service health yet"
+                  desc="Sign in to load live status for the API, database, and ERP services."
+                />
+              ) : (
+                <>
+                  {erpServices.length > 0 && (
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-doorli-dim">ERP backends</p>
+                  )}
+                  {erpServices.map((s) => (
+                    <ServiceRow key={s.name} {...s} />
+                  ))}
+                  {coreServices.length > 0 && (
+                    <p className="pt-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-doorli-dim">
+                      Marketplace services
+                    </p>
+                  )}
+                  {coreServices.map((s) => (
+                    <ServiceRow key={s.name} {...s} />
+                  ))}
+                </>
+              )}
+            </div>
+          </Panel>
+        </div>
 
-        <Panel title="Action Required" icon={<AlertCircle size={17} />}>
-          <div className="space-y-3">
-            <ActionItem
-              href="/verifications"
-              title={`Verify ${stats.pendingKyc} vendor${stats.pendingKyc === 1 ? '' : 's'}`}
-              desc="Approve shops waiting on KYC."
-              tone={stats.pendingKyc > 0 ? 'danger' : 'success'}
-              label={stats.pendingKyc > 0 ? 'Urgent' : 'Clear'}
-            />
-            <ActionItem
-              href="/tenants"
-              title={
-                (stats.erpProvisionFailed ?? 0) + (stats.erpSyncFailed ?? 0) > 0
-                  ? `Fix ${(stats.erpProvisionFailed ?? 0) + (stats.erpSyncFailed ?? 0)} ERP issue(s)`
-                  : 'ERP tenants healthy'
-              }
-              desc="Provision failures and order sync errors."
-              tone={(stats.erpProvisionFailed ?? 0) + (stats.erpSyncFailed ?? 0) > 0 ? 'danger' : 'success'}
-              label="ERP"
-            />
-            <ActionItem
-              href="/health"
-              title="System health"
-              desc="Probe API, Retail Smart, and Enterprise."
-              tone="info"
-              label="Live"
-            />
-          </div>
-        </Panel>
+        <div className="animate-slide-up" style={{ animationDelay: '0.5s' }}>
+          <Panel title="Action Required" icon={<AlertCircle size={17} />} className="hover:scale-[1.01] transition-transform">
+            <div className="space-y-3">
+              <ActionItem
+                href="/verifications"
+                title={`Verify ${stats.pendingKyc} vendor${stats.pendingKyc === 1 ? '' : 's'}`}
+                desc="Approve shops waiting on KYC."
+                tone={stats.pendingKyc > 0 ? 'danger' : 'success'}
+                label={stats.pendingKyc > 0 ? 'Urgent' : 'Clear'}
+              />
+              <ActionItem
+                href="/tenants"
+                title={
+                  (stats.erpProvisionFailed ?? 0) + (stats.erpSyncFailed ?? 0) > 0
+                    ? `Fix ${(stats.erpProvisionFailed ?? 0) + (stats.erpSyncFailed ?? 0)} ERP issue(s)`
+                    : 'ERP tenants healthy'
+                }
+                desc="Provision failures and order sync errors."
+                tone={(stats.erpProvisionFailed ?? 0) + (stats.erpSyncFailed ?? 0) > 0 ? 'danger' : 'success'}
+                label="ERP"
+              />
+              <ActionItem
+                href="/health"
+                title="System health"
+                desc="Probe API, Retail Smart, and Enterprise."
+                tone="info"
+                label="Live"
+              />
+            </div>
+          </Panel>
+        </div>
       </div>
     </>
   );

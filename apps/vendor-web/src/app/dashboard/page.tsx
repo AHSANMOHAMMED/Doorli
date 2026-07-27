@@ -138,23 +138,24 @@ export default function DashboardPage() {
         }
       />
 
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4 animate-slide-up">
         <StatCard label="Total orders" value={totalOrders} hint="All time" tone="blue" icon={<ShoppingBag size={17} />} delay="doorli-rise" />
         <StatCard label="Needs action" value={pendingOrders} hint="Pending, confirmed or preparing" tone="gold" icon={<Clock size={17} />} delay="doorli-rise-delay" />
         <StatCard label="Revenue" value={`LKR ${totalRevenue.toFixed(0)}`} hint="Excludes cancelled orders" tone="teal" icon={<DollarSign size={17} />} delay="doorli-rise-delay-2" />
         <StatCard label="Rating" value={avgRating > 0 ? avgRating.toFixed(1) : '—'} hint="Customer average" tone="rose" icon={<Star size={17} />} delay="doorli-rise-delay-2" />
       </div>
 
-      <div className="flex flex-wrap gap-2.5">
-        {QUICK_ACTIONS.map(({ href, label, icon: Icon, primary }) => (
+      <div className="flex flex-wrap gap-2.5 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+        {QUICK_ACTIONS.map(({ href, label, icon: Icon, primary }, index) => (
           <Link
             key={label}
             href={href}
-            className={`inline-flex min-h-11 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${
+            className={`inline-flex min-h-11 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all hover:scale-105 hover:-translate-y-0.5 ${
               primary
-                ? 'bg-gradient-to-r from-[#185fa5] to-[#1d9e75] text-white shadow-lg shadow-[#185fa5]/25 hover:brightness-110'
+                ? 'bg-gradient-to-r from-[#185fa5] to-[#1d9e75] text-white shadow-lg shadow-[#185fa5]/25 hover:brightness-110 animate-pulse-glow'
                 : 'border border-white/[0.1] bg-white/[0.05] text-doorli-muted hover:bg-white/[0.1] hover:text-white'
             }`}
+            style={{ animationDelay: `${0.3 + (index * 0.05)}s` }}
           >
             <Icon className="h-4 w-4" />
             {label}
@@ -162,20 +163,22 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      <Panel
-        title="Recent orders"
-        icon={<ShoppingBag size={17} />}
-        bodyClassName=""
-        actions={
-          <Link
-            href="/dashboard/orders"
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-[#7cb6ea] transition-colors hover:text-[#a9d2f5]"
-          >
-            View all
-            <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
-        }
-      >
+      <div className="animate-slide-up" style={{ animationDelay: '0.4s' }}>
+        <Panel
+          title="Recent orders"
+          icon={<ShoppingBag size={17} />}
+          bodyClassName=""
+          className="hover:scale-[1.01] transition-transform"
+          actions={
+            <Link
+              href="/dashboard/orders"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-[#7cb6ea] transition-colors hover:text-[#a9d2f5] hover:translate-x-1"
+            >
+              View all
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          }
+        >
         {recent.length === 0 ? (
           <div className="p-5">
             <EmptyState
@@ -229,6 +232,7 @@ export default function DashboardPage() {
           </div>
         )}
       </Panel>
+      </div>
     </>
   );
 }

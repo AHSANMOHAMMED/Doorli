@@ -287,7 +287,7 @@ export default function Home() {
           <div className="max-w-4xl mx-auto w-full text-center">
             
             {/* Live Status Pill */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full doorli-glass border border-white/15 mb-6 text-xs sm:text-sm text-white/90 shadow-xl">
+            <div className="animate-bounce-in inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full doorli-glass border border-white/15 mb-6 text-xs sm:text-sm text-white/90 shadow-xl animate-pulse-glow">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#5dcaa5] opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-[#5dcaa5]"></span>
@@ -298,65 +298,65 @@ export default function Home() {
 
             <div className="flex flex-col items-center">
               {/* Logo with Glow */}
-              <div className="relative group cursor-pointer">
+              <div className="relative group cursor-pointer animate-bounce-in" style={{ animationDelay: '0.1s' }}>
                 <div className="absolute -inset-1 bg-gradient-to-r from-[#185fa5] via-[#5dcaa5] to-[#fac775] rounded-[2rem] blur-xl opacity-60 group-hover:opacity-100 transition duration-700 animate-pulse" />
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={MARK}
                   alt="Doorli"
-                  className="relative w-24 h-24 sm:w-32 sm:h-32 rounded-[1.75rem] shadow-[0_24px_80px_rgba(0,0,0,0.6)] mb-6 ring-2 ring-white/20 object-cover"
+                  className="relative w-24 h-24 sm:w-32 sm:h-32 rounded-[1.75rem] shadow-[0_24px_80px_rgba(0,0,0,0.6)] mb-6 ring-2 ring-white/20 object-cover animate-doorli-float"
                 />
               </div>
 
-              <h1 className="font-display text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white drop-shadow-lg">
+              <h1 className="animate-slide-up font-display text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white drop-shadow-lg" style={{ animationDelay: '0.2s' }}>
                 Doorli
               </h1>
-              <p className="font-display mt-3 text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-white via-[#b5d4f4] to-[#5dcaa5] bg-clip-text text-transparent">
+              <p className="animate-slide-up font-display mt-3 text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-white via-[#b5d4f4] to-[#5dcaa5] bg-clip-text text-transparent animate-gradient" style={{ animationDelay: '0.3s' }}>
                 Everything local. Delivered.
               </p>
-              <p className="mt-4 text-sm sm:text-base md:text-lg text-[#9bb4d0] max-w-xl mx-auto leading-relaxed">
+              <p className="animate-slide-up mt-4 text-sm sm:text-base md:text-lg text-[#9bb4d0] max-w-xl mx-auto leading-relaxed" style={{ animationDelay: '0.4s' }}>
                 Marketplace, food, hotels, halls, services, beauty, delivery & rides — one seamless app connected directly to merchant ERP behind the counter.
               </p>
             </div>
 
             {/* Universal Search Bar */}
-            <div className="max-w-2xl mx-auto mt-8 relative z-40">
+            <div className="animate-slide-up max-w-2xl mx-auto mt-8 relative z-40" style={{ animationDelay: '0.5s' }}>
               <UniversalSearch />
             </div>
 
             {/* Quick Action Badges */}
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3">
-              <Link href="/search?category=grocery" className="doorli-cta-ghost text-xs sm:text-sm py-2 px-3.5 flex items-center gap-1.5">
+            <div className="animate-slide-up mt-6 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3" style={{ animationDelay: '0.6s' }}>
+              <Link href="/search?category=grocery" className="doorli-cta-ghost text-xs sm:text-sm py-2 px-3.5 flex items-center gap-1.5 hover:scale-105 transition-transform">
                 <Store className="w-4 h-4 text-[#378add]" />
                 Browse Marketplace
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
-              <Link href="/search?category=restaurant" className="doorli-cta-ghost text-xs sm:text-sm py-2 px-3.5 flex items-center gap-1.5">
+              <Link href="/search?category=restaurant" className="doorli-cta-ghost text-xs sm:text-sm py-2 px-3.5 flex items-center gap-1.5 hover:scale-105 transition-transform">
                 <Utensils className="w-4 h-4 text-[#fac775]" />
                 Order Food
               </Link>
-              <Link href="/ride" className="doorli-cta-ghost text-xs sm:text-sm py-2 px-3.5 flex items-center gap-1.5">
+              <Link href="/ride" className="doorli-cta-ghost text-xs sm:text-sm py-2 px-3.5 flex items-center gap-1.5 hover:scale-105 transition-transform">
                 <Car className="w-4 h-4 text-[#5dcaa5]" />
                 Book Ride
               </Link>
             </div>
 
             {/* Trust Highlights */}
-            <div className="mt-10 grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl mx-auto pt-6 border-t border-white/10 text-xs text-[#9bb4d0]">
-              <div className="flex items-center justify-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-[#5dcaa5]" />
+            <div className="animate-slide-up mt-10 grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl mx-auto pt-6 border-t border-white/10 text-xs text-[#9bb4d0]" style={{ animationDelay: '0.7s' }}>
+              <div className="flex items-center justify-center gap-1.5 group hover:scale-105 transition-transform">
+                <CheckCircle2 className="w-4 h-4 text-[#5dcaa5] group-hover:animate-bounce" />
                 <span>100+ Verified Vendors</span>
               </div>
-              <div className="flex items-center justify-center gap-1.5">
-                <Clock className="w-4 h-4 text-[#fac775]" />
+              <div className="flex items-center justify-center gap-1.5 group hover:scale-105 transition-transform">
+                <Clock className="w-4 h-4 text-[#fac775] group-hover:animate-bounce" />
                 <span>15-30 Min Delivery</span>
               </div>
-              <div className="flex items-center justify-center gap-1.5">
-                <Shield className="w-4 h-4 text-[#378add]" />
+              <div className="flex items-center justify-center gap-1.5 group hover:scale-105 transition-transform">
+                <Shield className="w-4 h-4 text-[#378add] group-hover:animate-bounce" />
                 <span>Live ERP Sync</span>
               </div>
-              <div className="flex items-center justify-center gap-1.5">
-                <Star className="w-4 h-4 text-[#fac775]" />
+              <div className="flex items-center justify-center gap-1.5 group hover:scale-105 transition-transform">
+                <Star className="w-4 h-4 text-[#fac775] group-hover:animate-bounce" />
                 <span>4.9/5 Rating</span>
               </div>
             </div>
@@ -407,21 +407,27 @@ export default function Home() {
 
           {/* Cards Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {filteredFeatures.map((f) => (
+            {filteredFeatures.map((f, index) => (
               <Link
                 key={f.name}
                 href={f.href}
-                className="group relative p-6 rounded-3xl doorli-glass-card hover:border-[#378add]/50 transition-all duration-300 flex flex-col justify-between overflow-hidden"
+                className="group relative p-6 rounded-3xl doorli-glass-card hover:border-[#378add]/50 transition-all duration-300 flex flex-col justify-between overflow-hidden animate-slide-up hover:scale-105 hover:-translate-y-1"
+                style={{ animationDelay: `${0.8 + (index * 0.1)}s` }}
               >
                 {/* Glow Background */}
                 <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${f.gradient} rounded-full blur-3xl opacity-20 group-hover:opacity-40 transition-opacity`} />
+                
+                {/* Shimmer Effect */}
+                <div className="absolute inset-0 overflow-hidden rounded-3xl">
+                  <div className="absolute inset-0 animate-shimmer opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
 
-                <div>
+                <div className="relative z-10">
                   <div className="flex items-center justify-between mb-4">
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border ${f.gradient} shadow-lg`}>
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border ${f.gradient} shadow-lg group-hover:scale-110 transition-transform`}>
                       <f.icon className="w-6 h-6" />
                     </div>
-                    <span className={`text-[10px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-full border ${f.badgeColor}`}>
+                    <span className={`text-[10px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-full border ${f.badgeColor} group-hover:scale-110 transition-transform`}>
                       {f.badge}
                     </span>
                   </div>
@@ -433,7 +439,7 @@ export default function Home() {
                   <p className="mt-2.5 text-xs sm:text-sm text-[#9bb4d0] leading-relaxed">{f.blurb}</p>
                 </div>
 
-                <div className="mt-5 pt-4 border-t border-white/10 flex items-center justify-between text-[11px] text-white/40">
+                <div className="relative z-10 mt-5 pt-4 border-t border-white/10 flex items-center justify-between text-[11px] text-white/40">
                   <span className="font-mono">{f.erp}</span>
                   <span className="font-semibold text-[#378add] group-hover:underline">Explore</span>
                 </div>
@@ -462,18 +468,19 @@ export default function Home() {
           {error && <p className="text-[var(--doorli-gold)] text-sm mb-4">{error}</p>}
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {vendors.map((v) => (
+            {vendors.map((v, index) => (
               <Link
                 key={v.id}
                 href={`/shop/${v.id}`}
-                className="p-6 rounded-3xl doorli-glass-card hover:bg-white/[0.08] transition block group border border-white/10"
+                className="p-6 rounded-3xl doorli-glass-card hover:bg-white/[0.08] transition block group border border-white/10 animate-slide-up hover:scale-105 hover:-translate-y-1"
+                style={{ animationDelay: `${1.5 + (index * 0.1)}s` }}
               >
                 <div className="flex items-start justify-between">
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-[#185fa5]/20 text-[#378add] border border-[#185fa5]/30">
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-[#185fa5]/20 text-[#378add] border border-[#185fa5]/30 group-hover:scale-110 transition-transform">
                     {v.category}
                   </span>
                   <span className={`text-[11px] font-medium flex items-center gap-1 ${v.isOpen !== false ? "text-emerald-400" : "text-rose-400"}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${v.isOpen !== false ? "bg-emerald-400" : "bg-rose-400"}`} />
+                    <span className={`w-1.5 h-1.5 rounded-full ${v.isOpen !== false ? "bg-emerald-400 animate-pulse" : "bg-rose-400"}`} />
                     {v.isOpen !== false ? "Open Now" : "Closed"}
                   </span>
                 </div>
@@ -490,7 +497,7 @@ export default function Home() {
                     <MapPin className="w-3.5 h-3.5 text-[#fac775]" />
                     <span>{v.city || "Colombo"}</span>
                   </div>
-                  <div className="flex items-center gap-1 font-semibold text-[#5dcaa5]">
+                  <div className="flex items-center gap-1 font-semibold text-[#5dcaa5] group-hover:translate-x-1 transition-transform">
                     <span>Order Now</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </div>
