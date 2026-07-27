@@ -25,7 +25,9 @@ services:
       - PORT=3001
       - DATABASE_URL=postgresql://user:pass@db:5432/doorli?schema=public
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    restart: unless-stopped
 
   db:
     image: postgis/postgis:15-3.4-alpine
@@ -35,6 +37,12 @@ services:
       - POSTGRES_DB=doorli
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d doorli"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
 volumes:
   pgdata:
