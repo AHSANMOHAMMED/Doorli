@@ -92,7 +92,7 @@ export async function addVendorToEvent(
   const vendor = await prisma.vendor.findUnique({ where: { id: vendorId } });
   if (!vendor) throw new AppError(404, 'Vendor not found');
 
-  const allStored = (pkg.items as (EventItem | EventMeta)[]) ?? [];
+  const allStored = (pkg.items as unknown as (EventItem | EventMeta)[]) ?? [];
   const meta = extractMeta(allStored);
   const existingItems = extractItems(allStored);
 
@@ -138,7 +138,7 @@ export async function removeVendorFromEvent(
     throw new AppError(400, `Cannot modify a ${pkg.status} event`);
   }
 
-  const allStored = (pkg.items as (EventItem | EventMeta)[]) ?? [];
+  const allStored = (pkg.items as unknown as (EventItem | EventMeta)[]) ?? [];
   const meta = extractMeta(allStored);
   const existingItems = extractItems(allStored);
 
@@ -169,7 +169,7 @@ export async function confirmEventPackage(eventId: string, customerId: string) {
     throw new AppError(400, `Event is already ${pkg.status}`);
   }
 
-  const allStored = (pkg.items as (EventItem | EventMeta)[]) ?? [];
+  const allStored = (pkg.items as unknown as (EventItem | EventMeta)[]) ?? [];
   const items = extractItems(allStored);
 
   if (items.length === 0) {
@@ -231,7 +231,7 @@ export async function getEventSummary(eventId: string, customerId: string) {
   if (!pkg) throw new AppError(404, 'Event package not found');
   if (pkg.customerId !== customerId) throw new AppError(403, 'Access denied');
 
-  const allStored = (pkg.items as (EventItem | EventMeta)[]) ?? [];
+  const allStored = (pkg.items as unknown as (EventItem | EventMeta)[]) ?? [];
   const meta = extractMeta(allStored);
   const items = extractItems(allStored);
 

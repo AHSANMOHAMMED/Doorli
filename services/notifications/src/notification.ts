@@ -14,7 +14,14 @@ export type NotificationPayload = {
   body: string;
   type: string;
   data?: Record<string, unknown>;
-  channels?: Array<'push' | 'sms' | 'in_app'>;
+  channels?: Array<'push' | 'sms' | 'in_app' | 'email'>;
+  email?: {
+    to: string;
+    subject: string;
+    html?: string;
+    templateId?: string;
+    templateData?: Record<string, unknown>;
+  };
 };
 
 /**
@@ -64,6 +71,9 @@ export class NotificationService {
         }
         if (channels.includes('in_app')) {
           await persistInApp(job.data);
+        }
+        if (channels.includes('email') && job.data.email) {
+          await sendEmail(job.data);
         }
       },
       { connection: { url: this.redisUrl, maxRetriesPerRequest: null } },
@@ -205,6 +215,58 @@ async function sendSms(payload: NotificationPayload): Promise<void> {
     });
   } catch (err) {
     console.warn('[notifications] SMS failed', err);
+  }
+}
+
+async function sendEmail(payload: NotificationPayload): Promise<void> {
+  const sendgridApiKey = process.env.SENDGRID_API_KEY;
+  const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'noreply@doorli.com';
+  
+  if (!sendgridApiKey) {
+    console.log(`[notifications] Email dry-run → To: ${payload.email?.to}, Subject: ${payload.email?.subject || payload.title}`);
+    return;
+  }
+
+  if (!payload.email?.to) {
+    console.warn('[notifications] Email skipped: no recipient address');
+    return;
+  }
+
+  try {
+    const emailData = {
+      personalizations: [
+        {
+          to: [{ email: payload.email.to }],
+          subject: payload.email.subject || payload.title,
+          ...(payload.email.templateId && payload.email.templateData
+            ? { dynamic_template_data: payload.email.templateData }
+            : {}),
+        },
+      ],
+      from: { email: fromEmail, name: 'Doorli' },
+      content: payload.email.html
+        ? [{ type: 'text/html', value: payload.email.html }]
+        : [{ type: 'text/plain', value: payload.body }],
+      ...(payload.email.templateId ? { template_id: payload.email.templateId } : {}),
+    };
+
+    const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${sendgridApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(emailData),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.warn(`[notifications] Email failed (${response.status}):`, errorText);
+    } else {
+      console.log(`[notifications] Email sent to ${payload.email.to}`);
+    }
+  } catch (err) {
+    console.warn('[notifications] Email send failed', err);
   }
 }
 

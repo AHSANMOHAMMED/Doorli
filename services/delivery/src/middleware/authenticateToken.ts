@@ -19,57 +19,54 @@ export async function authenticateToken(req: Request, _res: Response, next: Next
   try {
     // 1. Try standard Doorli Marketplace JWT
     const decoded = jwt.verify(token, JWT_SECRET) as any;
-      if (decoded && (decoded.userId || decoded.id)) {
-        req.user = decoded.userId ? { ...decoded, id: decoded.userId } : decoded;
-        return next();
-    } catch (err) {
-      // Fallback to ERP token check below if JWT fails
+    if (decoded && (decoded.userId || decoded.id)) {
+      req.user = decoded.userId ? { ...decoded, id: decoded.userId } : decoded;
+      return next();
     }
-
-    // 2. If it's not a standard JWT, check if it's an ERP company-session token
-    const redis = getRedis();
-    const cacheKey = `erp_auth:${token}`;
-    
-    // Check cache first to avoid hammering the ERP
-    if (redis.status === 'ready') {
-      const cached = await redis.get(cacheKey);
-      if (cached) {
-        req.user = JSON.parse(cached);
-        return next();
-      }
-    }
-
-    // 3. Introspect via ERP Internal API
-    const response = await fetch(`${env.ERP_SERVICE_URL}/api/internal/auth/validate`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-internal-secret': env.ERP_INTERNAL_SECRET,
-      },
-      body: JSON.stringify({ token }),
-    });
-
-    if (!response.ok) {
-      return next(new AppError(401, 'Invalid or expired token'));
-    }
-
-    const data = await response.json() as any;
-    if (!data.valid || !data.user) {
-      return next(new AppError(401, 'Invalid or expired token'));
-    }
-
-    req.user = data.user;
-
-    // Cache the validated session for 5 minutes
-    if (redis.status === 'ready') {
-      await redis.setex(cacheKey, 300, JSON.stringify(data.user));
-    }
-
-    next();
-  } catch (error) {
-    console.error('Auth Bridge Error:', error);
-    next(new AppError(500, 'Authentication service unavailable'));
+  } catch (err) {
+    // Fallback to ERP token check below if JWT fails
   }
+
+  // 2. If it's not a standard JWT, check if it's an ERP company-session token
+  const redis = getRedis();
+  const cacheKey = `erp_auth:${token}`;
+  
+  // Check cache first to avoid hammering the ERP
+  if (redis.status === 'ready') {
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      req.user = JSON.parse(cached);
+      return next();
+    }
+  }
+
+  // 3. Introspect via ERP Internal API
+  const response = await fetch(`${env.ERP_SERVICE_URL}/api/internal/auth/validate`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-internal-secret': env.ERP_INTERNAL_SECRET,
+    },
+    body: JSON.stringify({ token }),
+  });
+
+  if (!response.ok) {
+    return next(new AppError(401, 'Invalid or expired token'));
+  }
+
+  const data = await response.json() as any;
+  if (!data.valid || !data.user) {
+    return next(new AppError(401, 'Invalid or expired token'));
+  }
+
+  req.user = data.user;
+
+  // Cache the validated session for 5 minutes
+  if (redis.status === 'ready') {
+    await redis.setex(cacheKey, 300, JSON.stringify(data.user));
+  }
+
+  next();
 }
 
 export function requireRole(...roles: UserRole[]) {

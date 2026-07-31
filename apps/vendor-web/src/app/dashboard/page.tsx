@@ -1,243 +1,358 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import {
-  ShoppingBag,
-  Clock,
-  DollarSign,
-  Star,
-  Package,
-  Settings,
-  Plus,
-  Store,
-  ArrowRight,
-} from 'lucide-react';
-import { apiFetch, getToken } from '@/lib/api';
-import { useAuth } from '@/lib/auth-context';
-import { useFeatures } from '@/lib/features-context';
-import { PageHeader, StatCard, Panel, Badge, EmptyState, LoadingBlock, ErrorNote } from '@/components/console';
+import { Bed, CalendarDays, Star, Users, MapPin, Edit, Trash2, Eye, TrendingUp } from 'lucide-react';
 
-type Order = {
-  id: string;
-  orderNumber?: string;
-  status: string;
-  totalAmount: number | string;
-  createdAt: string;
-  customer?: { fullName?: string };
-  items?: unknown[];
-};
-
-type Vendor = {
-  id: string;
-  businessName: string;
-  category: string;
-  isOpen: boolean;
-  isVerified: boolean;
-  avgRating: number | string;
-};
-
-const QUICK_ACTIONS = [
-  { href: '/dashboard/pos', label: 'Open cashier', icon: Store, primary: true, feature: 'pos' },
-  { href: '/dashboard/orders', label: 'View orders', icon: ShoppingBag },
-  { href: '/dashboard/products', label: 'Add product', icon: Plus },
-  { href: '/dashboard/settings', label: 'Settings', icon: Settings },
+// Sample data for vendor dashboard
+const vendorHotels = [
+  {
+    id: 'hotel-001',
+    businessName: 'Grand Hotel Colombo',
+    location: 'Colombo',
+    rating: 4.7,
+    pricePerNight: 8500,
+    totalRooms: 120,
+    availableRooms: 15,
+    totalBookings: 245,
+    occupancyRate: 78,
+    revenue: 2125000,
+    isActive: true,
+    images: ['/images/hotel1.jpg'],
+    amenities: ['WiFi', 'Parking', 'Breakfast', 'Pool', 'Spa'],
+    lastBooking: '2025-01-28T10:30:00Z'
+  },
+  {
+    id: 'hotel-002',
+    businessName: 'Beach Resort Negombo',
+    location: 'Negombo',
+    rating: 4.3,
+    pricePerNight: 4500,
+    totalRooms: 85,
+    availableRooms: 8,
+    totalBookings: 132,
+    occupancyRate: 65,
+    revenue: 594000,
+    isActive: true,
+    images: ['/images/hotel2.jpg'],
+    amenities: ['Beach Access', 'Parking', 'Restaurant', 'Pool'],
+    lastBooking: '2025-01-27T14:15:00Z'
+  }
 ];
 
-function statusTone(status: string): 'success' | 'warning' | 'error' | 'info' {
-  const s = status.toLowerCase();
-  if (['delivered', 'completed'].includes(s)) return 'success';
-  if (['cancelled', 'rejected', 'failed'].includes(s)) return 'error';
-  if (['pending', 'preparing', 'confirmed'].includes(s)) return 'warning';
-  return 'info';
-}
-
-export default function DashboardPage() {
-  const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
-  const { hasFeature } = useFeatures();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [vendor, setVendor] = useState<Vendor | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (authLoading) return;
-    if (!getToken() || !user) {
-      router.replace('/login');
-      return;
-    }
-    if (user.role !== 'vendor' && user.role !== 'admin') {
-      setError('Vendor account required');
-      setLoading(false);
-      return;
-    }
-
-    (async () => {
-      try {
-        const ordersRes = await apiFetch<{ items: Order[] }>('/orders/vendor/mine');
-        setOrders(ordersRes.data?.items ?? []);
-
-        const vendorRes = await apiFetch<Vendor>('/vendors/me');
-        if (vendorRes.success && vendorRes.data) setVendor(vendorRes.data);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : 'Failed to load dashboard');
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [authLoading, user, router]);
-
-  if (authLoading || loading) {
-    return (
-      <>
-        <PageHeader title="Overview" subtitle="Loading your storefront…" />
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          <LoadingBlock rows={1} />
-          <LoadingBlock rows={1} />
-          <LoadingBlock rows={1} />
-          <LoadingBlock rows={1} />
-        </div>
-        <LoadingBlock rows={3} />
-      </>
-    );
+const vendorHalls = [
+  {
+    id: 'hall-001',
+    businessName: 'Grand Banquet Hall',
+    location: 'Colombo',
+    rating: 4.8,
+    basePrice: 75000,
+    capacity: { min: 50, max: 500 },
+    totalBookings: 45,
+    revenue: 3375000,
+    isActive: true,
+    images: ['/images/hall1.jpg'],
+    amenities: ['AC', 'Lighting', 'Sound System', 'Parking', 'Catering'],
+    nextAvailableDate: '2025-02-15',
+    lastBooking: '2025-01-25T09:00:00Z'
+  },
+  {
+    id: 'hall-002',
+    businessName: 'City Convention Center',
+    location: 'Kandy',
+    rating: 4.5,
+    basePrice: 45000,
+    capacity: { min: 100, max: 800 },
+    totalBookings: 23,
+    revenue: 1035000,
+    isActive: true,
+    images: ['/images/hall2.jpg'],
+    amenities: ['AV Equipment', 'WiFi', 'Projector', 'Parking'],
+    nextAvailableDate: '2025-03-10',
+    lastBooking: '2025-01-20T16:45:00Z'
   }
+];
 
-  if (error) {
-    return (
-      <>
-        <PageHeader title="Overview" />
-        <ErrorNote>{error}</ErrorNote>
-      </>
-    );
-  }
+export default function HotelHallVendorDashboard() {
+  const [activeTab, setActiveTab] = useState('hotels');
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  const totalOrders = orders.length;
-  const pendingOrders = orders.filter(
-    (o) => o.status === 'pending' || o.status === 'confirmed' || o.status === 'preparing',
-  ).length;
-  const totalRevenue = orders
-    .filter((o) => o.status !== 'cancelled')
-    .reduce((sum, o) => sum + Number(o.totalAmount), 0);
-  const avgRating = vendor ? Number(vendor.avgRating) : 0;
-  const recent = orders.slice(0, 6);
+  const statsCards = [
+    {
+      title: 'Total Hotels',
+      value: vendorHotels.length,
+      icon: Bed,
+      color: 'bg-blue-500/20 text-blue-300'
+    },
+    {
+      title: 'Total Halls',
+      value: vendorHalls.length,
+      icon: CalendarDays,
+      color: 'bg-purple-500/20 text-purple-300'
+    },
+    {
+      title: 'Total Revenue',
+      value: `${(vendorHotels.reduce((sum, h) => sum + h.revenue, 0) + vendorHalls.reduce((sum, h) => sum + h.revenue, 0)).toLocaleString()} LKR`,
+      icon: TrendingUp,
+      color: 'bg-green-500/20 text-green-300'
+    },
+    {
+      title: 'Occupancy Rate',
+      value: `${Math.round(((vendorHotels.reduce((sum, h) => sum + h.occupancyRate, 0) + vendorHalls.length * 70) / (vendorHotels.length + vendorHalls.length))).toLocaleString()}%`,
+      icon: Star,
+      color: 'bg-amber-500/20 text-amber-300'
+    }
+  ];
+
+  const renderHotelsTab = () => (
+    <div className="space-y-md">
+      <div className="flex justify-between items-center mb-md">
+        <h2 className="font-screen-title text-screen-title text-on-surface">Your Hotels</h2>
+        <Link
+          href="/vendor/hotel/create"
+          className="px-4 py-2 rounded-xl bg-primary-container text-white font-label-medium hover:brightness-110 transition-all"
+        >
+          Add New Hotel
+        </Link>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
+        {vendorHotels.map((hotel, index) => (
+          <div key={hotel.id} className="bg-surface-container-high rounded-xl border border-surface-variant overflow-hidden hover:border-primary/50 transition-all animate-slide-up">
+            <div className="relative h-40 bg-surface-variant">
+              <div className="flex items-center justify-center h-full">
+                <span className="material-symbols-outlined text-surface-variant text-5xl">hotel</span>
+              </div>
+              {!hotel.isActive && (
+                <div className="absolute top-2 right-2">
+                  <span className="px-2 py-1 bg-danger/20 text-danger text-xs rounded-full">Inactive</span>
+                </div>
+              )}
+            </div>
+            <div className="p-md">
+              <h3 className="font-display text-lg font-bold text-white mb-2 hover:text-primary transition-colors">
+                {hotel.businessName}
+              </h3>
+              <div className="space-y-xs mb-md">
+                <div className="flex items-center gap-2 text-sm text-[#9bb4d0]">
+                  <MapPin className="w-4 h-4" />
+                  <span>{hotel.location}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-[#9bb4d0]">
+                  <Star className="w-4 h-4 text-[#fac775]" />
+                  <span>{hotel.rating}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-[#9bb4d0]">
+                  <Bed className="w-4 h-4" />
+                  <span>{hotel.availableRooms}/{hotel.totalRooms} Available</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-[#9bb4d0]">
+                  <TrendingUp className="w-4 h-4 text-[#5dcaa5]" />
+                  <span>{hotel.occupancyRate}% Occupancy</span>
+                </div>
+              </div>
+              <div className="bg-surface-variant rounded-lg p-sm mb-md">
+                <div className="text-xs text-[#9bb4d0] mb-1">Today&apos;s Revenue</div>
+                <div className="text-lg font-bold text-[#5dcaa5]">Rs. {hotel.revenue.toLocaleString()}</div>
+              </div>
+              <div className="flex gap-xs">
+                <button
+                  onClick={() => setSelectedItem(hotel)}
+                  className="flex-1 p-2 rounded-lg bg-surface-variant text-[#9bb4d0] hover:bg-surface-variant/80 transition-colors"
+                >
+                  <Eye className="w-4 h-4 inline mr-1" />
+                  View
+                </button>
+                <Link
+                  href={`/vendor/hotel/${hotel.id}/edit`}
+                  className="flex-1 p-2 rounded-lg bg-primary/20 text-primary hover:bg-primary/30 transition-colors text-center"
+                >
+                  <Edit className="w-4 h-4 inline mr-1" />
+                  Edit
+                </Link>
+                <button
+                  onClick={() => { setSelectedItem(hotel); setShowDeleteConfirm(true); }}
+                  className="flex-1 p-2 rounded-lg bg-danger/20 text-danger hover:bg-danger/30 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4 inline mr-1" />
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const renderHallsTab = () => (
+    <div className="space-y-md">
+      <div className="flex justify-between items-center mb-md">
+        <h2 className="font-screen-title text-screen-title text-on-surface">Your Halls & Venues</h2>
+        <Link
+          href="/vendor/hall/create"
+          className="px-4 py-2 rounded-xl bg-primary-container text-white font-label-medium hover:brightness-110 transition-all"
+        >
+          Add New Hall
+        </Link>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
+        {vendorHalls.map((hall, index) => (
+          <div key={hall.id} className="bg-surface-container-high rounded-xl border border-surface-variant overflow-hidden hover:border-tertiary/50 transition-all animate-slide-up">
+            <div className="relative h-40 bg-surface-variant">
+              <div className="flex items-center justify-center h-full">
+                <span className="material-symbols-outlined text-surface-variant text-5xl">calendar_today</span>
+              </div>
+              {!hall.isActive && (
+                <div className="absolute top-2 right-2">
+                  <span className="px-2 py-1 bg-danger/20 text-danger text-xs rounded-full">Inactive</span>
+                </div>
+              )}
+            </div>
+            <div className="p-md">
+              <h3 className="font-display text-lg font-bold text-white mb-2 hover:text-tertiary transition-colors">
+                {hall.businessName}
+              </h3>
+              <div className="space-y-xs mb-md">
+                <div className="flex items-center gap-2 text-sm text-[#9bb4d0]">
+                  <MapPin className="w-4 h-4" />
+                  <span>{hall.location}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-[#9bb4d0]">
+                  <Star className="w-4 h-4 text-[#fac775]" />
+                  <span>{hall.rating}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-[#9bb4d0]">
+                  <Users className="w-4 h-4" />
+                  <span>{hall.capacity.min}-{hall.capacity.max} Guests</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-[#9bb4d0]">
+                  <TrendingUp className="w-4 h-4 text-[#fac775]" />
+                  <span>Rs. {hall.basePrice.toLocaleString()}/day</span>
+                </div>
+              </div>
+              <div className="bg-surface-variant rounded-lg p-sm mb-md">
+                <div className="text-xs text-[#9bb4d0] mb-1">Next Available</div>
+                <div className="text-lg font-bold text-[#fac775]">{hall.nextAvailableDate}</div>
+              </div>
+              <div className="flex gap-xs">
+                <button
+                  onClick={() => setSelectedItem(hall)}
+                  className="flex-1 p-2 rounded-lg bg-surface-variant text-[#9bb4d0] hover:bg-surface-variant/80 transition-colors"
+                >
+                  <Eye className="w-4 h-4 inline mr-1" />
+                  View
+                </button>
+                <Link
+                  href={`/vendor/hall/${hall.id}/edit`}
+                  className="flex-1 p-2 rounded-lg bg-tertiary/20 text-tertiary hover:bg-tertiary/30 transition-colors text-center"
+                >
+                  <Edit className="w-4 h-4 inline mr-1" />
+                  Edit
+                </Link>
+                <button
+                  onClick={() => { setSelectedItem(hall); setShowDeleteConfirm(true); }}
+                  className="flex-1 p-2 rounded-lg bg-danger/20 text-danger hover:bg-danger/30 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4 inline mr-1" />
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
-    <>
-      <PageHeader
-        title={vendor?.businessName ?? 'Overview'}
-        subtitle={vendor ? <span className="capitalize">{vendor.category}</span> : 'Welcome to your vendor console'}
-        actions={
-          vendor && (
-            <>
-              <Badge tone={vendor.isOpen ? 'success' : 'neutral'}>{vendor.isOpen ? 'Open now' : 'Closed'}</Badge>
-              <Badge tone={vendor.isVerified ? 'info' : 'warning'}>
-                {vendor.isVerified ? 'Verified' : 'Pending verification'}
-              </Badge>
-            </>
-          )
-        }
-      />
-
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4 animate-slide-up">
-        <StatCard label="Total orders" value={totalOrders} hint="All time" tone="blue" icon={<ShoppingBag size={17} />} delay="doorli-rise" />
-        <StatCard label="Needs action" value={pendingOrders} hint="Pending, confirmed or preparing" tone="gold" icon={<Clock size={17} />} delay="doorli-rise-delay" />
-        <StatCard label="Revenue" value={`LKR ${totalRevenue.toFixed(0)}`} hint="Excludes cancelled orders" tone="teal" icon={<DollarSign size={17} />} delay="doorli-rise-delay-2" />
-        <StatCard label="Rating" value={avgRating > 0 ? avgRating.toFixed(1) : '—'} hint="Customer average" tone="rose" icon={<Star size={17} />} delay="doorli-rise-delay-2" />
-      </div>
-
-      <div className="flex flex-wrap gap-2.5 animate-slide-up" style={{ animationDelay: '0.2s' }}>
-        {QUICK_ACTIONS.map(({ href, label, icon: Icon, primary, feature }, index) => {
-          if (feature && !hasFeature(feature)) return null;
-          return (
-            <Link
-              key={label}
-              href={href}
-              className={`inline-flex min-h-11 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all hover:scale-105 hover:-translate-y-0.5 ${
-                primary
-                  ? 'bg-gradient-to-r from-[#185fa5] to-[#1d9e75] text-white shadow-lg shadow-[#185fa5]/25 hover:brightness-110 animate-pulse-glow'
-                  : 'border border-white/[0.1] bg-white/[0.05] text-doorli-muted hover:bg-white/[0.1] hover:text-white'
-              }`}
-              style={{ animationDelay: `${0.3 + index * 0.05}s` }}
-            >
-              <Icon className="h-4 w-4" />
-              {label}
-            </Link>
-          );
-        })}
-      </div>
-
-      <div className="animate-slide-up" style={{ animationDelay: '0.4s' }}>
-        <Panel
-          title="Recent orders"
-          icon={<ShoppingBag size={17} />}
-          bodyClassName=""
-          className="hover:scale-[1.01] transition-transform"
-          actions={
-            <Link
-              href="/dashboard/orders"
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-[#7cb6ea] transition-colors hover:text-[#a9d2f5] hover:translate-x-1"
-            >
-              View all
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          }
-        >
-        {recent.length === 0 ? (
-          <div className="p-5">
-            <EmptyState
-              icon={<Package size={20} />}
-              title="No orders yet"
-              desc="Once customers start ordering, the latest ones will appear here."
-              action={
-                <Link
-                  href="/dashboard/products"
-                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#185fa5] to-[#1d9e75] px-4 py-2.5 text-sm font-semibold text-white"
-                >
-                  <Plus className="h-4 w-4" /> Add your first product
-                </Link>
-              }
-            />
+    <div className="min-h-screen bg-[#121212] text-white">
+      {/* Header */}
+      <header className="w-full top-0 sticky border-b border-surface-variant bg-[#121212] z-50 flex justify-between items-center px-margin-mobile md:px-margin-desktop h-16">
+        <div className="flex items-center gap-4">
+          <Link href="/" className="text-primary hover:text-primary/80">← Home</Link>
+          <h1 className="font-screen-title-mobile text-screen-title-mobile font-bold text-primary">Doorli Vendor Dashboard</h1>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="hidden md:flex items-center px-3 py-1 bg-surface-container rounded-lg border border-outline/20 mr-4">
+            <span className="material-symbols-outlined text-sm mr-2 text-primary">business</span>
+            <span className="text-caption font-caption text-on-surface-variant">Live ERP Connected</span>
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="console-table w-full text-left text-sm">
-              <thead>
-                <tr>
-                  <th>Order</th>
-                  <th>Customer</th>
-                  <th>Items</th>
-                  <th className="text-right">Total</th>
-                  <th>Status</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recent.map((order) => (
-                  <tr key={order.id}>
-                    <td className="font-mono text-xs font-semibold">
-                      #{order.orderNumber ?? order.id.slice(0, 8)}
-                    </td>
-                    <td className="text-doorli-muted">{order.customer?.fullName ?? 'Customer'}</td>
-                    <td className="text-doorli-muted">{order.items?.length ?? 0}</td>
-                    <td className="text-right font-semibold tabular-nums">
-                      LKR {Number(order.totalAmount).toFixed(0)}
-                    </td>
-                    <td>
-                      <Badge tone={statusTone(order.status)}>{order.status.replace(/_/g, ' ')}</Badge>
-                    </td>
-                    <td className="whitespace-nowrap text-doorli-dim">
-                      {new Date(order.createdAt).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        </div>
+      </header>
+
+      <main className="max-w-screen-xl mx-auto px-margin-mobile md:px-margin-desktop py-lg">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-md mb-lg">
+          {statsCards.map((card, index) => (
+            <div key={card.title} className="bg-surface-container-high rounded-xl p-md border border-surface-variant hover:border-primary/30 transition-all animate-slide-up" style={{ animationDelay: `${0.1 + (index * 0.1)}s` }}>
+              <div className="flex items-center gap-2 mb-2">
+                <div className={`p-2 rounded-lg ${card.color}`}>
+                  <card.icon className="w-5 h-5" />
+                </div>
+                <div className="text-label-medium text-on-surface">{card.title}</div>
+              </div>
+              <div className="font-display text-2xl font-bold text-white">
+                {card.value}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Tabs Navigation */}
+        <div className="bg-surface-container-high rounded-xl border border-surface-variant p-1 mb-md">
+          <div className="flex gap-1">
+            <button
+              onClick={() => setActiveTab('hotels')}
+              className={`flex-1 px-4 py-3 rounded-xl font-label-medium transition-all ${activeTab === 'hotels' ? 'bg-primary-container text-white shadow-lg' : 'text-on-surface-variant hover:bg-surface-variant'}`}
+            >
+              Hotels & Stays
+            </button>
+            <button
+              onClick={() => setActiveTab('halls')}
+              className={`flex-1 px-4 py-3 rounded-xl font-label-medium transition-all ${activeTab === 'halls' ? 'bg-primary-container text-white shadow-lg' : 'text-on-surface-variant hover:bg-surface-variant'}`}
+            >
+              Halls & Venues
+            </button>
           </div>
-        )}
-      </Panel>
-      </div>
-    </>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'hotels' ? renderHotelsTab() : renderHallsTab()}
+      </main>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && selectedItem && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-md">
+          <div className="bg-[#121212] rounded-2xl border border-surface-variant p-lg max-w-md w-full">
+            <h3 className="font-display text-xl font-bold text-white mb-sm">Confirm Deletion</h3>
+            <p className="text-[#9bb4d0] mb-md">
+              Are you sure you want to delete {selectedItem.businessName}? This action cannot be undone.
+            </p>
+            <div className="flex gap-sm">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 px-4 py-3 rounded-xl border border-surface-variant text-on-surface-variant font-label-medium hover:bg-surface-variant transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  // Delete logic would go here
+                  console.log('Deleting:', selectedItem);
+                  setShowDeleteConfirm(false);
+                  setSelectedItem(null);
+                }}
+                className="flex-1 px-4 py-3 rounded-xl bg-danger text-white font-label-medium hover:brightness-110 transition-all"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
