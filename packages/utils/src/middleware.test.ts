@@ -27,6 +27,23 @@ function makeReq(token?: string): Partial<Request> {
   };
 }
 
+/** Create a user with both id and userId (for backward compatibility in tests) */
+type AuthUserExtended = {
+  id?: string;
+  userId?: string;
+  role: string;
+  phone?: string;
+  email?: string;
+  jti?: string;
+}
+
+function makeExtendedToken(payload: AuthUserExtended, expiresIn: string | number = '1h'): string {
+  const tokenPayload = { ...payload };
+  if (payload.userId && !payload.id) tokenPayload.id = payload.userId;
+  if (!payload.id && !payload.userId) tokenPayload.id = `test-id-${Date.now()}`;
+  return jwt.sign(tokenPayload, SECRET, { expiresIn } as jwt.SignOptions);
+}
+
 /** Capture status + json body from a mock response. */
 function captureResponse(): {
   res: Partial<Response>;
@@ -67,7 +84,7 @@ describe('requireAuth middleware', () => {
   // ── 1. Valid token + matching role → next() called ─────────────────────
 
   it('passes when token has the required role (customer)', () => {
-    const token = makeToken({ userId: 'user-1', role: 'customer' });
+    const token = makeToken({ id: 'user-1', role: 'customer' });
     const req = makeReq(token);
     const { res, captured } = captureResponse();
     const next = makeNext();
@@ -80,7 +97,7 @@ describe('requireAuth middleware', () => {
   });
 
   it('passes when token role is one of multiple allowed roles (driver in [driver, admin])', () => {
-    const token = makeToken({ userId: 'drv-1', role: 'driver' });
+    const token = makeToken({ id: 'drv-1', role: 'driver' });
     const req = makeReq(token);
     const { res, captured } = captureResponse();
     const next = makeNext();
@@ -161,7 +178,7 @@ describe('requireAuth middleware', () => {
 
   it('returns 401 with TOKEN_EXPIRED code for an expired token', () => {
     // Sign with -1s to get an already-expired token
-    const token = makeToken({ userId: 'user-3', role: 'customer' }, -1);
+    const token = makeToken({ id: 'user-3', role: 'customer' }, -1);
     const req = makeReq(token);
     const { res, captured } = captureResponse();
     const next = makeNext();
