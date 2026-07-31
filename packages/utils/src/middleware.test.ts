@@ -15,7 +15,6 @@ const SECRET = 'super_secret_jwt_key_doorli_2026';
 
 function makeToken(payload: Partial<AuthUser>, expiresIn: string | number = '1h'): string {
   const tokenPayload = { ...payload };
-  if (payload.userId && !payload.id) tokenPayload.id = payload.userId;
   return jwt.sign(tokenPayload, SECRET, { expiresIn } as jwt.SignOptions);
 }
 
@@ -25,23 +24,6 @@ function makeReq(token?: string): Partial<Request> {
     headers: token ? { authorization: `Bearer ${token}` } : {},
     user: undefined,
   };
-}
-
-/** Create a user with both id and userId (for backward compatibility in tests) */
-type AuthUserExtended = {
-  id?: string;
-  userId?: string;
-  role: string;
-  phone?: string;
-  email?: string;
-  jti?: string;
-}
-
-function makeExtendedToken(payload: AuthUserExtended, expiresIn: string | number = '1h'): string {
-  const tokenPayload = { ...payload };
-  if (payload.userId && !payload.id) tokenPayload.id = payload.userId;
-  if (!payload.id && !payload.userId) tokenPayload.id = `test-id-${Date.now()}`;
-  return jwt.sign(tokenPayload, SECRET, { expiresIn } as jwt.SignOptions);
 }
 
 /** Capture status + json body from a mock response. */
