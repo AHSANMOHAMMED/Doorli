@@ -465,6 +465,45 @@ async function main() {
     });
   }
 
+  // Canonical platform feature flags (kept in sync with the
+  // 20260730120000_add_vendor_features migration).
+  const featureFlags = [
+    {
+      key: 'marketplace_listing',
+      name: 'Marketplace Listing',
+      description:
+        'Vendor is discoverable in customer-facing search, nearby and category results.',
+      isGlobal: true,
+    },
+    {
+      key: 'doorli_delivery',
+      name: 'Doorli Delivery',
+      description:
+        'Orders and ERP sales can be dispatched through the Doorli driver network.',
+      isGlobal: true,
+    },
+    {
+      key: 'online_payment',
+      name: 'Online Payment',
+      description: 'Vendor can accept online card / wallet payments through Doorli.',
+      isGlobal: false,
+    },
+    {
+      key: 'pos',
+      name: 'Point of Sale',
+      description: 'Embedded ERP cashier (POS) available in the vendor console.',
+      isGlobal: true,
+    },
+  ];
+  for (const flag of featureFlags) {
+    await prisma.featureFlag.upsert({
+      where: { key: flag.key },
+      update: { name: flag.name, description: flag.description, isGlobal: flag.isGlobal },
+      create: flag,
+    });
+  }
+  console.log(`Seeded ${featureFlags.length} platform feature flags`);
+
   console.log(
     `Seed complete: password for all demo users = ${DEMO_PASSWORD}`,
   );

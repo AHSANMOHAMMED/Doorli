@@ -15,19 +15,19 @@ export default function NotificationsScreen() {
   const { data, isLoading } = useQuery({
     queryKey: ['notifications'],
     queryFn: async () => {
-      const res = await apiClient.get('/users/notifications');
-      return res.data?.data ?? [];
+      const res = await apiClient.get('/notifications');
+      return res.data?.data?.items ?? res.data?.data ?? [];
     },
     refetchInterval: 15000,
   });
 
   async function markRead(id: string) {
-    await apiClient.patch(`/users/notifications/${id}/read`);
+    await apiClient.patch(`/notifications/${id}/read`);
     queryClient.invalidateQueries({ queryKey: ['notifications'] });
   }
 
   async function markAllRead() {
-    await apiClient.patch('/users/notifications/read-all');
+    await apiClient.patch('/notifications/read-all');
     queryClient.invalidateQueries({ queryKey: ['notifications'] });
   }
 

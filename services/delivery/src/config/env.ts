@@ -1,0 +1,55 @@
+import { z } from 'zod';
+import dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
+
+// Load repo-root .env when present (local/dev). CI has no .env — use schema defaults.
+const envPath = path.resolve(__dirname, '../../../.env');
+if (fs.existsSync(envPath)) {
+  dotenv.config({ path: envPath, override: false });
+}
+
+const optionalEmpty = <T extends z.ZodTypeAny>(schema: T) =>
+  z.preprocess((val) => (val === '' || val === undefined ? undefined : val), schema);
+
+const envSchema = z.object({
+  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  API_PORT: z.coerce.number().default(4000),
+  DATABASE_URL: z
+    .string()
+    .min(1)
+    .default('postgresql://doorli:doorli@localhost:5432/doorli'),
+  REDIS_URL: z.string().default('redis://localhost:6379'),
+  JWT_SECRET: optionalEmpty(
+    z.string().min(16).default('doorli-dev-access-secret-change-in-prod'),
+  ),
+  JWT_REFRESH_SECRET: optionalEmpty(
+    z.string().min(16).default('doorli-dev-refresh-secret-change-in-prod'),
+  ),
+  JWT_ACCESS_EXPIRES_IN: z.string().default('15m'),
+  JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
+  MSG91_API_KEY: z.string().optional(),
+  OTP_TTL_SECONDS: z.coerce.number().default(300),
+  ERP_INTERNAL_SECRET: z.string().default('doorli_internal_sync_secret'),
+  ERP_SERVICE_URL: z.string().default('http://localhost:3010'),
+  // Embedded Retail Smart ERP internal base (simple vendors). Falls back to ERP_SERVICE_URL.
+  ERP_EMBEDDED_URL: optionalEmpty(z.string()).optional(),
+  // Enterprise Frappe create_order method URL (enterprise vendors), e.g.
+  // https://enterprise.doorli.me/api/method/doorli_core.api.create_order
+  ERP_ENTERPRISE_URL: optionalEmpty(z.string()).optional(),
+  // Enterprise Frappe provision_vendor method URL (derived from ERP_ENTERPRISE_URL if unset).
+  ERP_ENTERPRISE_PROVISION_URL: optionalEmpty(z.string()).optional(),
+});
+
+export type Env = z.infer<typeof envSchema>;
+
+function loadEnv(): Env {
+  const result = envSchema.safeParse(process.env);
+  if (!result.success) {
+    console.error('Invalid environment variables:', result.error.flatten().fieldErrors);
+    process.exit(1);
+  }
+  return result.data;
+}
+
+export const env = loadEnv();

@@ -283,6 +283,25 @@ export default function LoginPage() {
                 </button>
               </>
             ))}
+
+          {/* ── Google OAuth ─────────────────────────────────── */}
+          <div className="flex items-center gap-3 pt-1">
+            <span className="flex-1 h-px bg-white/10" />
+            <span className="text-xs text-white/40">or</span>
+            <span className="flex-1 h-px bg-white/10" />
+          </div>
+          <a
+            href={`${process.env.NEXT_PUBLIC_AUTH_URL ?? 'http://localhost:4001'}/auth/google`}
+            className="w-full flex items-center justify-center gap-3 px-4 py-2.5 rounded-xl bg-white text-[#1a1a1a] text-sm font-semibold hover:bg-white/90 transition"
+          >
+            <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden>
+              <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.2l6.7-6.7C35.8 2.2 30.2 0 24 0 14.8 0 7 5.4 3.2 13.3l7.8 6C12.9 13.7 18 9.5 24 9.5z"/>
+              <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.5 2.8-2.2 5.2-4.7 6.8l7.3 5.7c4.3-3.9 6.8-9.7 6.8-16.5z"/>
+              <path fill="#FBBC05" d="M11 28.3A14.5 14.5 0 0 1 9.5 24c0-1.5.3-2.9.7-4.3L2.4 13.6A23.9 23.9 0 0 0 0 24c0 3.8.9 7.4 2.5 10.6l8.5-6.3z"/>
+              <path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.3-5.7c-2 1.4-4.6 2.2-7.9 2.2-6 0-11.1-4.1-12.9-9.7l-8.5 6.3C7 43 15 48 24 48z"/>
+            </svg>
+            Continue with Google
+          </a>
         </div>
       </div>
     </div>

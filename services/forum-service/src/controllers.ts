@@ -41,13 +41,27 @@ export const getThreads = async (req: Request, res: Response) => {
 export const createThread = async (req: Request, res: Response) => {
   try {
     const forumId = String(req.params.forumId);
-    // In real app, authorId comes from authenticated user context (JWT)
-    const { title, content, authorId } = req.body;
+    const authorId = (req as any).user.userId;
+    const { title, content } = req.body;
     
     const thread = await prisma.thread.create({
       data: { forumId, title, content, authorId },
     });
     res.status(201).json({ data: thread });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const lockThread = async (req: Request, res: Response) => {
+  try {
+    const threadId = String(req.params.threadId);
+    // Real implementation would have an isLocked column, using updated logic:
+    const thread = await prisma.thread.update({
+      where: { id: threadId },
+      data: { /* isLocked: true */ updatedAt: new Date() },
+    });
+    res.json({ data: thread, message: 'Thread locked (mock)' });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -70,12 +84,26 @@ export const getPosts = async (req: Request, res: Response) => {
 export const createPost = async (req: Request, res: Response) => {
   try {
     const threadId = String(req.params.threadId);
-    const { content, authorId, parentId } = req.body;
+    const authorId = (req as any).user.userId;
+    const { content, parentId } = req.body;
 
     const post = await prisma.post.create({
       data: { threadId, content, authorId, parentId },
     });
     res.status(201).json({ data: post });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const deletePost = async (req: Request, res: Response) => {
+  try {
+    const postId = String(req.params.postId);
+    const post = await prisma.post.update({
+      where: { id: postId },
+      data: { isDeleted: true },
+    });
+    res.json({ data: post, message: 'Post soft deleted' });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

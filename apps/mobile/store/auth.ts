@@ -30,6 +30,10 @@ interface AuthState {
   loading: boolean;
   setTokens: (accessToken: string, refreshToken: string) => void;
   setUser: (user: AuthUser) => void;
+  loginWithGoogle: (
+    accessToken: string,
+    refreshToken: string,
+  ) => Promise<{ error: string | null }>;
   sendOtp: (phone: string) => Promise<{ error: string | null }>;
   verifyOtpAndLogin: (
     phone: string,

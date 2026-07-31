@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { DoorliColors } from '../../constants/colors';
 import {
   View,
   Text,
@@ -34,9 +35,9 @@ import {
 import { fetchNearbyVendors, type Vendor, DEFAULT_LOCATION } from '../../lib/api';
 import { useCartStore } from '../../store/cart';
 
-const PRIMARY = '#006e25';
-const ON_SURFACE = '#191c1d';
-const ON_SURFACE_VARIANT = '#3d4a3c';
+const PRIMARY = DoorliColors.primary;          // Doorli Blue #185fa5
+const ON_SURFACE = DoorliColors.text;           // #f4f7fb
+const ON_SURFACE_VARIANT = DoorliColors.textMuted; // #9bb4d0
 
 export default function CustomerHome() {
   const router = useRouter();
@@ -63,7 +64,7 @@ export default function CustomerHome() {
   );
 
   const categories = [
-    { id: 'restaurant', label: 'Food', image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?q=80&w=400&auto=format&fit=crop', color: '#00b241', bg: 'rgba(0,178,65,0.1)' },
+    { id: 'restaurant', label: 'Food', image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?q=80&w=400&auto=format&fit=crop', color: DoorliColors.teal, bg: 'rgba(29,158,117,0.12)' },
     { id: 'grocery', label: 'Grocery', image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=400&auto=format&fit=crop', color: '#ff8a00', bg: 'rgba(255,138,0,0.1)' },
     { id: 'hotel', label: 'Hotels', image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=400&auto=format&fit=crop', color: '#7c9bd1', bg: 'rgba(124,155,209,0.1)' },
     { id: 'hall', label: 'Halls', image: 'https://images.unsplash.com/photo-1519167758481-83f54085356e?q=80&w=400&auto=format&fit=crop', color: '#ffdad6', bg: 'rgba(255,218,214,0.1)' },
@@ -114,12 +115,12 @@ export default function CustomerHome() {
               activeOpacity={0.9} 
               onPress={() => router.push('/(customer)/search')}
             >
-              <Search color="#3d4a3c" size={20} style={{ marginLeft: 16 }} />
+              <Search color={DoorliColors.textMuted} size={20} style={{ marginLeft: 16 }} />
               <View style={styles.searchInputWrapper} pointerEvents="none">
                 <TextInput
                   style={styles.searchInput}
                   placeholder="Search for shops or services"
-                  placeholderTextColor="#3d4a3c"
+                  placeholderTextColor={DoorliColors.textDim}
                   editable={false}
                 />
               </View>
@@ -390,7 +391,7 @@ const styles = StyleSheet.create({
     right: -64,
     width: 256,
     height: 256,
-    backgroundColor: '#00b241',
+    backgroundColor: DoorliColors.primary,
     opacity: 0.2,
     borderRadius: 128,
   },
@@ -632,7 +633,7 @@ const styles = StyleSheet.create({
   topRatedText: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#00b241',
+    color: DoorliColors.sky,
   },
   popularSubtitle: {
     fontSize: 14,

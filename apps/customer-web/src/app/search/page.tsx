@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { apiFetch, getApiBase } from "@/lib/api";
+import { apiFetch } from "@/lib/api";
 import { Search, Store, ArrowRight, MapPin } from "lucide-react";
 
 type Vendor = {
@@ -41,7 +41,7 @@ function SearchInner() {
     if (!q) {
       return;
     }
-    fetch(`${getApiBase()}/api/v1/search/products?q=${encodeURIComponent(q)}`)
+    fetch(`/api/search?q=${encodeURIComponent(q)}`)
       .then((r) => r.json())
       .then((json) => setHits(json.results || []))
       .catch(() => setHits([]));

@@ -1,17 +1,18 @@
 import { Router, Request, Response } from 'express';
+import { createProxyMiddleware } from 'http-proxy-middleware';
 import type { HealthCheckResponse } from '@doorli/types';
 import { checkDatabaseConnection } from '../lib/db.js';
 import { checkRedisConnection } from '../lib/redis.js';
-import { authRouter } from '../modules/auth/index.js';
+import { prisma } from '@doorli/db';
+import { authenticateToken } from '../middleware/authenticateToken.js';
+
+// Monolith routers
 import { usersRouter } from '../modules/users/index.js';
 import { vendorsRouter } from '../modules/vendors/index.js';
 import { productsRouter } from '../modules/products/index.js';
-import { ordersRouter } from '../modules/orders/index.js';
-import { driversRouter } from '../modules/drivers/index.js';
 import { bookingsRouter } from '../modules/bookings/index.js';
 import { serviceRequestsRouter } from '../modules/service-requests/index.js';
 import { reviewsRouter } from '../modules/reviews/index.js';
-import { paymentsRouter } from '../modules/payments/index.js';
 import promosRouter from '../modules/promos/promos.routes.js';
 import adminRouter from '../modules/admin/admin.routes.js';
 import loyaltyRouter from '../modules/loyalty/loyalty.routes.js';
@@ -45,23 +46,44 @@ router.get('/api/v1', (_req: Request, res: Response) => {
   res.json({
     success: true,
     data: {
-      name: 'Doorli API',
+      name: 'Doorli API Gateway',
       version: '0.1.0',
-      description: 'Everything Local. Delivered.',
+      description: 'Microservices Gateway — Everything Local. Delivered.',
     },
   });
 });
 
-router.use('/api/v1/auth', authRouter);
+// ==========================================
+// MICROSERVICES PROXY ROUTES
+// ==========================================
+
+// Auth Microservice Proxy (Port 4001)
+router.use('/api/v1/auth', createProxyMiddleware({
+  target: 'http://localhost:4001',
+  changeOrigin: true,
+  pathRewrite: { '^/api/v1/auth': '/auth' },
+}));
+
+// Delivery Microservice Proxy (Port 4002)
+const deliveryProxy = createProxyMiddleware({
+  target: 'http://localhost:4002',
+  changeOrigin: true,
+  pathRewrite: (path) => path.replace(/^\/api\/v1\/(orders|drivers|payments)/, '/$1'),
+});
+
+router.use('/api/v1/orders', deliveryProxy);
+router.use('/api/v1/drivers', deliveryProxy);
+router.use('/api/v1/payments', deliveryProxy);
+
+// ==========================================
+// MONOLITH ROUTES (To be migrated)
+// ==========================================
 router.use('/api/v1/users', usersRouter);
 router.use('/api/v1/vendors', vendorsRouter);
 router.use('/api/v1/products', productsRouter);
-router.use('/api/v1/orders', ordersRouter);
-router.use('/api/v1/drivers', driversRouter);
 router.use('/api/v1/bookings', bookingsRouter);
 router.use('/api/v1/service-requests', serviceRequestsRouter);
 router.use('/api/v1/reviews', reviewsRouter);
-router.use('/api/v1/payments', paymentsRouter);
 router.use('/api/v1/promos', promosRouter);
 router.use('/api/v1/admin', adminRouter);
 router.use('/api/v1/loyalty', loyaltyRouter);
@@ -73,5 +95,90 @@ router.use('/api/v1/flash-sales', flashSalesRouter);
 router.use('/api/v1/rides', ridesRouter);
 router.use('/api/v1/pos', posRouter);
 router.use('/api/v1/erp-webhooks', erpWebhooksRouter);
+
+// ==========================================
+// STANDALONE SERVICE PROXY ROUTES
+// ==========================================
+
+// GovTech Microservice Proxy (Port 8089)
+router.use('/api/v1/gov', createProxyMiddleware({
+  target: 'http://localhost:8089',
+  changeOrigin: true,
+  pathRewrite: { '^/api/v1/gov': '/api/v1/gov' },
+}));
+
+// Forum Microservice Proxy (Port 8087)
+router.use('/api/v1/forums', createProxyMiddleware({
+  target: 'http://localhost:8087',
+  changeOrigin: true,
+  pathRewrite: { '^/api/v1/forums': '/' },
+}));
+
+// Emergency Microservice Proxy (Port 8088)
+router.use('/api/v1/emergency', createProxyMiddleware({
+  target: 'http://localhost:8088',
+  changeOrigin: true,
+  pathRewrite: { '^/api/v1/emergency': '/' },
+}));
+
+// Notifications Microservice Proxy (Port 4007)
+router.use('/api/v1/notifications', createProxyMiddleware({
+  target: 'http://localhost:4007',
+  changeOrigin: true,
+  pathRewrite: { '^/api/v1/notifications': '' },
+}));
+
+// Search Service Proxy (Port 4004)
+router.use('/api/search', createProxyMiddleware({
+  target: 'http://localhost:4004',
+  changeOrigin: true,
+  pathRewrite: { '^/api/search': '/api/search' },
+}));
+
+// ==========================================
+// NOTIFICATION READ ENDPOINTS (API Monolith)
+// ==========================================
+router.get('/notifications', authenticateToken, async (req, res, next) => {
+  try {
+    const cursor = (Array.isArray(req.query.cursor) ? req.query.cursor[0] : req.query.cursor) as string | undefined;
+    const limit = Math.min(Number(req.query.limit) || 20, 50);
+    const notifications = await prisma.notification.findMany({
+      where: { userId: req.user!.id as string },
+      orderBy: { sentAt: 'desc' },
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor } } : {}),
+    });
+    const hasMore = notifications.length > limit;
+    const items = hasMore ? notifications.slice(0, limit) : notifications;
+    const nextCursor = hasMore ? items[items.length - 1].id : null;
+    res.json({ success: true, data: { items, nextCursor, unreadCount: notifications.filter(n => !n.isRead).length } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.patch('/notifications/:id/read', authenticateToken, async (req, res, next) => {
+  try {
+    const notification = await prisma.notification.update({
+      where: { id: req.params.id },
+      data: { isRead: true },
+    });
+    res.json({ success: true, data: notification });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.patch('/notifications/read-all', authenticateToken, async (req, res, next) => {
+  try {
+    const count = await prisma.notification.updateMany({
+      where: { userId: req.user!.id as string, isRead: false },
+      data: { isRead: true },
+    });
+    res.json({ success: true, data: { updated: count.count } });
+  } catch (err) {
+    next(err);
+  }
+});
 
 export default router;

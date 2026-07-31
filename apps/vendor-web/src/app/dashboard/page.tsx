@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { apiFetch, getToken } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import { useFeatures } from '@/lib/features-context';
 import { PageHeader, StatCard, Panel, Badge, EmptyState, LoadingBlock, ErrorNote } from '@/components/console';
 
 type Order = {
@@ -38,7 +39,7 @@ type Vendor = {
 };
 
 const QUICK_ACTIONS = [
-  { href: '/dashboard/pos', label: 'Open cashier', icon: Store, primary: true },
+  { href: '/dashboard/pos', label: 'Open cashier', icon: Store, primary: true, feature: 'pos' },
   { href: '/dashboard/orders', label: 'View orders', icon: ShoppingBag },
   { href: '/dashboard/products', label: 'Add product', icon: Plus },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
@@ -55,6 +56,7 @@ function statusTone(status: string): 'success' | 'warning' | 'error' | 'info' {
 export default function DashboardPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const { hasFeature } = useFeatures();
   const [orders, setOrders] = useState<Order[]>([]);
   const [vendor, setVendor] = useState<Vendor | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -146,21 +148,24 @@ export default function DashboardPage() {
       </div>
 
       <div className="flex flex-wrap gap-2.5 animate-slide-up" style={{ animationDelay: '0.2s' }}>
-        {QUICK_ACTIONS.map(({ href, label, icon: Icon, primary }, index) => (
-          <Link
-            key={label}
-            href={href}
-            className={`inline-flex min-h-11 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all hover:scale-105 hover:-translate-y-0.5 ${
-              primary
-                ? 'bg-gradient-to-r from-[#185fa5] to-[#1d9e75] text-white shadow-lg shadow-[#185fa5]/25 hover:brightness-110 animate-pulse-glow'
-                : 'border border-white/[0.1] bg-white/[0.05] text-doorli-muted hover:bg-white/[0.1] hover:text-white'
-            }`}
-            style={{ animationDelay: `${0.3 + (index * 0.05)}s` }}
-          >
-            <Icon className="h-4 w-4" />
-            {label}
-          </Link>
-        ))}
+        {QUICK_ACTIONS.map(({ href, label, icon: Icon, primary, feature }, index) => {
+          if (feature && !hasFeature(feature)) return null;
+          return (
+            <Link
+              key={label}
+              href={href}
+              className={`inline-flex min-h-11 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all hover:scale-105 hover:-translate-y-0.5 ${
+                primary
+                  ? 'bg-gradient-to-r from-[#185fa5] to-[#1d9e75] text-white shadow-lg shadow-[#185fa5]/25 hover:brightness-110 animate-pulse-glow'
+                  : 'border border-white/[0.1] bg-white/[0.05] text-doorli-muted hover:bg-white/[0.1] hover:text-white'
+              }`}
+              style={{ animationDelay: `${0.3 + index * 0.05}s` }}
+            >
+              <Icon className="h-4 w-4" />
+              {label}
+            </Link>
+          );
+        })}
       </div>
 
       <div className="animate-slide-up" style={{ animationDelay: '0.4s' }}>

@@ -5,7 +5,7 @@ import { Search, MapPin, Loader2, Store, Package } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
-import { apiFetch, getApiBase } from "@/lib/api";
+import { apiFetch } from "@/lib/api";
 
 interface SearchResult {
   id: string;
@@ -37,9 +37,7 @@ export function UniversalSearch() {
           apiFetch<{ items: Array<{ id: string; businessName: string; description?: string | null; category: string }> }>(
             "/vendors",
           ),
-          fetch(`${getApiBase()}/api/v1/search/products?q=${encodeURIComponent(query.trim())}`).then((r) =>
-            r.json().catch(() => ({ results: [] })),
-          ),
+          fetch(`/api/search?q=${encodeURIComponent(query.trim())}`).then((r) => r.json().catch(() => ({ results: [] }))),
         ]);
 
         const q = query.toLowerCase();

@@ -107,7 +107,7 @@ bookingsRouter.patch('/:id/status', validate(updateBookingStatusSchema), async (
   }
 });
 
-bookingsRouter.delete('/:id/cancel', async (req, res, next) => {
+bookingsRouter.post('/:id/cancel', async (req, res, next) => {
   try {
     if (!req.user) throw new AppError(401, 'Authentication required');
     const booking = await bookingsService.cancelBooking(

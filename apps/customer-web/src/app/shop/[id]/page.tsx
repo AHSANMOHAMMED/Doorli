@@ -7,6 +7,7 @@ import { Plus, ShoppingBag, Check, MapPin, CalendarDays, Wrench } from "lucide-r
 import { useCart } from "@/lib/cart-context";
 import { apiFetch } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { AIReviewAnalyzer } from "@/components/AIReviewAnalyzer";
 
 type Product = {
   id: string;
@@ -41,17 +42,25 @@ export default function VendorStorefront() {
   const [addedItems, setAddedItems] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    apiFetch<Vendor>(`/vendors/${id}`)
-      .then((v) => {
+    apiFetch<Vendor | { success: boolean; data: Vendor }>(`/vendors/${id}`)
+      .then((res) => {
+        let v: Vendor;
+        if ("success" in res && "data" in res) {
+          if (!res.success || !res.data) throw new Error("Vendor not found");
+          v = res.data;
+        } else {
+          v = res as Vendor;
+        }
+        
         setVendor(v);
-        const cats = Array.from(new Set((v.products || []).map((p) => p.category || "Other")));
+        const cats = Array.from(new Set((v.products || []).map((p: Product) => p.category || "Other")));
         setActiveCategory(cats[0] || "All");
       })
       .catch((e) => setError(e.message));
   }, [id]);
 
   const categories = useMemo(() => {
-    const cats = Array.from(new Set((vendor?.products || []).map((p) => p.category || "Other")));
+    const cats = Array.from(new Set((vendor?.products || []).map((p: Product) => p.category || "Other")));
     return cats.length ? cats : ["All"];
   }, [vendor]);
 
@@ -193,6 +202,12 @@ export default function VendorStorefront() {
               Use the button above to {isBookable ? "book a slot" : "post a job request"}.
             </p>
           )}
+
+          {/* AI Review Analyzer Section */}
+          <div className="mt-12 doorli-glass rounded-3xl p-8 border border-white/10">
+            <h3 className="font-display text-xl font-bold mb-4">Write a Review</h3>
+            <AIReviewAnalyzer vendorId={vendor.id} />
+          </div>
         </div>
       </div>
 

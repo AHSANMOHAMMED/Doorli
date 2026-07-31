@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { timingSafeEqual } from 'node:crypto';
 import { prisma } from '@doorli/db';
+import { isFeatureEnabled, DOORLI_DELIVERY_KEY } from '../../lib/featureFlags.js';
 
 const router = Router();
 
@@ -75,11 +76,39 @@ router.post('/stock-update', requireErpSecret, async (req: Request, res: Respons
   }
 
   try {
-    await prisma.product.update({
+    const updated = await prisma.product.update({
       where: { id: productId },
       data: { stockQuantity: newStockQuantity },
     });
     console.log(`[ERP Webhook] Updated stock for product ${productId} to ${newStockQuantity}`);
+
+    // Emit low-stock notification if quantity is at or below the threshold (Req 10.3)
+    if (updated.stockQuantity <= updated.lowStockAt) {
+      try {
+        const vendor = await prisma.vendor.findUnique({
+          where: { id: updated.vendorId },
+          select: { userId: true },
+        });
+
+        if (vendor) {
+          // Dynamic import to avoid circular dependency
+          const { enqueueNotification } = await import('../../lib/notifications.js');
+          void enqueueNotification({
+            userId: vendor.userId,
+            title: 'Low stock alert',
+            body: `Product stock is low (${updated.stockQuantity} remaining)`,
+            type: 'low_stock',
+            data: { productId: updated.id, stockQuantity: updated.stockQuantity },
+          }).catch((err: unknown) => {
+            console.error('[ERP Webhook] low-stock notification failed:', err);
+          });
+        }
+      } catch (notifErr) {
+        // Never fail the webhook because of a notification error
+        console.error('[ERP Webhook] low-stock notification error:', notifErr);
+      }
+    }
+
     return res.json({ success: true });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Internal server error';
@@ -141,6 +170,143 @@ router.post('/order-status', requireErpSecret, async (req: Request, res: Respons
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Internal server error';
     console.error('[ERP Webhook] Order status update error:', message);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * POST /erp-webhooks/dispatch-delivery — standalone ERP mode (Req 11.4/11.5).
+ * The vendor's ERP sold an order (POS/phone) and requests a Doorli delivery:
+ * verify the ERP secret, check the `doorli_delivery` feature flag, create a
+ * `pos`-type Order linked to `erpOrderId`, then trigger the dispatch engine.
+ */
+router.post('/dispatch-delivery', requireErpSecret, async (req: Request, res: Response) => {
+  const {
+    vendor_id,
+    erp_tenant_id,
+    erp_order_id,
+    customer,
+    dropoff,
+    total_amount,
+    delivery_fee,
+  } = req.body ?? {};
+
+  if (!erp_order_id || (!vendor_id && !erp_tenant_id)) {
+    return res
+      .status(400)
+      .json({ error: 'Invalid payload: require erp_order_id and vendor_id or erp_tenant_id' });
+  }
+  if (typeof total_amount !== 'number' || total_amount < 0) {
+    return res.status(400).json({ error: 'Invalid payload: total_amount must be a number' });
+  }
+  if (!dropoff?.address_line || typeof dropoff.address_line !== 'string') {
+    return res.status(400).json({ error: 'Invalid payload: dropoff.address_line is required' });
+  }
+
+  try {
+    const vendor = vendor_id
+      ? await prisma.vendor.findUnique({ where: { id: String(vendor_id) } })
+      : await prisma.vendor.findFirst({ where: { erpTenantId: String(erp_tenant_id) } });
+    if (!vendor) {
+      return res.status(404).json({ error: 'Vendor not found' });
+    }
+
+    // Doorli delivery is a paid add-on for standalone vendors — enforce the flag (Req 11.4)
+    if (!(await isFeatureEnabled(vendor.id, DOORLI_DELIVERY_KEY))) {
+      return res
+        .status(403)
+        .json({ error: 'doorli_delivery feature is disabled for this vendor', code: 'FEATURE_DISABLED' });
+    }
+
+    // Idempotent: the ERP may retry — one marketplace order per (vendor, erpOrderId)
+    const existing = await prisma.order.findFirst({
+      where: { vendorId: vendor.id, erpOrderId: String(erp_order_id).slice(0, 50) },
+    });
+    if (existing) {
+      return res.json({
+        success: true,
+        idempotent: true,
+        data: { orderId: existing.id, orderNumber: existing.orderNumber, status: existing.status },
+      });
+    }
+
+    // Resolve/create the customer: ERP customers usually have no Doorli account
+    const phone = customer?.phone ? String(customer.phone).slice(0, 20) : null;
+    let customerUser = phone ? await prisma.user.findUnique({ where: { phone } }) : null;
+    if (!customerUser) {
+      customerUser = await prisma.user.create({
+        data: {
+          fullName: String(customer?.name || 'ERP Customer').slice(0, 100),
+          phone: phone ?? undefined,
+          role: 'customer',
+        },
+      });
+    }
+
+    const address = await prisma.address.create({
+      data: {
+        userId: customerUser.id,
+        label: 'ERP delivery',
+        addressLine: String(dropoff.address_line),
+        latitude: typeof dropoff.latitude === 'number' ? dropoff.latitude : undefined,
+        longitude: typeof dropoff.longitude === 'number' ? dropoff.longitude : undefined,
+      },
+    });
+
+    const fee = typeof delivery_fee === 'number' && delivery_fee >= 0 ? delivery_fee : 0;
+    const orderNumber = `ORD-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 1000)}`;
+
+    // Born `ready`: the ERP already sold & packed it — the dispatcher takes over
+    const order = await prisma.order.create({
+      data: {
+        orderNumber,
+        customerId: customerUser.id,
+        vendorId: vendor.id,
+        deliveryAddressId: address.id,
+        status: 'ready',
+        orderType: 'pos',
+        subtotal: total_amount,
+        deliveryFee: fee,
+        totalAmount: total_amount + fee,
+        paymentMethod: 'cod',
+        specialInstructions: customer?.name ? `ERP order for ${customer.name}` : 'ERP order',
+        erpOrderId: String(erp_order_id).slice(0, 50),
+        erpSyncStatus: 'synced',
+        erpSyncedAt: new Date(),
+      },
+    });
+
+    // Kick the dispatch engine in the delivery service (fire-and-forget-ish:
+    // we report the outcome but never roll back the created order).
+    let dispatchStatus: 'requested' | 'unavailable' = 'unavailable';
+    try {
+      const base = (process.env.DELIVERY_SERVICE_URL || 'http://localhost:8086').replace(/\/$/, '');
+      const resp = await fetch(`${base}/orders/internal/dispatch`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-internal-secret': erpSecretExpected(),
+        },
+        body: JSON.stringify({ orderId: order.id }),
+      });
+      if (resp.ok) dispatchStatus = 'requested';
+    } catch {
+      // Delivery service down — order stays `ready`; dispatch can be retried.
+    }
+
+    console.log(`[ERP Webhook] dispatch-delivery created order ${order.id} (${dispatchStatus})`);
+    return res.status(201).json({
+      success: true,
+      data: {
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        status: order.status,
+        dispatch: dispatchStatus,
+      },
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    console.error('[ERP Webhook] dispatch-delivery error:', message);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });

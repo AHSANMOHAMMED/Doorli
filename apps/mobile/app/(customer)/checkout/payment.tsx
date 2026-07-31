@@ -12,6 +12,7 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Lock, CreditCard, Info, Shield, Landmark, BadgeCheck } from 'lucide-react-native';
+import { DoorliColors } from '../../../constants/colors';
 
 export default function SecurePaymentScreen() {
   const router = useRouter();
@@ -56,7 +57,7 @@ export default function SecurePaymentScreen() {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-            <ArrowLeft color="#006e25" size={24} />
+            <ArrowLeft color={DoorliColors.text} size={24} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Checkout</Text>
           <View style={{ width: 44 }} />
@@ -245,7 +246,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#006e25',
+    color: DoorliColors.primary,
     letterSpacing: -0.5,
   },
   content: {
@@ -264,7 +265,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: '#00b241',
+    backgroundColor: DoorliColors.sky,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
@@ -292,7 +293,7 @@ const styles = StyleSheet.create({
   cardPreview: {
     height: 208,
     borderRadius: 12,
-    backgroundColor: '#006e25',
+    backgroundColor: DoorliColors.primary,
     padding: 24,
     justifyContent: 'space-between',
     shadowColor: '#000',
@@ -407,8 +408,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   checkboxActive: {
-    backgroundColor: '#006e25',
-    borderColor: '#006e25',
+    backgroundColor: DoorliColors.primary,
+    borderColor: DoorliColors.primary,
   },
   saveCardText: {
     fontSize: 14,
@@ -440,7 +441,7 @@ const styles = StyleSheet.create({
     color: '#191c1d',
   },
   payButton: {
-    backgroundColor: '#00b241',
+    backgroundColor: DoorliColors.sky,
     borderRadius: 12,
     paddingVertical: 16,
     flexDirection: 'row',

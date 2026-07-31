@@ -161,3 +161,23 @@ export function ErrorNote({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+
+export function SkeletonCard({ className = '' }: { className?: string }) {
+  return (
+    <div className={`doorli-glass-card rounded-xl p-5 space-y-3 ${className}`}>
+      <Skeleton className="h-4 w-3/4" />
+      <Skeleton className="h-3 w-1/2" />
+      <Skeleton className="h-8 w-full mt-2" />
+    </div>
+  );
+}
+
+export function SkeletonList({ count = 5, className = '' }: { count?: number; className?: string }) {
+  return (
+    <div className={`space-y-3 ${className}`}>
+      {Array.from({ length: count }).map((_, i) => (
+        <Skeleton key={i} className="h-16 w-full" />
+      ))}
+    </div>
+  );
+}

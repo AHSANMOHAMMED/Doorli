@@ -1,5 +1,13 @@
 import type { Config } from "tailwindcss";
 
+/**
+ * Doorli Super Admin — Tailwind Config
+ *
+ * Color names preserve the original Material Design 3 class names used
+ * throughout the 33 pages (bg-surface-container, text-on-surface, etc.),
+ * but are now RE-MAPPED to Doorli brand values so the entire app renders
+ * in the official Doorli dark theme without touching any page/component.
+ */
 const config: Config = {
   darkMode: "class",
   content: [
@@ -10,102 +18,125 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        "inverse-surface": "#e5e2e1",
-        "primary-fixed": "#ffdad8",
-        "tertiary-container": "#30a193",
-        "surface-container-low": "#1c1b1b",
-        "on-secondary-fixed-variant": "#064c6b",
-        "surface-container-lowest": "#0e0e0e",
-        "surface-dim": "#131313",
-        "tertiary-fixed": "#8cf5e4",
-        "on-error": "#690005",
-        background: "#121212",
-        "primary-fixed-dim": "#ffb3b1",
-        "surface-bright": "#393939",
-        "surface-container-high": "#2a2a2a",
-        "on-secondary": "#00344c",
-        "on-tertiary-fixed": "#00201c",
-        "on-primary-container": "#5b000e",
-        "surface-variant": "#353534",
-        "on-secondary-container": "#8abfe4",
-        "error-container": "#93000a",
-        "on-tertiary-fixed-variant": "#005048",
-        "outline-variant": "#5b403f",
-        "secondary-fixed": "#c7e7ff",
-        "tertiary-fixed-dim": "#6fd8c8",
-        "on-surface": "#e5e2e1",
-        "secondary-fixed-dim": "#98cdf2",
-        "inverse-on-surface": "#313030",
-        "on-secondary-fixed": "#001e2e",
-        "surface-container": "#201f1f",
-        "primary-container": "#ff535b",
-        "on-error-container": "#ffdad6",
-        "secondary-container": "#0b4e6e",
-        tertiary: "#6fd8c8",
-        "on-primary-fixed-variant": "#92001c",
-        "surface-tint": "#ffb3b1",
-        primary: "#ffb3b1",
-        "on-primary": "#680011",
-        "on-surface-variant": "#e4bebc",
-        "surface-container-highest": "#353534",
-        "inverse-primary": "#bb152c",
-        surface: "#131313",
-        "on-tertiary": "#003731",
-        outline: "#ab8987",
-        "on-tertiary-container": "#00302a",
-        "on-background": "#e5e2e1",
-        "on-primary-fixed": "#410007",
-        error: "#ffb4ab",
-        secondary: "#98cdf2",
-        "doorli-red": "#E63946",
-        muted: "#A0A0A0",
+        // ── Core backgrounds ─────────────────────────────────────────────
+        background:                   "#060b1c",   // Doorli navy deep
+        surface:                      "#0a132e",   // Doorli navy mid
+        "surface-dim":                "#030712",   // Doorli deep
+        "surface-bright":             "#0f1d3a",
+        "surface-variant":            "rgba(255,255,255,0.10)",
+        "surface-container-lowest":   "#020610",
+        "surface-container-low":      "rgba(255,255,255,0.04)",
+        "surface-container":          "rgba(255,255,255,0.06)",
+        "surface-container-high":     "rgba(255,255,255,0.09)",
+        "surface-container-highest":  "rgba(255,255,255,0.13)",
+
+        // ── Primary (Doorli Blue) ─────────────────────────────────────────
+        primary:                      "#185fa5",
+        "primary-container":          "rgba(24,95,165,0.25)",
+        "primary-fixed":              "#378add",
+        "primary-fixed-dim":          "#1a6eb8",
+        "on-primary":                 "#ffffff",
+        "on-primary-container":       "#a8d0ff",
+        "on-primary-fixed":           "#ffffff",
+        "on-primary-fixed-variant":   "#c8e1ff",
+        "inverse-primary":            "#378add",
+        "surface-tint":               "#185fa5",
+
+        // ── Secondary (Doorli Teal) ───────────────────────────────────────
+        secondary:                    "#1d9e75",
+        "secondary-container":        "rgba(29,158,117,0.22)",
+        "secondary-fixed":            "#5dcaa5",
+        "secondary-fixed-dim":        "#2faf85",
+        "on-secondary":               "#ffffff",
+        "on-secondary-container":     "#a0ffe0",
+        "on-secondary-fixed":         "#ffffff",
+        "on-secondary-fixed-variant": "#b8ffe8",
+
+        // ── Tertiary (Doorli Gold) ────────────────────────────────────────
+        tertiary:                     "#fac775",
+        "tertiary-container":         "rgba(250,199,117,0.18)",
+        "tertiary-fixed":             "#fde4a0",
+        "tertiary-fixed-dim":         "#f7c45a",
+        "on-tertiary":                "#2a1a00",
+        "on-tertiary-container":      "#ffe8b5",
+        "on-tertiary-fixed":          "#2a1a00",
+        "on-tertiary-fixed-variant":  "#ffe0a0",
+
+        // ── Error (Doorli Rose) ───────────────────────────────────────────
+        error:                        "#f2668b",
+        "error-container":            "rgba(242,102,139,0.18)",
+        "on-error":                   "#ffffff",
+        "on-error-container":         "#ffc2d1",
+
+        // ── Text / On-surface ─────────────────────────────────────────────
+        "on-background":              "#f4f7fb",
+        "on-surface":                 "#f4f7fb",   // Doorli text
+        "on-surface-variant":         "#9bb4d0",   // Doorli text-muted
+        "inverse-surface":            "#f4f7fb",
+        "inverse-on-surface":         "#060b1c",
+
+        // ── Borders / Outlines ────────────────────────────────────────────
+        outline:                      "rgba(255,255,255,0.18)",
+        "outline-variant":            "rgba(255,255,255,0.10)",
+
+        // ── Brand accent ──────────────────────────────────────────────────
+        "doorli-red":                 "#f2668b",
+        "doorli-purple":              "#8b5cf6",
+        muted:                        "#6b86a6",   // Doorli text-dim
       },
+
       borderRadius: {
-        DEFAULT: "0.25rem",
-        lg: "0.5rem",
-        xl: "0.75rem",
+        DEFAULT: "0.75rem",
+        sm:   "0.5rem",
+        lg:   "0.875rem",
+        xl:   "1rem",
+        "2xl": "1.25rem",
         full: "9999px",
       },
+
       spacing: {
-        xl: "32px",
-        sm: "8px",
-        "container-max": "1440px",
-        lg: "24px",
-        gutter: "16px",
-        xs: "4px",
-        "margin-mobile": "16px",
-        md: "16px",
-        "margin-desktop": "24px",
-        base: "4px",
+        xs:                "4px",
+        sm:                "8px",
+        md:                "16px",
+        lg:                "24px",
+        xl:                "32px",
+        gutter:            "16px",
+        "margin-mobile":   "16px",
+        "margin-desktop":  "24px",
+        "container-max":   "1440px",
+        base:              "4px",
       },
+
       fontFamily: {
-        "body-compact": ["Inter", "sans-serif"],
-        "screen-title": ["Inter", "sans-serif"],
-        "body-main": ["Inter", "sans-serif"],
-        "section-header": ["Inter", "sans-serif"],
-        "label-medium": ["Inter", "sans-serif"],
-        "screen-title-mobile": ["Inter", "sans-serif"],
-        "kpi-number": ["Inter", "sans-serif"],
-        caption: ["Inter", "sans-serif"],
+        "body-compact":       ["Inter", "sans-serif"],
+        "screen-title":       ["Inter", "sans-serif"],
+        "body-main":          ["Inter", "sans-serif"],
+        "section-header":     ["Inter", "sans-serif"],
+        "label-medium":       ["Inter", "sans-serif"],
+        "screen-title-mobile":["Inter", "sans-serif"],
+        "kpi-number":         ["Inter", "sans-serif"],
+        caption:              ["Inter", "sans-serif"],
       },
+
       fontSize: {
-        "body-compact": ["14px", { lineHeight: "20px", fontWeight: "400" }],
-        "screen-title": ["24px", { lineHeight: "32px", fontWeight: "700" }],
-        "body-main": ["15px", { lineHeight: "22px", fontWeight: "400" }],
-        "section-header": ["18px", { lineHeight: "24px", fontWeight: "600" }],
-        "label-medium": ["13px", { lineHeight: "18px", fontWeight: "500" }],
+        "body-compact":        ["14px", { lineHeight: "20px", fontWeight: "400" }],
+        "screen-title":        ["24px", { lineHeight: "32px", fontWeight: "700" }],
+        "body-main":           ["15px", { lineHeight: "22px", fontWeight: "400" }],
+        "section-header":      ["18px", { lineHeight: "24px", fontWeight: "600" }],
+        "label-medium":        ["13px", { lineHeight: "18px", fontWeight: "500" }],
         "screen-title-mobile": ["20px", { lineHeight: "28px", fontWeight: "700" }],
-        "kpi-number": [
-          "32px",
-          { lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "700" },
-        ],
-        caption: [
-          "12px",
-          { lineHeight: "16px", letterSpacing: "0.01em", fontWeight: "500" },
-        ],
+        "kpi-number":          ["32px", { lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "700" }],
+        caption:               ["12px", { lineHeight: "16px", letterSpacing: "0.01em", fontWeight: "500" }],
+      },
+
+      boxShadow: {
+        "doorli-sm": "0 8px 32px rgba(3,7,18,0.45)",
+        "doorli-lg": "0 18px 44px -28px rgba(0,0,0,0.85)",
+        "primary-glow": "0 6px 22px rgba(24,95,165,0.38)",
       },
     },
   },
   plugins: [],
 };
+
 export default config;

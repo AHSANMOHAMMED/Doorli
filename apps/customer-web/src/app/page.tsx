@@ -146,13 +146,24 @@ const CORE_FEATURES = [
     name: "Emergency SOS",
     blurb: "Fast priority assistance when you need help most.",
     slug: "sos",
-    href: "/search?category=service",
+    href: "/sos",
     icon: ShieldAlert,
     badge: "24/7 HELP",
     badgeColor: "bg-red-500/20 text-red-300 border-red-500/30",
     gradient: "from-red-500/20 to-rose-500/20 border-red-500/30 text-red-300",
     erp: "Priority emergency ticket dispatch",
   },
+  {
+    name: "Gov Services",
+    blurb: "Pay taxes, apply for permits & report civic issues.",
+    slug: "gov",
+    href: "/gov",
+    icon: Shield,
+    badge: "E-GOV",
+    badgeColor: "bg-teal-500/20 text-teal-300 border-teal-500/30",
+    gradient: "from-teal-500/20 to-emerald-500/20 border-teal-500/30 text-teal-300",
+    erp: "Municipal council API sync",
+  }
 ];
 
 type Vendor = {
@@ -338,6 +349,10 @@ export default function Home() {
               <Link href="/ride" className="doorli-cta-ghost text-xs sm:text-sm py-2 px-3.5 flex items-center gap-1.5 hover:scale-105 transition-transform">
                 <Car className="w-4 h-4 text-[#5dcaa5]" />
                 Book Ride
+              </Link>
+              <Link href="/ai-picks" className="doorli-cta-primary text-xs sm:text-sm py-2 px-3.5 flex items-center gap-1.5 hover:scale-105 transition-transform">
+                <Sparkles className="w-4 h-4 text-purple-200" />
+                AI Smart Picks
               </Link>
             </div>
 

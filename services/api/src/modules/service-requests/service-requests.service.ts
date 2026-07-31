@@ -24,13 +24,15 @@ export async function createServiceRequest(userId: string, input: CreateServiceR
     },
   });
 
+  // Emit service:new_request to providers room (Req 6.1)
   const io = getSocketServer();
-  io?.to(`providers:${input.serviceType}`).emit('service_request:new', {
+  io?.to(`providers:${input.serviceType}`).emit('service:new_request', {
     requestId: serviceRequest.id,
     title: serviceRequest.title,
     isUrgent: serviceRequest.isUrgent,
     latitude: serviceRequest.latitude,
     longitude: serviceRequest.longitude,
+    serviceType: serviceRequest.serviceType,
   });
 
   // Notify nearby service vendors (category=service)
@@ -42,10 +44,10 @@ export async function createServiceRequest(userId: string, input: CreateServiceR
   for (const p of providers) {
     await enqueueNotification({
       userId: p.userId,
-      title: input.isUrgent ? 'Urgent job nearby' : 'New service request',
+      title: input.isUrgent ? '🚨 Urgent job nearby' : 'New service request nearby',
       body: serviceRequest.title,
       type: 'service_request_new',
-      data: { requestId: serviceRequest.id },
+      data: { requestId: serviceRequest.id, isUrgent: input.isUrgent },
     });
   }
 
@@ -80,22 +82,29 @@ export async function getServiceRequestById(requestId: string, userId: string, u
 export async function getNearbyServiceRequests(
   latitude: number,
   longitude: number,
-  radiusKm: number = 10
+  radiusKm: number = 10,
+  serviceType?: string
 ) {
-  // Find service requests within radius (simplified - in production use PostGIS)
+  // Find open/unassigned service requests, optionally filtered by serviceType
   const serviceRequests = await prisma.serviceRequest.findMany({
     where: {
       status: ServiceRequestStatus.open,
       assignedProviderId: null,
       latitude: { not: null },
       longitude: { not: null },
+      ...(serviceType ? { serviceType } : {}),
     },
     include: {
       customer: true,
     },
+    orderBy: [
+      // Urgent requests first
+      { isUrgent: 'desc' },
+      { createdAt: 'desc' },
+    ],
   });
 
-  // Filter by distance (simplified - use PostGIS ST_DistanceSphere in production)
+  // Filter by distance (Haversine — use PostGIS ST_DistanceSphere in production)
   const nearby = serviceRequests.filter((req) => {
     if (!req.latitude || !req.longitude) return false;
     const distance = calculateDistance(
@@ -121,17 +130,94 @@ export async function getMyServiceRequests(userId: string, userRole: string) {
     });
   }
 
-  if (userRole === 'vendor') {
-    return prisma.serviceRequest.findMany({
-      where: { assignedProviderId: userId },
-      include: {
-        customer: true,
+  throw new AppError(403, 'Access denied');
+}
+
+export async function getProviderServiceRequests(providerId: string) {
+  return prisma.serviceRequest.findMany({
+    where: {
+      OR: [
+        { assignedProviderId: providerId },
+        {
+          status: ServiceRequestStatus.open,
+          assignedProviderId: null,
+        },
+      ],
+    },
+    include: {
+      customer: true,
+    },
+    orderBy: [{ isUrgent: 'desc' }, { createdAt: 'desc' }],
+  });
+}
+
+export async function disputeServiceRequest(
+  requestId: string,
+  userId: string,
+  userRole: string,
+  mediaUrls: string[],
+  reason: string
+) {
+  const serviceRequest = await prisma.serviceRequest.findUnique({
+    where: { id: requestId },
+  });
+
+  if (!serviceRequest) {
+    throw new AppError(404, 'Service request not found');
+  }
+
+  const isCustomer = serviceRequest.customerId === userId;
+  const isProvider = serviceRequest.assignedProviderId === userId;
+  const isAdmin = userRole === 'admin';
+
+  if (!isCustomer && !isProvider && !isAdmin) {
+    throw new AppError(403, 'Access denied');
+  }
+
+  if (
+    serviceRequest.status !== ServiceRequestStatus.completed &&
+    serviceRequest.status !== ServiceRequestStatus.in_progress
+  ) {
+    throw new AppError(400, 'Disputes can only be raised on in-progress or completed requests');
+  }
+
+  // Store dispute evidence in description as structured note (no dedicated column in schema)
+  const disputeNote = `[DISPUTE] Reason: ${reason} | Evidence: ${mediaUrls.join(', ')} | RaisedBy: ${userId} | At: ${new Date().toISOString()}`;
+  const updatedDescription = serviceRequest.description
+    ? `${serviceRequest.description}\n${disputeNote}`
+    : disputeNote;
+
+  const updated = await prisma.serviceRequest.update({
+    where: { id: requestId },
+    data: { description: updatedDescription },
+    include: {
+      customer: true,
+      assignedProvider: true,
+    },
+  });
+
+  // Notify admin users about the dispute (flag for admin review)
+  const admins = await prisma.user.findMany({
+    where: { role: 'admin' },
+    select: { id: true },
+    take: 5,
+  });
+  for (const admin of admins) {
+    await enqueueNotification({
+      userId: admin.id,
+      title: 'Service request dispute',
+      body: `Dispute raised on request: ${serviceRequest.title}`,
+      type: 'service_request_dispute',
+      data: {
+        requestId: serviceRequest.id,
+        raisedBy: userId,
+        reason,
+        mediaUrls,
       },
-      orderBy: { createdAt: 'desc' },
     });
   }
 
-  throw new AppError(403, 'Access denied');
+  return { ...updated, disputeMediaUrls: mediaUrls, disputeReason: reason };
 }
 
 export async function acceptServiceRequest(requestId: string, providerId: string) {

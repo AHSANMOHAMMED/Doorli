@@ -1,0 +1,15 @@
+{
+    "name": "@doorli/design-tokens",
+    "version": "0.1.0",
+    "private": true,
+    "description": "Shared Doorli design tokens — colors, typography, spacing, glassmorphism, animations",
+    "main": "dist/index.css",
+    "style": "dist/index.css",
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "mkdir -p dist && cp src/tokens.css dist/index.css",
+        "dev": "mkdir -p dist && cp src/tokens.css dist/index.css"
+    }
+}

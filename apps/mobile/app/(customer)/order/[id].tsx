@@ -1,4 +1,5 @@
 import React from 'react';
+import { DoorliColors } from '../../../constants/colors';
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -6,11 +7,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { fetchOrder, formatPrice } from '../../../lib/api';
 import { MapPin, Search, CheckCircle, Clock, Package } from 'lucide-react-native';
 
-const PRIMARY = '#006e25';
-const PRIMARY_CONTAINER = '#00b241';
-const ON_SURFACE = '#191c1d';
-const ON_SURFACE_VARIANT = '#3d4a3c';
-const SURFACE = '#f8f9fa';
+const PRIMARY = DoorliColors.primary;
+const PRIMARY_CONTAINER = DoorliColors.sky;
+const ON_SURFACE = DoorliColors.text;
+const ON_SURFACE_VARIANT = DoorliColors.textMuted;
+const SURFACE = DoorliColors.navyMid;
 
 export default function OrderSuccessScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

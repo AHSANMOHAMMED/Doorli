@@ -8,6 +8,7 @@ import { requireQuota } from '@/lib/db/storage-quota'
 import { validateBody } from '@/lib/validation/helpers'
 import { bulkStockAdjustmentSchema } from '@/lib/validation/schemas/stock'
 import { postStockAdjustmentToGL } from '@/lib/accounting/auto-post'
+import { pushStockForItems } from '@/lib/erp-sync/stock-sync'
 
 // POST - Apply bulk stock adjustments
 export async function POST(request: NextRequest) {
@@ -95,6 +96,9 @@ export async function POST(request: NextRequest) {
     }
 
     logAndBroadcast(session.user.tenantId, 'stock-movement', 'created', 'bulk')
+
+    // Req 10.3: push adjusted quantities to the marketplace (post-commit, best-effort)
+    pushStockForItems(session.user.tenantId, body.adjustments.map((a) => a.itemId))
 
     return { data: { adjusted, total: body.adjustments.length, errors } }
   })

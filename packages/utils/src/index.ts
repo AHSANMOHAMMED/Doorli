@@ -1,4 +1,7 @@
 export { haversineKm } from './geo.js';
+export { requireAuth, requireAnyAuth } from './middleware.js';
+export type { AuthUser, UserRole } from './middleware.js';
+export * from './validators/index.js';
 
 export function formatCurrency(amount: number, currency = 'LKR'): string {
   return new Intl.NumberFormat('en-LK', {

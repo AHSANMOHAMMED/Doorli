@@ -4,10 +4,12 @@ import { Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useI18nStore } from '../../lib/i18n';
 
-const ACTIVE_TEXT = '#003b10'; // on-primary-container
-const ACTIVE_BG = '#00b241'; // primary-container
-const INACTIVE = '#3d4a3c'; // on-surface-variant
-const SURFACE = '#f8f9fa';
+import { DoorliColors } from '../../constants/colors';
+
+const ACTIVE_TEXT = '#ffffff';          // white text on active tab
+const ACTIVE_BG = DoorliColors.primary; // Doorli Blue
+const INACTIVE = DoorliColors.textMuted; // #9bb4d0
+const SURFACE = DoorliColors.navy;       // #060b1c
 
 export default function CustomerLayout() {
   const insets = useSafeAreaInsets();

@@ -1,7 +1,11 @@
 import dotenv from 'dotenv';
 import path from 'path';
 import express from 'express';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
 import { NotificationService } from './notification.js';
+import { setSocketServer, registerSocketAuth } from './socket.js';
+import { startSocketBridge } from './socketBridge.js';
 
 dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
@@ -20,6 +24,15 @@ async function main() {
   });
 
   const app = express();
+  const httpServer = createServer(app);
+  const ioServer = new Server(httpServer, {
+    cors: { origin: '*' },
+  });
+  
+  setSocketServer(ioServer);
+  registerSocketAuth(ioServer);
+  const stopSocketBridge = startSocketBridge(redisUrl);
+
   app.get('/health', async (_req, res) => {
     const ok = await notifications.ping();
     res.status(ok ? 200 : 503).json({
@@ -41,11 +54,13 @@ async function main() {
       res.status(500).json({ error: (err as Error).message });
     }
   });
-  app.listen(HEALTH_PORT, () => {
-    console.log(`Notifications health on http://localhost:${HEALTH_PORT}/health`);
+
+  httpServer.listen(HEALTH_PORT, () => {
+    console.log(`Notifications + WebSocket server listening on port ${HEALTH_PORT}`);
   });
 
   process.on('SIGINT', async () => {
+    await stopSocketBridge();
     await worker.close();
     await notifications.close();
     process.exit(0);

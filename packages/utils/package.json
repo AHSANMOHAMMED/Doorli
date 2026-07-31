@@ -10,8 +10,17 @@
     "lint": "eslint src --ext .ts",
     "test": "node --import tsx --test src/**/*.test.ts"
   },
+  "dependencies": {
+    "jsonwebtoken": "9.0.2",
+    "zod": "3.23.8"
+  },
   "devDependencies": {
+    "@types/jsonwebtoken": "9.0.7",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "@types/jsonwebtoken": "9.0.10",
+    "jsonwebtoken": "9.0.3"
   }
 }

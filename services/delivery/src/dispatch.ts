@@ -97,7 +97,16 @@ export class DispatchService {
       },
     });
 
-    if (!order || order.status !== 'ready' || order.driverId || order.orderType !== 'delivery') {
+    if (!order || order.status !== 'ready' || order.driverId) {
+      return;
+    }
+    // Regular marketplace deliveries always dispatch; ERP-origin `pos` orders
+    // dispatch only when they carry a dropoff address (Req 11.4). Walk-in POS
+    // sales have no delivery address and must never reach a driver.
+    const dispatchable =
+      order.orderType === 'delivery' ||
+      (order.orderType === 'pos' && order.deliveryAddressId != null);
+    if (!dispatchable) {
       return;
     }
 

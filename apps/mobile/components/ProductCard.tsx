@@ -2,6 +2,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import type { Product } from '../lib/api';
 import { formatPrice } from '../lib/api';
 import { Plus } from 'lucide-react-native';
+import { DoorliColors, DoorliRadius } from '../constants/colors';
 
 interface Props {
   product: Product;
@@ -27,11 +28,11 @@ export function ProductCard({ product, onAdd }: Props) {
         )}
         <Text style={styles.price}>{formatPrice(price)}</Text>
       </View>
-      
+
       <View style={styles.imageContainer}>
-        <Image 
-          source={{ uri: product.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=300&auto=format&fit=crop' }} 
-          style={styles.image} 
+        <Image
+          source={{ uri: product.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=300&auto=format&fit=crop' }}
+          style={styles.image}
         />
         <TouchableOpacity style={styles.addBtn} onPress={onAdd}>
           <Plus color="#ffffff" size={20} />
@@ -44,38 +45,40 @@ export function ProductCard({ product, onAdd }: Props) {
 const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: DoorliRadius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
     padding: 16,
     gap: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
+    shadowColor: DoorliColors.deep,
+    shadowOpacity: 0.4,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
     elevation: 3,
     marginBottom: 16,
   },
-  info: { 
-    flex: 1, 
-    justifyContent: 'center' 
+  info: {
+    flex: 1,
+    justifyContent: 'center',
   },
-  name: { 
-    fontSize: 18, 
-    fontWeight: '600', 
-    color: '#191c1d', 
-    marginBottom: 4 
+  name: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: DoorliColors.text,
+    marginBottom: 4,
   },
-  description: { 
-    fontSize: 14, 
-    color: '#3d4a3c', 
+  description: {
+    fontSize: 14,
+    color: DoorliColors.textMuted,
     marginBottom: 12,
-    lineHeight: 20
+    lineHeight: 20,
   },
-  price: { 
-    fontSize: 18, 
-    fontWeight: '600', 
-    color: '#006e25' 
-  }, 
+  price: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: DoorliColors.sky,  // Doorli sky blue for price highlight
+  },
   imageContainer: {
     width: 112,
     height: 112,
@@ -84,21 +87,21 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: '100%',
-    borderRadius: 12,
+    borderRadius: DoorliRadius.md,
     resizeMode: 'cover',
   },
   placeholderImage: {
     width: '100%',
     height: '100%',
-    borderRadius: 12,
-    backgroundColor: '#e9ecef',
+    borderRadius: DoorliRadius.md,
+    backgroundColor: 'rgba(255,255,255,0.05)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: { 
-    fontSize: 32, 
-    fontWeight: '700', 
-    color: '#006e25' 
+  avatarText: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: DoorliColors.primary,
   },
   addBtn: {
     position: 'absolute',
@@ -106,12 +109,12 @@ const styles = StyleSheet.create({
     right: -8,
     width: 40,
     height: 40,
-    borderRadius: 12,
-    backgroundColor: '#00b241', 
+    borderRadius: DoorliRadius.sm,
+    backgroundColor: DoorliColors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#00b241',
-    shadowOpacity: 0.3,
+    shadowColor: DoorliColors.primary,
+    shadowOpacity: 0.4,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 4,

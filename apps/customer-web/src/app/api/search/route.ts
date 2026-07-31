@@ -1,27 +1,85 @@
 import { NextResponse } from 'next/server';
 
-// Mock data to simulate an Elasticsearch response returning businesses and products
-const mockIndex = [
-  { id: 'b1', type: 'business', name: 'Mario\'s Pizza', description: 'Authentic Italian Pizzeria', distance: '1.2 km' },
-  { id: 'p1', type: 'product', name: 'Pepperoni Pizza', description: 'Large pepperoni with extra cheese from Mario\'s', price: 'LKR 2,500' },
-  { id: 'b2', type: 'business', name: 'City Plumbing', description: '24/7 Emergency Plumber', distance: '3.4 km' },
-  { id: 'b3', type: 'business', name: 'Fresh Mart Grocery', description: 'Local organic vegetables and daily needs', distance: '0.8 km' },
-];
+type Vendor = {
+  id: string;
+  businessName: string;
+  category: string;
+  description?: string | null;
+  city?: string | null;
+};
+
+type Product = {
+  id: string;
+  name: string;
+  description?: string | null;
+  price?: number | string | null;
+  vendorId?: string;
+  vendor?: { businessName?: string };
+};
+
+function getApiBase() {
+  return process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:4000';
+}
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const q = searchParams.get('q')?.toLowerCase();
+  const q = (searchParams.get('q') || '').trim().toLowerCase();
 
   if (!q) {
     return NextResponse.json({ results: [] });
   }
 
-  // Simulate latency of an Elasticsearch query
-  await new Promise(resolve => setTimeout(resolve, 400));
+  const baseUrl = getApiBase();
+  const vendorsResponse = await fetch(`${baseUrl}/api/v1/vendors`);
+  const vendorsJson = await vendorsResponse.json().catch(() => ({ data: { items: [] } }));
+  const vendors: Vendor[] = vendorsJson.data?.items || [];
 
-  const results = mockIndex.filter(item => 
-    item.name.toLowerCase().includes(q) || item.description.toLowerCase().includes(q)
+  const productGroups = await Promise.all(
+    vendors.slice(0, 8).map(async (vendor) => {
+      const response = await fetch(`${baseUrl}/api/v1/products/vendor/${vendor.id}`);
+      const json = await response.json().catch(() => ({ data: { items: [] } }));
+      const items: Product[] = json.data?.items || [];
+      return items.map((product) => ({ ...product, vendor: { businessName: vendor.businessName } }));
+    }),
   );
+  const products = productGroups.flat();
 
-  return NextResponse.json({ results });
+  const vendorResults = vendors
+    .filter(
+      (vendor) =>
+        vendor.businessName.toLowerCase().includes(q) ||
+        (vendor.description || '').toLowerCase().includes(q) ||
+        (vendor.city || '').toLowerCase().includes(q) ||
+        vendor.category.toLowerCase().includes(q),
+    )
+    .slice(0, 20)
+    .map((vendor) => ({
+      id: vendor.id,
+      type: 'business',
+      name: vendor.businessName,
+      description: vendor.description || vendor.city || vendor.category,
+      distance: undefined,
+    }));
+
+  const productResults = products
+    .filter(
+      (product) =>
+        product.name.toLowerCase().includes(q) ||
+        (product.description || '').toLowerCase().includes(q) ||
+        (product.vendor?.businessName || '').toLowerCase().includes(q),
+    )
+    .slice(0, 20)
+    .map((product) => ({
+      id: product.id,
+      type: 'product',
+      name: product.name,
+      description: product.vendor?.businessName || product.description || '',
+      price:
+        product.price != null
+          ? `LKR ${Number(product.price).toLocaleString()}`
+          : undefined,
+      vendorId: product.vendorId,
+    }));
+
+  return NextResponse.json({ results: [...vendorResults, ...productResults].slice(0, 40) });
 }

@@ -124,6 +124,20 @@ enum PaymentReferenceType {
   booking
 }
 
+model Wallet {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @unique @map("user_id") @db.Uuid
+  balance   Decimal  @default(0) @db.Decimal(12, 2)
+  currency  String   @default("LKR") @db.VarChar(10)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("wallets")
+}
+
 model LoyaltyPoint {
   id        String   @id @default(uuid()) @db.Uuid
   userId    String   @unique @map("user_id") @db.Uuid
@@ -156,6 +170,7 @@ model User {
   addresses           Address[]
   vendor              Vendor?
   driver              Driver?
+  wallet              Wallet?
   loyaltyPoints       LoyaltyPoint?
   ordersAsCustomer    Order[]          @relation("CustomerOrders")
   ordersAsDriver      Order[]          @relation("DriverOrders")
@@ -246,6 +261,7 @@ model Vendor {
   orders            Order[]
   bookings          Booking[]
   reviews           Review[]
+  features          VendorFeature[]
 
   @@index([category])
   @@index([latitude, longitude])
@@ -925,4 +941,39 @@ model PublicConsultation {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@map("public_consultations")
+}
+
+// -----------------------------------------
+// Platform Feature Management
+// -----------------------------------------
+
+model FeatureFlag {
+  id          String   @id @default(uuid()) @db.Uuid
+  key         String   @unique @db.VarChar(100) // e.g. "ai_reviews", "pos_integration"
+  name        String   @db.VarChar(150)
+  description String?
+  isGlobal    Boolean  @default(false) @map("is_global") // If true, enabled for everyone automatically
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  vendorFeatures VendorFeature[]
+
+  @@map("feature_flags")
+}
+
+model VendorFeature {
+  id        String   @id @default(uuid()) @db.Uuid
+  vendorId  String   @map("vendor_id") @db.Uuid
+  featureId String   @map("feature_id") @db.Uuid
+  isEnabled Boolean  @default(true) @map("is_enabled") // If the record exists, usually it means granted, but this allows explicit revoking of a global feature
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  vendor  Vendor      @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  feature FeatureFlag @relation(fields: [featureId], references: [id], onDelete: Cascade)
+
+  @@unique([vendorId, featureId])
+  @@index([vendorId])
+  @@index([featureId])
+  @@map("vendor_features")
 }

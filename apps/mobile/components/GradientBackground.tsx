@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { DoorliColors, DoorliGradients } from '../constants/colors';
 
 const { width, height } = Dimensions.get('window');
 
@@ -13,26 +14,26 @@ export const GradientBackground: React.FC<GradientBackgroundProps> = ({ children
     <View style={styles.container}>
       {/* Base deep background */}
       <View style={styles.baseBg} />
-      
-      {/* Top Right Blob (Teal) */}
+
+      {/* Top Right Blob — Doorli Teal */}
       <LinearGradient
-        colors={['rgba(13, 148, 136, 0.4)', 'transparent']}
+        colors={DoorliGradients.bgTeal}
         style={[styles.blob, styles.blobTopRight]}
         start={{ x: 0.5, y: 0.5 }}
         end={{ x: 1, y: 1 }}
       />
 
-      {/* Bottom Left Blob (Primary Blue) */}
+      {/* Bottom Left Blob — Doorli Blue */}
       <LinearGradient
-        colors={['rgba(26, 86, 219, 0.4)', 'transparent']}
+        colors={DoorliGradients.bgBlue}
         style={[styles.blob, styles.blobBottomLeft]}
         start={{ x: 0.5, y: 0.5 }}
         end={{ x: 0, y: 1 }}
       />
-      
-      {/* Center Blob (Amber/Warm) */}
+
+      {/* Center Blob — Doorli Gold accent */}
       <LinearGradient
-        colors={['rgba(217, 119, 6, 0.15)', 'transparent']}
+        colors={DoorliGradients.bgGold}
         style={[styles.blob, styles.blobCenter]}
         start={{ x: 0.5, y: 0.5 }}
         end={{ x: 1, y: 0 }}
@@ -51,11 +52,11 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: height,
     width: '100%',
-    backgroundColor: '#0A0F1A', // Very dark blue/slate base
+    backgroundColor: DoorliColors.navy,
   },
   baseBg: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#0A0F1A',
+    backgroundColor: DoorliColors.navy,
   },
   blob: {
     position: 'absolute',
@@ -77,5 +78,5 @@ const styles = StyleSheet.create({
     width: width * 2,
     height: width * 2,
     borderRadius: width,
-  }
+  },
 });

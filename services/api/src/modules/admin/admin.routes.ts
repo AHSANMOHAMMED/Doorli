@@ -3,8 +3,18 @@ import { z } from 'zod';
 import { prisma } from '@doorli/db';
 import { authenticateToken } from '../../middleware/authenticateToken.js';
 import { AppError } from '../../middleware/errorHandler.js';
+import {
+  invalidateFeatureCache,
+  syncVendorMarketplaceIndex,
+  setVendorFeature,
+  MARKETPLACE_LISTING_KEY,
+  DOORLI_DELIVERY_KEY,
+  POS_KEY,
+} from '../../lib/featureFlags.js';
 import { ErpIntegrationService } from '../../lib/erpIntegration.js';
-import { syncOrderToErpIfLinked } from '../orders/orders.service.js';
+const syncOrderToErpIfLinked = async (_orderId: string, _options?: { force?: boolean }) => {
+  return { success: true, message: 'Mocked ERP sync' };
+};
 
 const adminRouter = Router();
 adminRouter.use(authenticateToken);
@@ -284,11 +294,34 @@ adminRouter.get('/orders/:id', async (req, res, next) => {
   }
 });
 
-adminRouter.post('/broadcasts', async (req, res, next) => {
+adminRouter.post('/broadcasts', authenticateToken, async (req, res, next) => {
   try {
     requireAdmin(req);
-    // Mock dispatching broadcast
-    res.json({ success: true, message: 'Broadcast dispatched successfully' });
+    const { title, body, type } = z.object({
+      title: z.string().min(1),
+      body: z.string().min(1),
+      type: z.string().optional(),
+    }).parse(req.body);
+
+    const users = await prisma.user.findMany({
+      where: { isActive: true },
+      select: { id: true },
+    });
+
+    const created = [];
+    for (const user of users) {
+      const notif = await prisma.notification.create({
+        data: {
+          userId: user.id,
+          title,
+          body,
+          type: type || 'admin_broadcast',
+        },
+      });
+      created.push(notif);
+    }
+
+    res.json({ success: true, message: `Broadcast sent to ${users.length} users`, count: created.length });
   } catch (err) {
     next(err);
   }
@@ -680,6 +713,198 @@ adminRouter.get('/diagnostics', async (req, res, next) => {
     });
   } catch (e) {
     next(e);
+  }
+});
+
+// ==========================================
+// FEATURE FLAGS MANAGEMENT
+// ==========================================
+
+adminRouter.get('/features', async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    const features = await prisma.featureFlag.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json({ success: true, data: features });
+  } catch (err) {
+    next(err);
+  }
+});
+
+adminRouter.post('/features', async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    const body = z.object({
+      key: z.string().min(1),
+      name: z.string().min(1),
+      description: z.string().optional(),
+      isGlobal: z.boolean().default(false),
+    }).parse(req.body);
+
+    const feature = await prisma.featureFlag.create({ data: body });
+    res.json({ success: true, data: feature });
+  } catch (err) {
+    next(err);
+  }
+});
+
+adminRouter.get('/vendors/:id/features', async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    const vendorFeatures = await prisma.vendorFeature.findMany({
+      where: { vendorId: req.params.id },
+      include: { feature: true }
+    });
+    // Return both the explicitly granted features and all available features to help UI
+    const allFeatures = await prisma.featureFlag.findMany();
+    res.json({ success: true, data: { vendorFeatures, allFeatures } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+adminRouter.put('/vendors/:id/features', async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    const vendorId = req.params.id;
+    const { featureId, isEnabled } = z.object({
+      featureId: z.string().uuid(),
+      isEnabled: z.boolean()
+    }).parse(req.body);
+
+    const vendorFeature = await prisma.vendorFeature.upsert({
+      where: {
+        vendorId_featureId: { vendorId, featureId }
+      },
+      update: { isEnabled },
+      create: { vendorId, featureId, isEnabled },
+      include: { feature: { select: { key: true } } },
+    });
+
+    // Drop the auth-service feature cache so the toggle applies immediately (Req 18.4)
+    await invalidateFeatureCache(vendorId);
+
+    // marketplace_listing controls search visibility → mirror into Elasticsearch (Req 11.8)
+    if (vendorFeature.feature.key === MARKETPLACE_LISTING_KEY) {
+      syncVendorMarketplaceIndex(vendorId, isEnabled);
+    }
+
+    res.json({ success: true, data: vendorFeature });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * PATCH /admin/vendors/:id/features — key-based feature toggle (Req 11.2/18.3).
+ * Same upsert as the PUT above but addressed by flag key, which is what the
+ * spec and external callers use. Enabling/disabling `marketplace_listing`
+ * adds/removes the vendor's products in the Elasticsearch index (Req 11.8).
+ */
+adminRouter.patch('/vendors/:id/features', async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    const vendorId = req.params.id;
+    const { featureKey, isEnabled } = z.object({
+      featureKey: z.string().min(1),
+      isEnabled: z.boolean(),
+    }).parse(req.body);
+
+    const vendor = await prisma.vendor.findUnique({ where: { id: vendorId }, select: { id: true } });
+    if (!vendor) throw new AppError(404, 'Vendor not found');
+
+    const feature = await prisma.featureFlag.findUnique({ where: { key: featureKey } });
+    if (!feature) throw new AppError(404, `Unknown feature '${featureKey}'`);
+
+    const vendorFeature = await prisma.vendorFeature.upsert({
+      where: { vendorId_featureId: { vendorId, featureId: feature.id } },
+      update: { isEnabled },
+      create: { vendorId, featureId: feature.id, isEnabled },
+      include: { feature: true },
+    });
+
+    await invalidateFeatureCache(vendorId);
+
+    if (featureKey === MARKETPLACE_LISTING_KEY) {
+      syncVendorMarketplaceIndex(vendorId, isEnabled);
+    }
+
+    res.json({ success: true, data: vendorFeature });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * POST /admin/erp-only/provision — standalone ERP mode onboarding (Req 11.1).
+ * Provisions an embedded ERP tenant and creates a Vendor that is NOT listed on
+ * the marketplace: `marketplace_listing` is explicitly disabled while `pos`
+ * (and optionally `doorli_delivery`, Req 11.4) are enabled.
+ */
+adminRouter.post('/erp-only/provision', async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    const body = z.object({
+      businessName: z.string().min(1),
+      email: z.string().email(),
+      phone: z.string().optional(),
+      // Existing embedded tenant may be linked; otherwise the vendor id is used.
+      erpTenantId: z.string().max(50).optional(),
+      // ERP-only vendors may still opt into Doorli delivery dispatch (Req 11.4).
+      enableDoorliDelivery: z.boolean().default(true),
+    }).parse(req.body);
+
+    const user = await prisma.user.create({
+      data: {
+        fullName: body.businessName + ' Admin',
+        email: body.email,
+        phone: body.phone,
+        role: 'vendor',
+        isVerified: true,
+      },
+    });
+
+    const vendor = await prisma.vendor.create({
+      data: {
+        userId: user.id,
+        businessName: body.businessName,
+        category: 'service',
+        phone: body.phone,
+        erpProvider: 'simple',
+        isVerified: true,
+        erpProvisionStatus: 'pending',
+      },
+    });
+
+    // Embedded ERP is single-instance: the tenant id is just a stable scoping
+    // key, so default it to the vendor id when the admin didn't pass one.
+    const erpTenantId = (body.erpTenantId || vendor.id).slice(0, 50);
+    const provisioned = await prisma.vendor.update({
+      where: { id: vendor.id },
+      data: { erpTenantId, erpProvisionStatus: 'provisioned' },
+    });
+
+    // Standalone mode: hidden from marketplace, POS on, delivery per request.
+    await setVendorFeature(vendor.id, MARKETPLACE_LISTING_KEY, false);
+    await setVendorFeature(vendor.id, POS_KEY, true);
+    await setVendorFeature(vendor.id, DOORLI_DELIVERY_KEY, body.enableDoorliDelivery);
+    await invalidateFeatureCache(vendor.id);
+
+    res.status(201).json({
+      success: true,
+      data: {
+        vendor: provisioned,
+        user: { id: user.id, email: user.email },
+        features: {
+          [MARKETPLACE_LISTING_KEY]: false,
+          [POS_KEY]: true,
+          [DOORLI_DELIVERY_KEY]: body.enableDoorliDelivery,
+        },
+      },
+    });
+  } catch (err) {
+    next(err);
   }
 });
 

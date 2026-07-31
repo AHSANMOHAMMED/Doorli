@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { apiFetch } from '@/lib/api';
-import { Loader as Loader2, Store, User, Check, CircleAlert as AlertCircle } from 'lucide-react';
+import { Loader as Loader2, Store, User, Check, CircleAlert as AlertCircle, SlidersHorizontal } from 'lucide-react';
 
 interface VendorForm {
   businessName: string;
@@ -20,6 +20,39 @@ interface ProfileForm {
   fullName: string;
   email: string;
 }
+
+interface FeatureFlag {
+  id: string;
+  key: string;
+  name: string;
+  description?: string | null;
+  isGlobal: boolean;
+}
+
+interface VendorFeature {
+  featureId: string;
+  isEnabled: boolean;
+  feature?: FeatureFlag;
+}
+
+// Self-serviceable flags — mirrors VENDOR_TOGGLEABLE_FEATURES in the API
+const FEATURE_TOGGLES: { key: string; label: string; description: string }[] = [
+  {
+    key: 'marketplace_listing',
+    label: 'Marketplace listing',
+    description: 'Show my shop in Doorli search, nearby and category results',
+  },
+  {
+    key: 'doorli_delivery',
+    label: 'Doorli delivery',
+    description: 'Dispatch my orders and POS sales via the Doorli driver network',
+  },
+  {
+    key: 'online_payment',
+    label: 'Online payments',
+    description: 'Accept card and wallet payments through Doorli',
+  },
+];
 
 export default function SettingsPage() {
   const { user, profile, loading: authLoading } = useAuth();
@@ -42,6 +75,11 @@ export default function SettingsPage() {
     null,
   );
   const [profileMessage, setProfileMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(
+    null,
+  );
+  const [features, setFeatures] = useState<Record<string, boolean>>({});
+  const [togglingFeature, setTogglingFeature] = useState<string | null>(null);
+  const [featureMessage, setFeatureMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(
     null,
   );
 
@@ -90,6 +128,20 @@ export default function SettingsPage() {
           deliveryRadiusKm: String(v.deliveryRadiusKm ?? 5),
           minOrderAmount: v.minOrderAmount != null ? String(v.minOrderAmount) : '',
         });
+
+        // Effective feature map: global defaults overridden by explicit vendor rows
+        const featuresRes = await apiFetch<{
+          vendorFeatures: VendorFeature[];
+          allFeatures: FeatureFlag[];
+        }>('/vendors/me/features');
+        if (featuresRes.success && featuresRes.data) {
+          const map: Record<string, boolean> = {};
+          for (const flag of featuresRes.data.allFeatures ?? []) map[flag.key] = flag.isGlobal;
+          for (const vf of featuresRes.data.vendorFeatures ?? []) {
+            if (vf.feature) map[vf.feature.key] = vf.isEnabled;
+          }
+          setFeatures(map);
+        }
       }
     } catch (err) {
       setVendorMessage({
@@ -155,6 +207,32 @@ export default function SettingsPage() {
       });
     } finally {
       setSavingProfile(false);
+    }
+  }
+
+  async function toggleFeature(key: string) {
+    const next = !features[key];
+    setTogglingFeature(key);
+    setFeatureMessage(null);
+    setFeatures((prev) => ({ ...prev, [key]: next })); // optimistic
+    try {
+      const res = await apiFetch('/vendors/me/features', {
+        method: 'PATCH',
+        body: JSON.stringify({ featureKey: key, isEnabled: next }),
+      });
+      if (!res.success) throw new Error(res.error || 'Update failed');
+      setFeatureMessage({
+        type: 'success',
+        text: `${next ? 'Enabled' : 'Disabled'} ${key.replace(/_/g, ' ')}`,
+      });
+    } catch (err) {
+      setFeatures((prev) => ({ ...prev, [key]: !next })); // revert on failure
+      setFeatureMessage({
+        type: 'error',
+        text: err instanceof Error ? err.message : 'Update failed',
+      });
+    } finally {
+      setTogglingFeature(null);
     }
   }
 
@@ -320,6 +398,62 @@ export default function SettingsPage() {
           <a href="/dashboard/onboarding" className="underline font-medium">
             Complete onboarding
           </a>
+        </div>
+      )}
+
+      {vendorId && (
+        <div className="bg-white border rounded-xl p-6 space-y-4">
+          <h2 className="font-semibold flex items-center gap-2">
+            <SlidersHorizontal className="w-5 h-5" /> Platform features
+          </h2>
+          <p className="text-sm text-slate-500">
+            Control how your shop connects to the Doorli marketplace. Changes apply immediately.
+          </p>
+          {featureMessage && (
+            <p
+              className={`text-sm flex items-center gap-2 ${
+                featureMessage.type === 'success' ? 'text-green-600' : 'text-red-600'
+              }`}
+            >
+              {featureMessage.type === 'success' ? (
+                <Check className="w-4 h-4" />
+              ) : (
+                <AlertCircle className="w-4 h-4" />
+              )}
+              {featureMessage.text}
+            </p>
+          )}
+          <ul className="divide-y">
+            {FEATURE_TOGGLES.map(({ key, label, description }) => {
+              const enabled = !!features[key];
+              const busy = togglingFeature === key;
+              return (
+                <li key={key} className="py-3 flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-medium text-slate-900">{label}</p>
+                    <p className="text-sm text-slate-500">{description}</p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={enabled}
+                    aria-label={label}
+                    disabled={busy}
+                    onClick={() => toggleFeature(key)}
+                    className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${
+                      enabled ? 'bg-blue-600' : 'bg-slate-300'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                        enabled ? 'translate-x-[22px]' : 'translate-x-0.5'
+                      }`}
+                    />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
         </div>
       )}
     </div>

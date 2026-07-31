@@ -12,21 +12,28 @@ import {
   Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
 import { homeForRole, useAuthStore } from '../../store/auth';
 import { useI18nStore } from '../../lib/i18n';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MapPin } from 'lucide-react-native';
 
+// Required so the browser session can be resumed after redirect on Android
+WebBrowser.maybeCompleteAuthSession();
+
 type AuthTab = 'password' | 'otp';
 type AuthMode = 'signin' | 'signup';
 type Role = 'customer' | 'vendor' | 'driver';
 
-const PRIMARY = '#006e25';
-const PRIMARY_CONTAINER = '#00b241';
-const ON_SURFACE = '#191c1d';
-const ON_SURFACE_VARIANT = '#3d4a3c';
-const SURFACE = '#f8f9fa';
-const OUTLINE_VARIANT = '#bccbb7';
+import { DoorliColors, DoorliGlass } from '../../constants/colors';
+
+const PRIMARY = DoorliColors.primary;
+const PRIMARY_CONTAINER = DoorliColors.sky;
+const ON_SURFACE = DoorliColors.text;
+const ON_SURFACE_VARIANT = DoorliColors.textMuted;
+const SURFACE = DoorliColors.navyMid;
+const OUTLINE_VARIANT = DoorliGlass.borderStrong;
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -48,7 +55,46 @@ export default function LoginScreen() {
   const [role, setRole] = useState<Role>('customer');
   const [loading, setLoading] = useState(false);
 
-  function goHome(roleHint?: string | null) {
+  const AUTH_URL = process.env.EXPO_PUBLIC_AUTH_URL ?? 'http://localhost:4001';
+
+  async function handleGoogleLogin() {
+    setLoading(true);
+    try {
+      // Build the deep-link redirect URI so the auth service can send us back
+      const redirectUri = Linking.createURL('auth/callback');
+
+      const result = await WebBrowser.openAuthSessionAsync(
+        `${AUTH_URL}/auth/google?mobile_redirect=${encodeURIComponent(redirectUri)}`,
+        redirectUri,
+      );
+
+      if (result.type === 'success' && result.url) {
+        const parsed = Linking.parse(result.url);
+        const token = parsed.queryParams?.token as string | undefined;
+        const refresh = parsed.queryParams?.refresh as string | undefined;
+        const newUser = parsed.queryParams?.newUser as string | undefined;
+        const tempToken = parsed.queryParams?.tempToken as string | undefined;
+
+        if (token && refresh) {
+          // Existing user — store tokens and navigate home
+          useAuthStore.getState().setTokens(token, refresh);
+          // Fetch user profile from decoded token (role is in JWT)
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          router.replace(homeForRole(payload.role) as any);
+        } else if (newUser === 'true' && tempToken) {
+          // New Google user — go to role selection screen
+          router.push({
+            pathname: '/(auth)/select-role',
+            params: { tempToken },
+          } as any);
+        }
+      }
+    } catch (err: any) {
+      alert(err.message || 'Google sign-in failed');
+    } finally {
+      setLoading(false);
+    }
+  }
     const r = roleHint || useAuthStore.getState().user?.role;
     router.replace(homeForRole(r) as any);
   }
@@ -307,6 +353,26 @@ export default function LoginScreen() {
             )}
           </View>
 
+          {/* ── Google OAuth ──────────────────────────── */}
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          <TouchableOpacity
+            style={styles.googleBtn}
+            onPress={handleGoogleLogin}
+            disabled={loading}
+            activeOpacity={0.85}
+          >
+            {/* Google G SVG rendered as a simple coloured block for RN */}
+            <View style={styles.googleIcon}>
+              <Text style={styles.googleIconText}>G</Text>
+            </View>
+            <Text style={styles.googleBtnText}>Continue with Google</Text>
+          </TouchableOpacity>
+
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -497,5 +563,59 @@ const styles = StyleSheet.create({
     color: ON_SURFACE_VARIANT,
     fontSize: 15,
     fontWeight: '600',
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
+    width: '100%',
+    maxWidth: 400,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: OUTLINE_VARIANT,
+  },
+  dividerText: {
+    marginHorizontal: 12,
+    fontSize: 13,
+    color: ON_SURFACE_VARIANT,
+  },
+  googleBtn: {
+    width: '100%',
+    maxWidth: 400,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderWidth: 1,
+    borderColor: OUTLINE_VARIANT,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  googleIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#4285F4',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  googleIconText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  googleBtnText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1a1a1a',
   },
 });

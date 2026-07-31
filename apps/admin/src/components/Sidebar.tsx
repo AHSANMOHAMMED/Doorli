@@ -16,6 +16,7 @@ import {
   X,
   Activity,
   ShoppingBag,
+  ToggleLeft,
 } from 'lucide-react';
 
 type NavItem = {
@@ -52,6 +53,7 @@ const groups: NavGroup[] = [
     label: 'System',
     items: [
       { href: '/health', label: 'Health', icon: Activity },
+      { href: '/features', label: 'Feature Flags', icon: ToggleLeft },
       { href: '/settings', label: 'Settings', icon: Settings },
     ],
   },

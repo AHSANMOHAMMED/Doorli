@@ -1,19 +1,18 @@
 import http from 'http';
-import { Server } from 'socket.io';
 import { createApp } from './app.js';
 import { env } from './config/env.js';
-import { setSocketServer, registerSocketAuth } from './lib/socket.js';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 
 const app = createApp();
 const server = http.createServer(app);
 
-const io = new Server(server, {
-  cors: { origin: '*', methods: ['GET', 'POST'] },
+// WebSocket Proxy to Notifications Service
+const wsProxy = createProxyMiddleware({
+  target: process.env.NOTIFICATIONS_SERVICE_URL || 'http://localhost:4007',
+  changeOrigin: true,
+  ws: true,
 });
-
-setSocketServer(io);
-registerSocketAuth(io);
+app.use('/socket.io', wsProxy);
 
 // Delivery/Dispatch service proxy
 app.use(
@@ -53,7 +52,7 @@ app.use(
   createProxyMiddleware({
     target: process.env.SEARCH_SERVICE_URL || 'http://localhost:4004',
     changeOrigin: true,
-    pathRewrite: (path) => `/api/search${path}`,
+    pathRewrite: (path) => path.replace(/^\/api\/v1\/search/, '/api/search'),
   })
 );
 
@@ -61,9 +60,9 @@ app.use(
 app.use(
   '/api/v1/ai',
   createProxyMiddleware({
-    target: process.env.AI_SERVICE_URL || 'http://localhost:4006',
+    target: process.env.AI_SERVICE_URL || 'http://localhost:4008',
     changeOrigin: true,
-    pathRewrite: (path) => `/api/ai${path}`,
+    pathRewrite: (path) => path.replace(/^\/api\/v1\/ai/, ''),
   })
 );
 
@@ -97,8 +96,10 @@ app.use(
   })
 );
 
+server.on('upgrade', wsProxy.upgrade!);
+
 server.listen(env.API_PORT, () => {
   console.log(`Doorli API running on http://localhost:${env.API_PORT}`);
   console.log(`Swagger docs at http://localhost:${env.API_PORT}/api/docs`);
-  console.log(`Socket.io ready on ws://localhost:${env.API_PORT}`);
+  console.log(`WebSocket proxy ready at ws://localhost:${env.API_PORT}/socket.io -> port 4007`);
 });

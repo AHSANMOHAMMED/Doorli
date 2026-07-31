@@ -351,21 +351,21 @@ body {
 /* --- Console surfaces ---------------------------------------------------- */
 
 .console-panel {
-  border-radius: 1rem;
+  border-radius: 1.25rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  background: linear-gradient(150deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.028));
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  box-shadow: 0 18px 44px -28px rgba(0, 0, 0, 0.85);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 8px 32px rgba(3, 7, 18, 0.45);
 }
 
 .console-panel-hover {
-  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
 }
 .console-panel-hover:hover {
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.18);
   transform: translateY(-2px);
-  box-shadow: 0 26px 56px -30px rgba(0, 0, 0, 0.95);
+  box-shadow: 0 14px 44px rgba(3, 7, 18, 0.6);
 }
 
 /* --- Console tables ------------------------------------------------------ */
@@ -461,12 +461,12 @@ body {
 
 .doorli-console .card,
 .doorli-console .bg-white {
-  border-radius: 1rem;
+  border-radius: 1.25rem;
   border-color: rgba(255, 255, 255, 0.1);
-  background: linear-gradient(150deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.028));
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  box-shadow: 0 18px 44px -28px rgba(0, 0, 0, 0.85);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 8px 32px rgba(3, 7, 18, 0.45);
   color: var(--doorli-text);
 }
 

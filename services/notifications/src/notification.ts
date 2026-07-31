@@ -103,9 +103,18 @@ async function persistInApp(payload: NotificationPayload): Promise<void> {
   }
 }
 
+import { initializeApp, getApp } from 'firebase-admin/app';
+import { getMessaging } from 'firebase-admin/messaging';
+
+// Initialize Firebase Admin (will use GOOGLE_APPLICATION_CREDENTIALS or default app)
+try {
+  initializeApp();
+} catch (e) {
+  // Ignore if already initialized
+}
+
 async function sendFcmPush(payload: NotificationPayload): Promise<void> {
-  const projectId = process.env.FIREBASE_PROJECT_ID;
-  const serverKey = process.env.FIREBASE_SERVER_KEY || process.env.FCM_SERVER_KEY;
+  const projectId = process.env.FIREBASE_PROJECT_ID || getApp().options.projectId;
 
   let tokens: string[] = [];
   try {
@@ -123,39 +132,49 @@ async function sendFcmPush(payload: NotificationPayload): Promise<void> {
     return;
   }
 
-  if (!serverKey || !projectId) {
-    console.log(`[notifications] FCM dry-run → ${payload.title}: ${payload.body} (${tokens.length} tokens)`);
+  if (!projectId) {
+    console.log(`[notifications] FCM dry-run (No Project ID) → ${payload.title}: ${payload.body} (${tokens.length} tokens)`);
     return;
   }
 
-  // Legacy FCM HTTP API (works with server key). Prefer HTTP v1 when migrating to service accounts.
-  for (const token of tokens) {
-    try {
-      const res = await fetch('https://fcm.googleapis.com/fcm/send', {
-        method: 'POST',
-        headers: {
-          Authorization: `key=${serverKey}`,
-          'Content-Type': 'application/json',
+  const message = {
+    notification: {
+      title: payload.title,
+      body: payload.body,
+    },
+    data: {
+      type: payload.type,
+      ...(payload.data
+        ? Object.fromEntries(
+            Object.entries(payload.data).map(([k, v]) => [k, String(v)]),
+          )
+        : {}),
+    },
+    tokens,
+    apns: {
+      payload: {
+        aps: {
+          sound: 'default',
         },
-        body: JSON.stringify({
-          to: token,
-          notification: { title: payload.title, body: payload.body },
-          data: {
-            type: payload.type,
-            ...(payload.data
-              ? Object.fromEntries(
-                  Object.entries(payload.data).map(([k, v]) => [k, String(v)]),
-                )
-              : {}),
-          },
-        }),
+      },
+    },
+  };
+
+  try {
+    const response = await getMessaging().sendEachForMulticast(message);
+    if (response.failureCount > 0) {
+      const failedTokens: string[] = [];
+      response.responses.forEach((resp: any, idx: number) => {
+        if (!resp.success) {
+          failedTokens.push(tokens[idx]);
+          console.warn(`[notifications] FCM error for token ${tokens[idx]}:`, resp.error);
+        }
       });
-      if (!res.ok) {
-        console.warn('[notifications] FCM error', await res.text());
-      }
-    } catch (err) {
-      console.warn('[notifications] FCM send failed', err);
+    } else {
+      console.log(`[notifications] FCM push sent successfully to ${response.successCount} devices`);
     }
+  } catch (err) {
+    console.warn('[notifications] FCM send failed', err);
   }
 }
 

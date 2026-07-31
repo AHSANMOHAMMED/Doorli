@@ -1,0 +1,572 @@
+/* ==========================================================================
+   Doorli Design Tokens v0.1
+   Single source of truth for all Doorli brand styling.
+   Import this in every app's globals.css via:
+     @import "@doorli/design-tokens";
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Brand Colors
+   -------------------------------------------------------------------------- */
+:root {
+    --doorli-navy: #060b1c;
+    --doorli-navy-mid: #0a132e;
+    --doorli-deep: #030712;
+    --doorli-blue: #185fa5;
+    --doorli-sky: #378add;
+    --doorli-teal: #1d9e75;
+    --doorli-mint: #5dcaa5;
+    --doorli-gold: #fac775;
+    --doorli-rose: #f2668b;
+    --doorli-purple: #8b5cf6;
+    --doorli-pink: #ec4899;
+    --doorli-text: #f4f7fb;
+    --doorli-text-muted: #9bb4d0;
+    --doorli-text-dim: #6b86a6;
+    --doorli-line: rgba(255, 255, 255, 0.1);
+    --doorli-line-strong: rgba(255, 255, 255, 0.18);
+    --doorli-radius: 0.875rem;
+    --doorli-radius-sm: 0.75rem;
+    --doorli-radius-lg: 1rem;
+    --doorli-radius-xl: 1.25rem;
+    --doorli-shadow: 0 8px 32px rgba(3, 7, 18, 0.45);
+    --doorli-shadow-lg: 0 18px 44px -28px rgba(0, 0, 0, 0.85);
+}
+
+/* --------------------------------------------------------------------------
+   2. Background Gradients
+   -------------------------------------------------------------------------- */
+.doorli-hero-plane {
+    background:
+        radial-gradient(ellipse 90% 70% at 18% 8%, rgba(24, 95, 165, 0.5), transparent 60%),
+        radial-gradient(ellipse 80% 60% at 88% 22%, rgba(29, 158, 117, 0.34), transparent 55%),
+        radial-gradient(ellipse 60% 50% at 55% 92%, rgba(250, 199, 117, 0.12), transparent 50%),
+        linear-gradient(165deg, #060b1c 0%, #0a132e 52%, #030712 100%);
+}
+
+.doorli-console-bg {
+    background:
+        radial-gradient(ellipse 90% 55% at 12% 0%, rgba(24, 95, 165, 0.4), transparent 58%),
+        radial-gradient(ellipse 70% 45% at 92% 12%, rgba(29, 158, 117, 0.24), transparent 52%),
+        linear-gradient(165deg, #060b1c 0%, #0a132e 48%, #030712 100%);
+    background-attachment: fixed;
+}
+
+/* --------------------------------------------------------------------------
+   3. Ambient Orbs
+   -------------------------------------------------------------------------- */
+.doorli-orb {
+    position: absolute;
+    z-index: 0;
+    border-radius: 9999px;
+    filter: blur(56px);
+    pointer-events: none;
+    animation: doorli-drift 16s ease-in-out infinite alternate;
+}
+
+.doorli-orb--a {
+    width: min(52vw, 420px);
+    height: min(52vw, 420px);
+    background: rgba(24, 95, 165, 0.4);
+    top: -10%;
+    left: -6%;
+}
+
+.doorli-orb--b {
+    width: min(44vw, 360px);
+    height: min(44vw, 360px);
+    background: rgba(29, 158, 117, 0.26);
+    bottom: 4%;
+    right: -6%;
+    animation-delay: -5s;
+}
+
+.doorli-orb--c {
+    width: min(28vw, 220px);
+    height: min(28vw, 220px);
+    background: rgba(250, 199, 117, 0.22);
+    top: 28%;
+    right: 22%;
+    animation-delay: -7s;
+}
+
+/* --------------------------------------------------------------------------
+   4. Glassmorphism Surfaces
+   -------------------------------------------------------------------------- */
+.doorli-glass {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--doorli-line-strong);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+}
+
+.doorli-glass-card {
+    position: relative;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.075) 0%, rgba(255, 255, 255, 0.02) 100%);
+    border: 1px solid var(--doorli-line);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: var(--doorli-radius-lg);
+    box-shadow: var(--doorli-shadow);
+    transition: border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.doorli-glass-card:hover {
+    border-color: var(--doorli-line-strong);
+    transform: translateY(-2px);
+    box-shadow: 0 14px 44px rgba(3, 7, 18, 0.6);
+}
+
+/* Thin luminous rule along the top edge of a card */
+.doorli-glass-card--lit::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 1px;
+    border-radius: var(--doorli-radius-lg) var(--doorli-radius-lg) 0 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+}
+
+.doorli-panel {
+    border-radius: var(--doorli-radius-lg);
+    border: 1px solid var(--doorli-line);
+    background: linear-gradient(150deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.028));
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    box-shadow: var(--doorli-shadow-lg);
+}
+
+/* --------------------------------------------------------------------------
+   5. Buttons
+   -------------------------------------------------------------------------- */
+.doorli-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.1rem;
+    border-radius: var(--doorli-radius-sm);
+    font-weight: 600;
+    font-size: 0.875rem;
+    white-space: nowrap;
+    transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+    border: none;
+}
+
+.doorli-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+.doorli-btn--primary {
+    background: linear-gradient(135deg, var(--doorli-blue) 0%, var(--doorli-sky) 100%);
+    color: #fff;
+    box-shadow: 0 6px 22px rgba(24, 95, 165, 0.38);
+}
+
+.doorli-btn--primary:hover:not(:disabled) {
+    transform: translateY(-1.5px);
+    box-shadow: 0 10px 30px rgba(55, 138, 221, 0.5);
+}
+
+.doorli-btn--accent {
+    background: linear-gradient(135deg, var(--doorli-teal) 0%, var(--doorli-mint) 100%);
+    color: #05231a;
+    box-shadow: 0 6px 22px rgba(29, 158, 117, 0.35);
+}
+
+.doorli-btn--accent:hover:not(:disabled) {
+    transform: translateY(-1.5px);
+    box-shadow: 0 10px 30px rgba(93, 202, 165, 0.45);
+}
+
+.doorli-btn--ghost {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--doorli-line-strong);
+    color: var(--doorli-text);
+}
+
+.doorli-btn--ghost:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.doorli-btn--danger {
+    background: rgba(242, 102, 139, 0.14);
+    border: 1px solid rgba(242, 102, 139, 0.4);
+    color: #ffc2d1;
+}
+
+.doorli-btn--danger:hover:not(:disabled) {
+    background: rgba(242, 102, 139, 0.24);
+}
+
+/* Legacy aliases */
+.doorli-cta-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.85rem 1.5rem;
+    border-radius: var(--doorli-radius-sm);
+    font-weight: 600;
+    background: linear-gradient(135deg, #185fa5 0%, #378add 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 20px rgba(24, 95, 165, 0.4);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.doorli-cta-primary:hover {
+    transform: translateY(-1.5px);
+    box-shadow: 0 6px 28px rgba(55, 138, 221, 0.55);
+}
+
+.doorli-cta-ghost {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.85rem 1.5rem;
+    border-radius: var(--doorli-radius-sm);
+    font-weight: 600;
+    color: var(--doorli-text);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--doorli-line-strong);
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.doorli-cta-ghost:hover {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* --------------------------------------------------------------------------
+   6. Inputs
+   -------------------------------------------------------------------------- */
+.doorli-input {
+    width: 100%;
+    padding: 0.65rem 0.9rem;
+    border-radius: var(--doorli-radius-sm);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--doorli-line);
+    color: var(--doorli-text);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.doorli-input::placeholder {
+    color: var(--doorli-text-dim);
+}
+
+.doorli-input:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(55, 138, 221, 0.65);
+    box-shadow: 0 0 0 3px rgba(55, 138, 221, 0.18);
+}
+
+/* --------------------------------------------------------------------------
+   7. Badges
+   -------------------------------------------------------------------------- */
+.doorli-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 9999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: capitalize;
+    border: 1px solid transparent;
+}
+
+.doorli-badge--success {
+    background: rgba(29, 158, 117, 0.16);
+    color: var(--doorli-mint);
+    border-color: rgba(29, 158, 117, 0.35);
+}
+
+.doorli-badge--warning {
+    background: rgba(250, 199, 117, 0.14);
+    color: var(--doorli-gold);
+    border-color: rgba(250, 199, 117, 0.32);
+}
+
+.doorli-badge--danger {
+    background: rgba(242, 102, 139, 0.14);
+    color: #ff9db4;
+    border-color: rgba(242, 102, 139, 0.34);
+}
+
+.doorli-badge--info {
+    background: rgba(55, 138, 221, 0.16);
+    color: #8ec5ff;
+    border-color: rgba(55, 138, 221, 0.35);
+}
+
+.doorli-badge--neutral {
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--doorli-text-muted);
+    border-color: var(--doorli-line);
+}
+
+/* --------------------------------------------------------------------------
+   8. Data Tables
+   -------------------------------------------------------------------------- */
+.doorli-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.doorli-table thead th {
+    text-align: left;
+    padding: 0.75rem 1rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--doorli-text-dim);
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid var(--doorli-line);
+}
+
+.doorli-table tbody td {
+    padding: 0.9rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    color: var(--doorli-text);
+    font-size: 0.875rem;
+}
+
+.doorli-table tbody tr {
+    transition: background 0.18s ease;
+}
+
+.doorli-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.doorli-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* --------------------------------------------------------------------------
+   9. Animations
+   -------------------------------------------------------------------------- */
+@keyframes doorli-drift {
+    from {
+        transform: translate(0, 0) scale(1);
+    }
+
+    to {
+        transform: translate(20px, -24px) scale(1.06);
+    }
+}
+
+@keyframes doorli-float {
+
+    0%,
+    100% {
+        transform: translateY(0px) rotate(0deg);
+    }
+
+    50% {
+        transform: translateY(-8px) rotate(1deg);
+    }
+}
+
+@keyframes doorli-pulse-glow {
+
+    0%,
+    100% {
+        box-shadow: 0 0 20px rgba(24, 95, 165, 0.4), 0 0 40px rgba(29, 158, 117, 0.2);
+    }
+
+    50% {
+        box-shadow: 0 0 30px rgba(24, 95, 165, 0.6), 0 0 60px rgba(29, 158, 117, 0.4);
+    }
+}
+
+@keyframes doorli-shimmer {
+    0% {
+        background-position: -200% center;
+    }
+
+    100% {
+        background-position: 200% center;
+    }
+}
+
+@keyframes doorli-bounce-in {
+    0% {
+        opacity: 0;
+        transform: scale(0.8) translateY(20px);
+    }
+
+    50% {
+        transform: scale(1.05) translateY(-5px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes doorli-slide-up {
+    0% {
+        opacity: 0;
+        transform: translateY(40px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes doorli-rise {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes doorli-gradient-shift {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+/* Animation utility classes */
+.animate-doorli-float {
+    animation: doorli-float 6s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+    animation: doorli-pulse-glow 3s ease-in-out infinite;
+}
+
+.animate-shimmer {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    background-size: 200% 100%;
+    animation: doorli-shimmer 2s infinite;
+}
+
+.animate-bounce-in {
+    animation: doorli-bounce-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-up {
+    animation: doorli-slide-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-gradient {
+    background-size: 200% 200%;
+    animation: doorli-gradient-shift 8s ease infinite;
+}
+
+.doorli-rise {
+    animation: doorli-rise 0.5s ease-out both;
+}
+
+.doorli-rise-1 {
+    animation: doorli-rise 0.5s ease-out 0.06s both;
+}
+
+.doorli-rise-2 {
+    animation: doorli-rise 0.5s ease-out 0.12s both;
+}
+
+.doorli-rise-3 {
+    animation: doorli-rise 0.5s ease-out 0.18s both;
+}
+
+/* --------------------------------------------------------------------------
+   10. Reduced Motion
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+    .doorli-orb {
+        animation: none;
+    }
+
+    .animate-doorli-float {
+        animation: none;
+    }
+
+    .animate-pulse-glow {
+        animation: none;
+    }
+
+    .animate-shimmer {
+        animation: none;
+    }
+
+    .animate-bounce-in {
+        animation: none;
+        opacity: 1;
+        transform: none;
+    }
+
+    .animate-slide-up {
+        animation: none;
+        opacity: 1;
+        transform: none;
+    }
+
+    .animate-gradient {
+        animation: none;
+    }
+
+    .doorli-rise,
+    .doorli-rise-1,
+    .doorli-rise-2,
+    .doorli-rise-3 {
+        animation: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+    }
+
+    .doorli-glass-card:hover,
+    .doorli-btn:hover:not(:disabled) {
+        transform: none !important;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   11. Scrollbar Styling
+   -------------------------------------------------------------------------- */
+.doorli-scrollbar {
+    scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+    scrollbar-width: thin;
+}
+
+.doorli-scrollbar::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+.doorli-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.14);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+.doorli-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.24);
+    background-clip: content-box;
+}

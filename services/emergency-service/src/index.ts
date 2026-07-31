@@ -1,9 +1,9 @@
 import { createApp } from './app.js';
 
-const port = process.env.PORT || 8087;
+const port = process.env.PORT || 8088;
 
-const app = createApp();
+const server = createApp();
 
-app.listen(port, () => {
-  console.log(`Forum service listening on port ${port}`);
+server.listen(port, () => {
+  console.log(`Emergency service listening on port ${port}`);
 });

@@ -33,8 +33,25 @@ const NAV: NavItem[] = [
   { href: '/dashboard/settings', label: 'Settings', icon: Settings, roles: ['vendor', 'admin', 'driver'], group: 'Manage' },
 ];
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+const NAV_FEATURE_REQUIREMENTS: Record<string, string> = {
+  '/dashboard/pos': 'pos',
+  '/dashboard/analytics': 'advanced_analytics',
+  '/dashboard/reviews': 'ai_reviews',
+};
+
+import { FeaturesProvider, useFeatures } from '@/lib/features-context';
+
+export default function DashboardLayoutWrapper({ children }: { children: React.ReactNode }) {
+  return (
+    <FeaturesProvider>
+      <DashboardLayout>{children}</DashboardLayout>
+    </FeaturesProvider>
+  );
+}
+
+function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, profile, loading, signOut } = useAuth();
+  const { hasFeature } = useFeatures();
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -60,7 +77,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!user) return null;
 
   const role = profile?.role ?? 'vendor';
-  const items = NAV.filter((item) => item.roles.includes(role));
+
+  const items = NAV.filter((item) => {
+    if (!item.roles.includes(role)) return false;
+    const reqFeature = NAV_FEATURE_REQUIREMENTS[item.href];
+    if (reqFeature && !hasFeature(reqFeature)) return false;
+    return true;
+  });
+
   const groups = items.reduce<Record<string, NavItem[]>>((acc, item) => {
     (acc[item.group] ??= []).push(item);
     return acc;
@@ -71,111 +95,110 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="doorli-console flex min-h-screen">
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-[264px] flex-col border-r border-white/[0.07] bg-[#050a19]/95 backdrop-blur-xl transition-transform duration-200 lg:static lg:translate-x-0 lg:bg-transparent ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-      >
-        <div className="flex h-16 shrink-0 items-center justify-between px-5">
-          <Link href="/dashboard" className="flex items-center gap-2.5">
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-[#185fa5] to-[#1d9e75] font-display text-base font-bold text-white shadow-lg">
-              D
-            </span>
-            <span className="font-display text-lg font-bold tracking-tight text-white">Doorli</span>
-          </Link>
-          <button onClick={() => setSidebarOpen(false)} className="lg:hidden" aria-label="Close menu">
-            <X className="h-5 w-5 text-doorli-muted" />
-          </button>
-        </div>
+          className={`fixed inset-y-0 left-0 z-50 flex w-[264px] flex-col border-r border-white/[0.07] bg-[#050a19]/95 backdrop-blur-xl transition-transform duration-200 lg:static lg:translate-x-0 lg:bg-transparent ${
+            sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
+        >
+          <div className="flex h-16 shrink-0 items-center justify-between px-5">
+            <Link href="/dashboard" className="flex items-center gap-2.5">
+              <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-[#185fa5] to-[#1d9e75] font-display text-base font-bold text-white shadow-lg">
+                D
+              </span>
+              <span className="font-display text-lg font-bold tracking-tight text-white">Doorli</span>
+            </Link>
+            <button onClick={() => setSidebarOpen(false)} className="lg:hidden" aria-label="Close menu">
+              <X className="h-5 w-5 text-doorli-muted" />
+            </button>
+          </div>
 
-        <nav className="flex-1 space-y-6 overflow-y-auto px-3 pb-4">
-          {Object.entries(groups).map(([group, groupItems]) => (
-            <div key={group}>
-              <p className="px-3 pb-2 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-doorli-dim">
-                {group}
-              </p>
-              <div className="space-y-0.5">
-                {groupItems.map((item) => {
-                  const Icon = item.icon;
-                  const active = pathname === item.href;
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={`group relative flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
-                        active
-                          ? 'bg-white/[0.09] text-white'
-                          : 'text-doorli-muted hover:bg-white/[0.05] hover:text-white'
-                      }`}
-                    >
-                      {active && (
-                        <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-gradient-to-b from-[#378add] to-[#1d9e75]" />
-                      )}
-                      <Icon className={`h-[18px] w-[18px] shrink-0 ${active ? 'text-[#5dcaa5]' : ''}`} />
-                      {item.label}
-                    </Link>
-                  );
-                })}
+          <nav className="flex-1 space-y-6 overflow-y-auto px-3 pb-4">
+            {Object.entries(groups).map(([group, groupItems]) => (
+              <div key={group}>
+                <p className="px-3 pb-2 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-doorli-dim">
+                  {group}
+                </p>
+                <div className="space-y-0.5">
+                  {groupItems.map((item) => {
+                    const Icon = item.icon;
+                    const active = pathname === item.href;
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={`group relative flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+                          active
+                            ? 'bg-white/[0.09] text-white'
+                            : 'text-doorli-muted hover:bg-white/[0.05] hover:text-white'
+                        }`}
+                      >
+                        {active && (
+                          <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-gradient-to-b from-[#378add] to-[#1d9e75]" />
+                        )}
+                        <Icon className={`h-[18px] w-[18px] shrink-0 ${active ? 'text-[#5dcaa5]' : ''}`} />
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
-        </nav>
+            ))}
+          </nav>
 
-        <div className="shrink-0 border-t border-white/[0.07] p-3">
-          <button
-            onClick={async () => {
-              await signOut();
-              router.push('/login');
-            }}
-            className="flex w-full min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-doorli-muted transition-colors hover:bg-[rgba(242,102,139,0.12)] hover:text-[#f2668b]"
-          >
-            <LogOut className="h-[18px] w-[18px]" />
-            Sign out
-          </button>
-        </div>
-      </aside>
-
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden" onClick={() => setSidebarOpen(false)} />
-      )}
-
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between gap-4 border-b border-white/[0.07] bg-[#060b1c]/70 px-4 backdrop-blur-xl lg:px-7">
-          <button
-            type="button"
-            onClick={() => setSidebarOpen(true)}
-            className="-ml-2 flex min-h-11 min-w-11 items-center justify-center lg:hidden"
-            aria-label="Open menu"
-          >
-            <Menu className="h-6 w-6 text-doorli-muted" />
-          </button>
-
-          <div className="flex-1" />
-
-          <div className="flex items-center gap-3">
+          <div className="shrink-0 border-t border-white/[0.07] p-3">
             <button
-              className="relative grid h-10 w-10 place-items-center rounded-xl border border-white/[0.08] bg-white/[0.04] transition-colors hover:bg-white/[0.09]"
-              aria-label="Notifications"
+              onClick={async () => {
+                await signOut();
+                router.push('/login');
+              }}
+              className="flex w-full min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-doorli-muted transition-colors hover:bg-[rgba(242,102,139,0.12)] hover:text-[#f2668b]"
             >
-              <Bell className="h-[18px] w-[18px] text-doorli-muted" />
-              <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-[#f2668b] ring-2 ring-[#060b1c]" />
+              <LogOut className="h-[18px] w-[18px]" />
+              Sign out
+            </button>
+          </div>
+        </aside>
+
+        {sidebarOpen && (
+          <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden" onClick={() => setSidebarOpen(false)} />
+        )}
+
+        <div className="flex min-w-0 flex-1 flex-col">
+          <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between gap-4 border-b border-white/[0.07] bg-[#060b1c]/70 px-4 backdrop-blur-xl lg:px-7">
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(true)}
+              className="-ml-2 flex min-h-11 min-w-11 items-center justify-center lg:hidden"
+              aria-label="Open menu"
+            >
+              <Menu className="h-6 w-6 text-doorli-muted" />
             </button>
 
-            <div className="flex items-center gap-3 rounded-xl border border-white/[0.08] bg-white/[0.04] py-1.5 pl-1.5 pr-3">
-              <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-[#185fa5] to-[#1d9e75] text-sm font-semibold text-white">
-                {initial}
-              </span>
-              <div className="hidden sm:block">
-                <p className="text-sm font-medium leading-tight text-white">{profile?.full_name ?? 'User'}</p>
-                <p className="text-xs capitalize leading-tight text-doorli-dim">{role}</p>
+            <div className="flex-1" />
+
+            <div className="flex items-center gap-3">
+              <button
+                className="relative grid h-10 w-10 place-items-center rounded-xl border border-white/[0.08] bg-white/[0.04] transition-colors hover:bg-white/[0.09]"
+                aria-label="Notifications"
+              >
+                <Bell className="h-[18px] w-[18px] text-doorli-muted" />
+                <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-[#f2668b] ring-2 ring-[#060b1c]" />
+              </button>
+
+              <div className="flex items-center gap-3 rounded-xl border border-white/[0.08] bg-white/[0.04] py-1.5 pl-1.5 pr-3">
+                <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-[#185fa5] to-[#1d9e75] text-sm font-semibold text-white">
+                  {initial}
+                </span>
+                <div className="hidden sm:block">
+                  <p className="text-sm font-medium leading-tight text-white">{profile?.full_name ?? 'User'}</p>
+                  <p className="text-xs capitalize leading-tight text-doorli-dim">{role}</p>
+                </div>
               </div>
             </div>
-          </div>
-        </header>
-
-        <main className="flex-1 overflow-y-auto p-4 lg:p-7">
-          <div className="mx-auto w-full max-w-[1400px] space-y-6">{children}</div>
-        </main>
+          </header>
+          <main className="flex-1 overflow-y-auto p-4 lg:p-7">
+            <div className="mx-auto w-full max-w-[1400px] space-y-6">{children}</div>
+          </main>
+        </div>
       </div>
-    </div>
   );
 }

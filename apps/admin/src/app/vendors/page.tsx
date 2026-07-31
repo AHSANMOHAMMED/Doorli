@@ -5,6 +5,7 @@ import { Search, Store, BadgeCheck, Plus, ExternalLink, RefreshCw } from 'lucide
 import { adminFetch } from '@/lib/api';
 import { erpDeepLink } from '@/lib/erp';
 import { PageHeader, Badge, TableShell, EmptyState, Skeleton, Panel } from '@/components/ui';
+import VendorFeaturesModal from '@/components/VendorFeaturesModal';
 
 type Vendor = {
   id: string;
@@ -43,6 +44,7 @@ export default function VendorsPage() {
     erpTenantId: '',
   });
   const [createMsg, setCreateMsg] = useState<string | null>(null);
+  const [manageFeaturesVendor, setManageFeaturesVendor] = useState<{id: string, name: string} | null>(null);
 
   const load = () =>
     adminFetch('/admin/vendors')
@@ -336,12 +338,27 @@ export default function VendorsPage() {
                         {busy === v.id ? 'Verifying…' : 'Verify'}
                       </button>
                     )}
+                    <button
+                      type="button"
+                      onClick={() => setManageFeaturesVendor({ id: v.id, name: v.businessName })}
+                      className="btn btn-ghost inline-flex items-center gap-1.5 text-xs text-doorli-blue ml-2"
+                    >
+                      Features
+                    </button>
                   </div>
                 </td>
               </tr>
             );
           })}
         </TableShell>
+      )}
+
+      {manageFeaturesVendor && (
+        <VendorFeaturesModal
+          vendorId={manageFeaturesVendor.id}
+          vendorName={manageFeaturesVendor.name}
+          onClose={() => setManageFeaturesVendor(null)}
+        />
       )}
     </>
   );

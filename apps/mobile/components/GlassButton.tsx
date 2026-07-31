@@ -1,28 +1,31 @@
 import { TouchableOpacity, TouchableOpacityProps, Text, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { DoorliColors, DoorliGradients, DoorliGlass, DoorliRadius } from '../constants/colors';
 
 interface GlassButtonProps extends TouchableOpacityProps {
   title: string;
-  variant?: 'primary' | 'secondary';
+  variant?: 'primary' | 'secondary' | 'accent';
   icon?: React.ReactNode;
 }
 
 export function GlassButton({ title, variant = 'primary', icon, style, ...props }: GlassButtonProps) {
-  const isPrimary = variant === 'primary';
-  
+  const gradientColors =
+    variant === 'primary'   ? DoorliGradients.primary :
+    variant === 'accent'    ? DoorliGradients.teal :
+    /* secondary */           ['rgba(255,255,255,0.10)', 'rgba(255,255,255,0.05)'] as const;
+
+  const isGhost = variant === 'secondary';
+
   return (
     <TouchableOpacity activeOpacity={0.8} style={[styles.container, style]} {...props}>
       <LinearGradient
-        colors={isPrimary ? ['rgba(37, 99, 235, 0.8)', 'rgba(14, 165, 233, 0.8)'] : ['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)']}
+        colors={gradientColors}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={[
-          styles.gradient,
-          !isPrimary && styles.secondaryBorder,
-        ]}
+        style={[styles.gradient, isGhost && styles.ghostBorder]}
       >
         {icon && <View style={styles.icon}>{icon}</View>}
-        <Text style={[styles.text, !isPrimary && styles.textSecondary]}>{title}</Text>
+        <Text style={styles.text}>{title}</Text>
       </LinearGradient>
     </TouchableOpacity>
   );
@@ -30,12 +33,12 @@ export function GlassButton({ title, variant = 'primary', icon, style, ...props 
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 16,
+    borderRadius: DoorliRadius.lg,
     overflow: 'hidden',
-    shadowColor: '#000',
+    shadowColor: DoorliColors.deep,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
     elevation: 5,
   },
   gradient: {
@@ -45,20 +48,17 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 24,
   },
-  secondaryBorder: {
+  ghostBorder: {
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
+    borderColor: DoorliGlass.borderStrong,
   },
   icon: {
     marginRight: 8,
   },
   text: {
-    color: '#fff',
+    color: '#ffffff',
     fontSize: 16,
     fontWeight: '700',
     letterSpacing: 0.5,
-  },
-  textSecondary: {
-    color: 'rgba(255,255,255,0.9)',
   },
 });
