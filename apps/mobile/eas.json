@@ -19,12 +19,33 @@
       }
     },
     "production": {
+      "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "http://140.245.207.93"
+        "EXPO_PUBLIC_API_URL": "https://api.localconnect.app"
+      },
+      "ios": {
+        "resourceClasses": ["2x", "3x"],
+        "appleProvisioningCredentials": {
+          "distributionType": "appStore"
+        }
+      },
+      "android": {
+        "buildType": "app-bundle",
+        "gradleCommand": ":app:bundleRelease"
       }
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleId": "",
+        "ascAppId": "",
+        "appleTeamId": ""
+      },
+      "android": {
+        "serviceAccountKeyPath": "./google-service-account.json",
+        "track": "internal"
+      }
+    }
   }
 }

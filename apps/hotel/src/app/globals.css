@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+:root {
+  --doorli-navy: #0a0f2e;
+  --doorli-surface: #121a36;
+  --doorli-mint: #5dcaa5;
+  --doorli-gold: #fac775;
+  --doorli-rose: #f2668b;
+  --doorli-text: #e8edf5;
+  --doorli-dim: #7b8ba3;
+}
+
+body {
+  font-family: var(--font-doorli-body), system-ui, sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-doorli-display), system-ui, sans-serif;
+}

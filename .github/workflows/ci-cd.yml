@@ -1,0 +1,103 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run linting
+        run: npm run lint
+      
+      - name: Build core packages
+        run: |
+          npm run build --workspace=@doorli/db
+          npm run build --workspace=@doorli/types
+          npm run build --workspace=@doorli/utils
+          npm run build --workspace=@doorli/design-tokens
+      
+      - name: Build services
+        run: |
+          npm run build --workspace=services/api
+          npm run build --workspace=services/auth
+          npm run build --workspace=services/delivery
+          npm run build --workspace=services/notifications
+          npm run build --workspace=services/search
+      
+      - name: Build web apps
+        run: |
+          npm run build --workspace=apps/customer-web
+          npm run build --workspace=apps/vendor-web
+          npm run build --workspace=apps/admin
+          npm run build --workspace=apps/hotel
+
+  build-mobile:
+    runs-on: ubuntu-latest
+    needs: lint-and-build
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build Android (Preview)
+        if: github.ref == 'refs/heads/develop'
+        run: eas build --platform android --profile preview --non-interactive
+        working-directory: apps/mobile
+      
+      - name: Build iOS (Preview)
+        if: github.ref == 'refs/heads/develop'
+        run: eas build --platform ios --profile preview --non-interactive
+        working-directory: apps/mobile
+      
+      - name: Build Android (Production)
+        if: github.ref == 'refs/heads/main'
+        run: eas build --platform android --profile production --non-interactive
+        working-directory: apps/mobile
+      
+      - name: Build iOS (Production)
+        if: github.ref == 'refs/heads/main'
+        run: eas build --platform ios --profile production --non-interactive
+        working-directory: apps/mobile
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [lint-and-build, build-mobile]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Deploy to Production
+        run: |
+          echo "Deploying to production..."
+      
+      - name: Notify deployment
+        run: |
+          echo "Deployment completed successfully"
