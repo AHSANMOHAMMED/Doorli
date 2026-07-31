@@ -9,13 +9,13 @@ import jwt from 'jsonwebtoken';
 export type UserRole = 'customer' | 'vendor' | 'driver' | 'admin';
 
 /** Shape attached to req.user after a valid JWT is verified. */
-export interface AuthUser {
-  userId: string;
-  role: UserRole;
-  phone?: string;
-  email?: string;
-  jti?: string;
-}
+  export interface AuthUser {
+    id: string;
+    role: UserRole;
+    phone?: string;
+    email?: string;
+    jti?: string;
+  }
 
 // Extend Express Request so TypeScript knows about req.user
 declare global {
