@@ -18,12 +18,10 @@ export async function authenticateToken(req: Request, _res: Response, next: Next
 
   try {
     // 1. Try standard Doorli Marketplace JWT
-    try {
-      const decoded = jwt.verify(token, JWT_SECRET) as any;
-      if (decoded && decoded.userId) {
-        req.user = decoded;
+    const decoded = jwt.verify(token, JWT_SECRET) as any;
+      if (decoded && (decoded.userId || decoded.id)) {
+        req.user = decoded.userId ? { ...decoded, id: decoded.userId } : decoded;
         return next();
-      }
     } catch (err) {
       // Fallback to ERP token check below if JWT fails
     }

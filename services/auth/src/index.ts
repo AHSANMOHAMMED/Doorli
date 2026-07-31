@@ -46,13 +46,13 @@ async function issueTokenPair(payload: {
   const jti = randomUUID();
 
   const accessToken = jwt.sign(
-    { userId: payload.userId, role: payload.role, phone: payload.phone, email: payload.email, jti },
+    { id: payload.userId, role: payload.role, phone: payload.phone, email: payload.email, jti },
     JWT_SECRET,
     { expiresIn: JWT_EXPIRES_IN },
   );
 
   const refreshToken = randomUUID();
-  // Store: refresh:{userId} → refreshToken  (EX 30 days)
+  // Store: refresh:{id} → refreshToken  (EX 30 days)
   await redis.set(`refresh:${payload.userId}`, refreshToken, 'EX', REFRESH_TTL_SEC);
 
   return { accessToken, refreshToken };
