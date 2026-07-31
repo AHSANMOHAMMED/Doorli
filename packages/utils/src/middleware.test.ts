@@ -14,7 +14,9 @@ import type { AuthUser, UserRole } from './middleware.js';
 const SECRET = 'super_secret_jwt_key_doorli_2026';
 
 function makeToken(payload: Partial<AuthUser>, expiresIn: string | number = '1h'): string {
-  return jwt.sign(payload, SECRET, { expiresIn } as jwt.SignOptions);
+  const tokenPayload = { ...payload };
+  if (payload.userId && !payload.id) tokenPayload.id = payload.userId;
+  return jwt.sign(tokenPayload, SECRET, { expiresIn } as jwt.SignOptions);
 }
 
 /** Build a minimal Express-like request with an optional Authorization header. */
@@ -90,7 +92,7 @@ describe('requireAuth middleware', () => {
   });
 
   it('passes for admin role accessing admin-only route', () => {
-    const token = makeToken({ userId: 'adm-1', role: 'admin' });
+    const token = makeToken({ id: 'adm-1', role: 'admin' });
     const req = makeReq(token);
     const { res, captured } = captureResponse();
     const next = makeNext();
@@ -99,13 +101,13 @@ describe('requireAuth middleware', () => {
 
     assert.equal(next.called(), true);
     assert.equal(captured.status, null);
-    assert.equal((req as Request).user?.userId, 'adm-1');
+    assert.equal((req as Request).user?.id, 'adm-1');
   });
 
   // ── 2. Valid token + wrong role → 403 ─────────────────────────────────
 
   it('returns 403 when role is not in allowedRoles', () => {
-    const token = makeToken({ userId: 'user-2', role: 'customer' });
+    const token = makeToken({ id: 'user-2', role: 'customer' });
     const req = makeReq(token);
     const { res, captured } = captureResponse();
     const next = makeNext();
@@ -118,7 +120,7 @@ describe('requireAuth middleware', () => {
   });
 
   it('returns 403 when vendor tries to access driver-only route', () => {
-    const token = makeToken({ userId: 'ven-1', role: 'vendor' });
+    const token = makeToken({ id: 'ven-1', role: 'vendor' });
     const req = makeReq(token);
     const { res, captured } = captureResponse();
     const next = makeNext();
@@ -186,7 +188,7 @@ describe('requireAuth middleware', () => {
   });
 
   it('returns 401 when token is signed with the wrong secret', () => {
-    const token = jwt.sign({ userId: 'user-x', role: 'customer' }, 'wrong_secret', { expiresIn: '1h' });
+    const token = jwt.sign({ id: 'user-x', role: 'customer' }, 'wrong_secret', { expiresIn: '1h' });
     const req = makeReq(token);
     const { res, captured } = captureResponse();
     const next = makeNext();
@@ -203,7 +205,7 @@ describe('requireAuth middleware', () => {
   it('requireAnyAuth allows any role through', () => {
     const roles: UserRole[] = ['customer', 'vendor', 'driver', 'admin'];
     for (const role of roles) {
-      const token = makeToken({ userId: `uid-${role}`, role });
+      const token = makeToken({ id: `uid-${role}`, role });
       const req = makeReq(token);
       const { res, captured } = captureResponse();
       const next = makeNext();
@@ -218,7 +220,7 @@ describe('requireAuth middleware', () => {
   // ── 7. req.user is populated on success ───────────────────────────────
 
   it('populates req.user with payload fields on success', () => {
-    const token = makeToken({ userId: 'usr-99', role: 'vendor', phone: '+94771234567' });
+    const token = makeToken({ id: 'usr-99', role: 'vendor', phone: '+94771234567' });
     const req = makeReq(token);
     const { res } = captureResponse();
     const next = makeNext();
@@ -226,7 +228,7 @@ describe('requireAuth middleware', () => {
     requireAuth(['vendor'])(req as Request, res as Response, next.fn);
 
     const user = (req as Request).user!;
-    assert.equal(user.userId, 'usr-99');
+    assert.equal(user.id, 'usr-99');
     assert.equal(user.role, 'vendor');
     assert.equal(user.phone, '+94771234567');
   });
