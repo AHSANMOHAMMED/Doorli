@@ -13,7 +13,7 @@ export function createApp() {
   app.use('/', forumRoutes);
 
   // Health check
-  app.get('/health/live', (_req, res) => {
+  app.get('/health/live', (_req: express.Request, res: express.Response) => {
     res.status(200).json({ status: 'ok', service: 'forum-service' });
   });
 

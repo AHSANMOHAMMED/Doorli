@@ -1,9 +1,10 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { PrismaClient } from '@doorli/db';
+import type { AuthRequest } from './types.d.js';
 
 const prisma = new PrismaClient();
 
-export const getForums = async (_req: Request, res: Response) => {
+export const getForums = async (_req: AuthRequest, res: Response) => {
   try {
     const forums = await prisma.forum.findMany({ where: { isActive: true } });
     res.json({ data: forums });
@@ -12,7 +13,7 @@ export const getForums = async (_req: Request, res: Response) => {
   }
 };
 
-export const createForum = async (req: Request, res: Response) => {
+export const createForum = async (req: AuthRequest, res: Response) => {
   try {
     const { name, description, category } = req.body;
     const forum = await prisma.forum.create({
@@ -24,7 +25,7 @@ export const createForum = async (req: Request, res: Response) => {
   }
 };
 
-export const getThreads = async (req: Request, res: Response) => {
+export const getThreads = async (req: AuthRequest, res: Response) => {
   try {
     const forumId = String(req.params.forumId);
     const threads = await prisma.thread.findMany({
@@ -38,12 +39,12 @@ export const getThreads = async (req: Request, res: Response) => {
   }
 };
 
-export const createThread = async (req: Request, res: Response) => {
+export const createThread = async (req: AuthRequest, res: Response) => {
   try {
     const forumId = String(req.params.forumId);
-    const authorId = (req as any).user.userId;
+    const authorId = req.user!.userId;
     const { title, content } = req.body;
-    
+
     const thread = await prisma.thread.create({
       data: { forumId, title, content, authorId },
     });
@@ -53,13 +54,12 @@ export const createThread = async (req: Request, res: Response) => {
   }
 };
 
-export const lockThread = async (req: Request, res: Response) => {
+export const lockThread = async (req: AuthRequest, res: Response) => {
   try {
     const threadId = String(req.params.threadId);
-    // Real implementation would have an isLocked column, using updated logic:
     const thread = await prisma.thread.update({
       where: { id: threadId },
-      data: { /* isLocked: true */ updatedAt: new Date() },
+      data: { updatedAt: new Date() },
     });
     res.json({ data: thread, message: 'Thread locked (mock)' });
   } catch (error: any) {
@@ -67,7 +67,7 @@ export const lockThread = async (req: Request, res: Response) => {
   }
 };
 
-export const getPosts = async (req: Request, res: Response) => {
+export const getPosts = async (req: AuthRequest, res: Response) => {
   try {
     const threadId = String(req.params.threadId);
     const posts = await prisma.post.findMany({
@@ -81,10 +81,10 @@ export const getPosts = async (req: Request, res: Response) => {
   }
 };
 
-export const createPost = async (req: Request, res: Response) => {
+export const createPost = async (req: AuthRequest, res: Response) => {
   try {
     const threadId = String(req.params.threadId);
-    const authorId = (req as any).user.userId;
+    const authorId = req.user!.userId;
     const { content, parentId } = req.body;
 
     const post = await prisma.post.create({
@@ -96,7 +96,7 @@ export const createPost = async (req: Request, res: Response) => {
   }
 };
 
-export const deletePost = async (req: Request, res: Response) => {
+export const deletePost = async (req: AuthRequest, res: Response) => {
   try {
     const postId = String(req.params.postId);
     const post = await prisma.post.update({
