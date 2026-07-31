@@ -502,7 +502,7 @@ app.get('/auth/features/:key', async (req: Request, res: Response) => {
     if (!user) return;
 
     const vendor = await prisma.vendor.findUnique({
-      where: { userId: user.userId },
+      where: { userId: user.id },
       select: { id: true },
     });
     if (!vendor) {
@@ -511,12 +511,31 @@ app.get('/auth/features/:key', async (req: Request, res: Response) => {
         .json({ error: 'Vendor profile required', code: 'VENDOR_PROFILE_REQUIRED' });
     }
 
-    const enabled = await hasFeature(vendor.id, req.params.key);
+    const enabled = await hasFeature(req.params.key, vendor.id);
     return res.json({ success: true, feature: req.params.key, enabled });
-  } catch (err) {
-    console.error('[features:key]', err);
-    return res.status(500).json({ error: 'Internal server error.' });
-  }
+   } catch (err) {
+     console.error('[features:key]', err);
+     return res.status(500).json({ error: 'Internal server error.' });
+   }
+
+  // Health check - vendor disabled features (GET /features/:key)
+  app.get('/features/:key(\w+(?:-\w+)*)', async (req: Request, res: Response, next: NextFunction) => {
+    const user = await featureAccess.authenticate(req, res);
+    if (!user) return;
+
+    const vendor = await prisma.vendor.findUnique({
+      where: { userId: user.id },
+      select: { id: true },
+    });
+    if (!vendor) {
+      return res
+        .status(403)
+        .json({ error: 'Vendor profile required', code: 'VENDOR_PROFILE_REQUIRED' });
+    }
+
+    const enabled = await hasFeature(req.params.key, vendor.id);
+    return res.json({ success: true, feature: req.params.key, enabled });
+  });
 });
 
 /**

@@ -19,7 +19,7 @@ const FEATURE_CACHE_TTL_SEC = 60;
 const featureCacheKey = (vendorId: string) => `vendor_features:${vendorId}`;
 
 type JwtUser = {
-  userId: string;
+  id: string;
   role: string;
   phone?: string | null;
   email?: string | null;
@@ -123,7 +123,7 @@ export function createFeatureAccess(deps: {
         }
 
         const vendor = await prisma.vendor.findUnique({
-          where: { userId: user.userId },
+          where: { userId: user.id },
           select: { id: true },
         });
         if (!vendor) {
@@ -133,7 +133,8 @@ export function createFeatureAccess(deps: {
           return;
         }
 
-        if (!(await hasFeature(vendor.id, featureKey))) {
+        const isFeatureEnabled = await hasFeature(featureKey, vendor.id);
+        if (!isFeatureEnabled) {
           res.status(403).json({
             error: `Feature '${featureKey}' is not enabled for this vendor`,
             code: 'FEATURE_DISABLED',
