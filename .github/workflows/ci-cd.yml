@@ -11,88 +11,83 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
-      - name: Run linting
-        run: npm run lint
-      
-      - name: Build core packages
-        run: |
-          npm run build --workspace=@doorli/db
-          npm run build --workspace=@doorli/types
-          npm run build --workspace=@doorli/utils
-          npm run build --workspace=@doorli/design-tokens
-      
-      - name: Build services
-        run: |
-          npm run build --workspace=services/api
-          npm run build --workspace=services/auth
-          npm run build --workspace=services/delivery
-          npm run build --workspace=services/notifications
-          npm run build --workspace=services/search
-      
-      - name: Build web apps
-        run: |
-          npm run build --workspace=apps/customer-web
-          npm run build --workspace=apps/vendor-web
-          npm run build --workspace=apps/admin
-          npm run build --workspace=apps/hotel
+
+      - name: Build all packages
+        run: npx turbo run build --filter='!@doorli/erp'
+
+      - name: Lint
+        run: npx turbo run lint
+
+      - name: Test
+        run: npx turbo run test
 
   build-mobile:
     runs-on: ubuntu-latest
     needs: lint-and-build
-    env:
-      HAS_EXPO_TOKEN: ${{ secrets.EXPO_TOKEN && 'true' || 'false' }}
-    if: ${{ env.HAS_EXPO_TOKEN == 'true' }}
+    if: github.event_name == 'push'
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-      
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check for EXPO_TOKEN
+        id: check-token
+        run: |
+          if [ -n "$EXPO_TOKEN" ]; then
+            echo "has_token=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_token=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::EXPO_TOKEN not set — skipping mobile builds"
+          fi
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
       - name: Setup EAS
+        if: steps.check-token.outputs.has_token == 'true'
         uses: expo/expo-github-action@v8
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
-      
-      - name: Install dependencies
-        run: npm ci
-      
+
       - name: Build Android (Preview)
-        if: github.ref == 'refs/heads/develop'
+        if: steps.check-token.outputs.has_token == 'true' && github.ref == 'refs/heads/develop'
         run: eas build --platform android --profile preview --non-interactive
         working-directory: apps/mobile
-      
+
       - name: Build iOS (Preview)
-        if: github.ref == 'refs/heads/develop'
+        if: steps.check-token.outputs.has_token == 'true' && github.ref == 'refs/heads/develop'
         run: eas build --platform ios --profile preview --non-interactive
         working-directory: apps/mobile
-      
+
       - name: Build Android (Production)
-        if: github.ref == 'refs/heads/main'
+        if: steps.check-token.outputs.has_token == 'true' && github.ref == 'refs/heads/main'
         run: eas build --platform android --profile production --non-interactive
         working-directory: apps/mobile
-      
+
       - name: Build iOS (Production)
-        if: github.ref == 'refs/heads/main'
+        if: steps.check-token.outputs.has_token == 'true' && github.ref == 'refs/heads/main'
         run: eas build --platform ios --profile production --non-interactive
         working-directory: apps/mobile
 
   deploy:
     runs-on: ubuntu-latest
-    needs: [lint-and-build]
+    needs: lint-and-build
     if: github.ref == 'refs/heads/main'
     environment: production
     steps:
@@ -110,7 +105,28 @@ jobs:
       - name: Build all packages
         run: npx turbo run build --filter='!@doorli/erp'
 
-      - name: Deploy API + Services to OCI
+      - name: Check deployment secrets
+        id: check-secrets
+        run: |
+          if [ -n "$OCI_HOST" ] && [ -n "$OCI_SSH_KEY" ]; then
+            echo "has_oci=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_oci=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::OCI secrets not configured — skipping OCI deploy"
+          fi
+          if [ -n "$VERCEL_TOKEN" ]; then
+            echo "has_vercel=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_vercel=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::VERCEL_TOKEN not configured — skipping Vercel deploy"
+          fi
+        env:
+          OCI_HOST: ${{ secrets.OCI_HOST }}
+          OCI_SSH_KEY: ${{ secrets.OCI_SSH_KEY }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy to OCI
+        if: steps.check-secrets.outputs.has_oci == 'true'
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.OCI_HOST }}
@@ -125,11 +141,11 @@ jobs:
             docker system prune -f
 
       - name: Deploy Web Apps (Vercel)
+        if: steps.check-secrets.outputs.has_vercel == 'true'
         run: |
           npx vercel --prod --yes --token=${{ secrets.VERCEL_TOKEN }} --scope=${{ secrets.VERCEL_ORG }} apps/customer-web
           npx vercel --prod --yes --token=${{ secrets.VERCEL_TOKEN }} --scope=${{ secrets.VERCEL_ORG }} apps/vendor-web
           npx vercel --prod --yes --token=${{ secrets.VERCEL_TOKEN }} --scope=${{ secrets.VERCEL_ORG }} apps/admin
-
-      - name: Notify deployment
-        if: success()
-        run: echo "Production deployment completed successfully"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG: ${{ secrets.VERCEL_ORG }}
