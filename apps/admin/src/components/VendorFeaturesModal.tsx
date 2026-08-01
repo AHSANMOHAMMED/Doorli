@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X, Loader2, ToggleLeft, Check } from "lucide-react";
+import { X, Loader2, ToggleLeft } from "lucide-react";
 import { adminFetch } from "@/lib/api";
 
 type FeatureFlag = {
@@ -35,7 +35,7 @@ export default function VendorFeaturesModal({ vendorId, vendorName, onClose }: P
         const res = await adminFetch<{ allFeatures: FeatureFlag[], vendorFeatures: VendorFeature[] }>(`/admin/vendors/${vendorId}/features`);
         
         // Handle wrapper correctly depending on how adminFetch unwraps
-        const data = (res as any).data || res;
+        const data = (res as { data?: typeof res } | typeof res).data || res;
         
         setFeatures(data.allFeatures || []);
         
@@ -53,7 +53,7 @@ export default function VendorFeaturesModal({ vendorId, vendorName, onClose }: P
     load();
   }, [vendorId]);
 
-  const toggleFeature = async (featureId: string, currentStatus: boolean, isGlobal: boolean) => {
+  const toggleFeature = async (featureId: string, currentStatus: boolean, _isGlobal: boolean) => {
     // If it's a global feature and hasn't been explicitly set for this vendor, its default is true.
     const newStatus = !currentStatus;
     setSavingId(featureId);

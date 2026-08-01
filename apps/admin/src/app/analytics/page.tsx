@@ -3,10 +3,10 @@
 import React, { useEffect, useState } from 'react';
 import { 
   TrendingUp, TrendingDown, DollarSign, ShoppingCart, Users, Store, 
-  Calendar, ArrowUpRight, BarChart3, PieChart, Activity 
+  BarChart3, PieChart, Activity 
 } from 'lucide-react';
 import { adminFetch } from '@/lib/api';
-import { PageHeader, Panel, StatCard, Badge, Skeleton } from '@/components/ui';
+import { PageHeader, Panel, StatCard, Skeleton } from '@/components/ui';
 
 type AnalyticsData = {
   revenue: {
@@ -108,7 +108,6 @@ export default function AnalyticsPage() {
 
   const revenueGrowth = calculateGrowth(data.revenue.thisMonth, data.revenue.lastMonth);
   const ordersGrowth = calculateGrowth(data.orders.thisMonth, data.orders.lastMonth);
-  const usersGrowth = calculateGrowth(data.users.newThisMonth, data.users.newThisMonth * 0.8);
 
   return (
     <>

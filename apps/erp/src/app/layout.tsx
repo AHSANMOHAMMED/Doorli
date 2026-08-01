@@ -13,29 +13,29 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://www.retailsmarterp.com'),
+  metadataBase: new URL('https://erp.doorli.me'),
   title: {
-    default: 'RetailSmart ERP - AI-Powered POS & Business Management',
-    template: '%s | RetailSmart ERP',
+    default: 'Doorli ERP - AI-Powered POS & Business Management',
+    template: '%s | Doorli ERP',
   },
   description: 'AI-powered cloud POS and ERP for retail, restaurants, supermarkets, and auto service. Unlimited users, unlimited transactions. Free to start.',
-  keywords: ['POS system', 'point of sale', 'ERP software', 'retail management', 'restaurant POS', 'supermarket POS', 'auto service management', 'inventory management', 'AI business', 'cloud POS', 'free POS'],
-  authors: [{ name: 'RetailSmart ERP' }],
-  creator: 'RetailSmart ERP',
-  publisher: 'RetailSmart ERP Pvt. Ltd.',
+  keywords: ['POS system', 'point of sale', 'ERP software', 'retail management', 'restaurant POS', 'supermarket POS', 'auto service management', 'inventory management', 'AI business', 'cloud POS', 'free POS', 'Doorli'],
+  authors: [{ name: 'Doorli' }],
+  creator: 'Doorli',
+  publisher: 'Doorli Pvt. Ltd.',
   formatDetection: { email: false, address: false, telephone: false },
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://www.retailsmarterp.com',
-    siteName: 'RetailSmart ERP',
-    title: 'RetailSmart ERP - AI-Powered POS & Business Management',
+    url: 'https://erp.doorli.me',
+    siteName: 'Doorli ERP',
+    title: 'Doorli ERP - AI-Powered POS & Business Management',
     description: 'AI-powered cloud POS and ERP. Unlimited users, unlimited transactions. All features on every plan. Free to start.',
-    images: [{ url: '/og/home', width: 1200, height: 630, alt: 'RetailSmart ERP - AI-Powered POS & Business Management' }],
+    images: [{ url: '/og/home', width: 1200, height: 630, alt: 'Doorli ERP - AI-Powered POS & Business Management' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'RetailSmart ERP - AI-Powered POS & Business Management',
+    title: 'Doorli ERP - AI-Powered POS & Business Management',
     description: 'AI-powered cloud POS and ERP. Unlimited users, unlimited transactions.',
     images: ['/og/home'],
   },
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
     google: '', // TODO: Add Google Search Console verification code
   },
   other: {
-    'application-name': 'RetailSmart ERP',
+    'application-name': 'Doorli ERP',
     'subject': 'Business Management Software, Point of Sale, ERP',
     'classification': 'Business',
     'coverage': 'Worldwide',

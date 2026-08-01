@@ -91,13 +91,42 @@ jobs:
     runs-on: ubuntu-latest
     needs: [lint-and-build, build-mobile]
     if: github.ref == 'refs/heads/main'
+    environment: production
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Deploy to Production
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build all packages
+        run: npx turbo run build --filter='!@doorli/erp'
+
+      - name: Deploy API + Services to OCI
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.OCI_HOST }}
+          username: ${{ secrets.OCI_USER }}
+          key: ${{ secrets.OCI_SSH_KEY }}
+          script: |
+            cd /opt/doorli
+            git pull origin main
+            docker compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
+            docker compose -f docker-compose.prod.yml exec -T api npx prisma migrate deploy
+            docker system prune -f
+
+      - name: Deploy Web Apps (Vercel)
         run: |
-          echo "Deploying to production..."
-      
+          npx vercel --prod --yes --token=${{ secrets.VERCEL_TOKEN }} --scope=${{ secrets.VERCEL_ORG }} apps/customer-web
+          npx vercel --prod --yes --token=${{ secrets.VERCEL_TOKEN }} --scope=${{ secrets.VERCEL_ORG }} apps/vendor-web
+          npx vercel --prod --yes --token=${{ secrets.VERCEL_TOKEN }} --scope=${{ secrets.VERCEL_ORG }} apps/admin
+
       - name: Notify deployment
-        run: |
-          echo "Deployment completed successfully"
+        if: success()
+        run: echo "Production deployment completed successfully"

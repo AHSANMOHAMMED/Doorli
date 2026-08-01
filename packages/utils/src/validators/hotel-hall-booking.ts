@@ -16,7 +16,7 @@ export const createHotelBookingSchema = z.object({
   paymentMethod: z.enum(['card', 'wallet', 'cod']).default('card'),
   customerInfo: z.object({
     name: z.string().min(2, 'Name must be at least 2 characters'),
-    phone: z.string().regex(/^\+?[0-9\s\-\(\)]+$/, 'Invalid phone number'),
+    phone: z.string().regex(/^\+?[0-9\s\-()]+$/, 'Invalid phone number'),
     email: z.string().email().optional(),
   }),
 });
@@ -40,7 +40,7 @@ export const createHallBookingSchema = z.object({
   paymentMethod: z.enum(['card', 'wallet', 'cod']).default('card'),
   customerInfo: z.object({
     name: z.string().min(2, 'Name must be at least 2 characters'),
-    phone: z.string().regex(/^\+?[0-9\s\-\(\)]+$/, 'Invalid phone number'),
+    phone: z.string().regex(/^\+?[0-9\s\-()]+$/, 'Invalid phone number'),
     email: z.string().email().optional(),
     company: z.string().optional(), // For corporate events
   }),

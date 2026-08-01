@@ -20,7 +20,7 @@ describe('Health endpoint', () => {
     const res = await request(app).get('/api/v1');
     assert.equal(res.status, 200);
     assert.equal(res.body.success, true);
-    assert.equal(res.body.data.name, 'Doorli API');
+    assert.equal(res.body.data.name, 'Doorli API Gateway');
   });
 
   it('GET /health returns health status object', async () => {

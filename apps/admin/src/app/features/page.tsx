@@ -27,7 +27,7 @@ export default function FeaturesPage() {
       const res = await adminFetch("/admin/features");
       const data = Array.isArray(res) ? res : res.items || [];
       // Handle wrapped API responses
-      const actualData = (res as any).data || data;
+      const actualData = (res as { data?: unknown[] }).data || data;
       setFeatures(Array.isArray(actualData) ? actualData : []);
     } catch (err) {
       console.error(err);

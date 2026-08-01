@@ -70,7 +70,7 @@ export const analyzeReview = async (req: Request, res: Response): Promise<void> 
     
     const result = await model.generateContent(prompt);
     let text = result.response.text().trim();
-    if (text.startsWith('\`\`\`json')) {
+    if (text.startsWith('```json')) {
       text = text.substring(7, text.length - 3).trim();
     }
     

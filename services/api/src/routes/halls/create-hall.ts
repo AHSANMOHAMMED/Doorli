@@ -10,7 +10,7 @@ const createHallSchema = z.object({
   description: z.string().min(10, 'Description must be at least 10 characters'),
   city: z.string(),
   address: z.string().optional(),
-  phone: z.string().regex(/^\+?[0-9\s\-\(\)]+$/, 'Invalid phone number'),
+  phone: z.string().regex(/^\+?[0-9\s\-()]+$/, 'Invalid phone number'),
   basePrice: z.number().positive('Base price must be positive'),
   capacity: z.object({
     min: z.number().int().min(1),
@@ -70,7 +70,7 @@ router.post('/', async (req, res) => {
 // Get all halls for customer search
 router.get('/', async (req, res) => {
   try {
-    const { city, minPrice, maxPrice, capacity: _capacity, featured, limit = 50 } = req.query;
+    const { city, minPrice, maxPrice, featured, limit = 50 } = req.query;
     
     const halls = [
       {

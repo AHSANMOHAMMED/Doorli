@@ -1,19 +1,35 @@
 services:
-  # DEPRECATED — live Super Admin is apps/admin at /admin (port 3005 via nginx).
-  # Opt-in only: docker compose --profile deprecated up super-admin
-  super-admin:
-    profiles: ["deprecated"]
-    build:
-      context: .
-      dockerfile: apps/super-admin/Dockerfile
-    ports:
-      - "3006:3000"
+  # ─── Infrastructure ────────────────────────────────────────────
+  db:
+    image: postgis/postgis:15-3.4-alpine
     environment:
-      - NODE_ENV=production
-      - NEXT_PUBLIC_SUPER_ADMIN_URL=http://doorli.me/admin
-    depends_on:
-      - api
+      - POSTGRES_USER=${POSTGRES_USER:-doorli}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-doorli_secret}
+      - POSTGRES_DB=${POSTGRES_DB:-doorli}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-doorli} -d ${POSTGRES_DB:-doorli}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
 
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ─── Core Services ─────────────────────────────────────────────
   api:
     build:
       context: .
@@ -23,26 +39,194 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3001
-      - DATABASE_URL=postgresql://user:pass@db:5432/doorli?schema=public
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-doorli}:${POSTGRES_PASSWORD:-doorli_secret}@db:5432/${POSTGRES_DB:-doorli}?schema=public
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - NOTIFICATIONS_SERVICE_URL=http://notifications:4007
+      - DELIVERY_SERVICE_URL=http://delivery:8086
+      - SEARCH_SERVICE_URL=http://search:4004
+      - AI_SERVICE_URL=http://ai:4008
+      - FORUM_SERVICE_URL=http://forum:8087
+      - EMERGENCY_SERVICE_URL=http://emergency:8088
+      - GOV_SERVICE_URL=http://gov:8089
+      - RIDE_HAILING_SERVICE_URL=http://ride-hailing:8085
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  auth:
+    build:
+      context: .
+      dockerfile: services/auth/Dockerfile
+    ports:
+      - "4001:4001"
+    environment:
+      - NODE_ENV=production
+      - PORT=4001
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-doorli}:${POSTGRES_PASSWORD:-doorli_secret}@db:5432/${POSTGRES_DB:-doorli}?schema=public
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  delivery:
+    build:
+      context: .
+      dockerfile: services/delivery/Dockerfile
+    ports:
+      - "8086:8086"
+    environment:
+      - NODE_ENV=production
+      - PORT=8086
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-doorli}:${POSTGRES_PASSWORD:-doorli_secret}@db:5432/${POSTGRES_DB:-doorli}?schema=public
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  notifications:
+    build:
+      context: .
+      dockerfile: services/notifications/Dockerfile
+    ports:
+      - "4007:4007"
+    environment:
+      - NODE_ENV=production
+      - NOTIFICATIONS_HEALTH_PORT=4007
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-doorli}:${POSTGRES_PASSWORD:-doorli_secret}@db:5432/${POSTGRES_DB:-doorli}?schema=public
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID:-}
+      - FIREBASE_PRIVATE_KEY=${FIREBASE_PRIVATE_KEY:-}
+      - FIREBASE_CLIENT_EMAIL=${FIREBASE_CLIENT_EMAIL:-}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  search:
+    build:
+      context: .
+      dockerfile: services/search/Dockerfile
+    ports:
+      - "4004:4004"
+    environment:
+      - NODE_ENV=production
+      - PORT=4004
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-doorli}:${POSTGRES_PASSWORD:-doorli_secret}@db:5432/${POSTGRES_DB:-doorli}?schema=public
+      - REDIS_URL=redis://redis:6379
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - KAFKA_BROKER=kafka:9092
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  ai:
+    build:
+      context: .
+      dockerfile: services/ai-service/Dockerfile
+    ports:
+      - "4008:4008"
+    environment:
+      - NODE_ENV=production
+      - PORT=4008
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-doorli}:${POSTGRES_PASSWORD:-doorli_secret}@db:5432/${POSTGRES_DB:-doorli}?schema=public
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
     depends_on:
       db:
         condition: service_healthy
     restart: unless-stopped
 
-  db:
-    image: postgis/postgis:15-3.4-alpine
+  forum:
+    build:
+      context: .
+      dockerfile: services/forum-service/Dockerfile
+    ports:
+      - "8087:8087"
     environment:
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=pass
-      - POSTGRES_DB=doorli
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d doorli"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-      start_period: 30s
+      - NODE_ENV=production
+      - PORT=8087
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-doorli}:${POSTGRES_PASSWORD:-doorli_secret}@db:5432/${POSTGRES_DB:-doorli}?schema=public
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  emergency:
+    build:
+      context: .
+      dockerfile: services/emergency-service/Dockerfile
+    ports:
+      - "8088:8088"
+    environment:
+      - NODE_ENV=production
+      - PORT=8088
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-doorli}:${POSTGRES_PASSWORD:-doorli_secret}@db:5432/${POSTGRES_DB:-doorli}?schema=public
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  gov:
+    build:
+      context: .
+      dockerfile: services/gov-service/Dockerfile
+    ports:
+      - "8089:8089"
+    environment:
+      - NODE_ENV=production
+      - PORT=8089
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-doorli}:${POSTGRES_PASSWORD:-doorli_secret}@db:5432/${POSTGRES_DB:-doorli}?schema=public
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  ride-hailing:
+    build:
+      context: .
+      dockerfile: services/ride-hailing/Dockerfile
+    ports:
+      - "8085:8085"
+    environment:
+      - NODE_ENV=production
+      - PORT=8085
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-doorli}:${POSTGRES_PASSWORD:-doorli_secret}@db:5432/${POSTGRES_DB:-doorli}?schema=public
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   pgdata:

@@ -10,7 +10,7 @@ const createHotelSchema = z.object({
   description: z.string().min(10, 'Description must be at least 10 characters'),
   city: z.string(),
   address: z.string().optional(),
-  phone: z.string().regex(/^\+?[0-9\s\-\(\)]+$/, 'Invalid phone number'),
+  phone: z.string().regex(/^\+?[0-9\s\-()]+$/, 'Invalid phone number'),
   pricePerNight: z.number().positive('Price must be positive'),
   rating: z.number().min(1).max(5).optional(),
   totalRooms: z.number().int().min(1, 'Must have at least 1 room'),

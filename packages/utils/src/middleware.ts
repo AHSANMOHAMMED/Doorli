@@ -19,6 +19,7 @@ export type UserRole = 'customer' | 'vendor' | 'driver' | 'admin';
 
 // Extend Express Request so TypeScript knows about req.user
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
       user?: AuthUser;

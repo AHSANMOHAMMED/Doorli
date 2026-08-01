@@ -118,7 +118,7 @@ export default function HotelHallVendorDashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
-        {vendorHotels.map((hotel, index) => (
+        {vendorHotels.map((hotel) => (
           <div key={hotel.id} className="bg-surface-container-high rounded-xl border border-surface-variant overflow-hidden hover:border-primary/50 transition-all animate-slide-up">
             <div className="relative h-40 bg-surface-variant">
               <div className="flex items-center justify-center h-full">
@@ -199,7 +199,7 @@ export default function HotelHallVendorDashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
-        {vendorHalls.map((hall, index) => (
+        {vendorHalls.map((hall) => (
           <div key={hall.id} className="bg-surface-container-high rounded-xl border border-surface-variant overflow-hidden hover:border-tertiary/50 transition-all animate-slide-up">
             <div className="relative h-40 bg-surface-variant">
               <div className="flex items-center justify-center h-full">
