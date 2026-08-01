@@ -47,6 +47,95 @@ export const getAlerts = async (_req: Request, res: Response) => {
   }
 };
 
+export const updateIncidentStatus = async (req: Request, res: Response) => {
+  try {
+    const id = String(req.params.id);
+    const { status } = req.body;
+
+    const validStatuses = ['open', 'in_progress', 'completed', 'cancelled'];
+    if (!validStatuses.includes(status)) {
+      res.status(400).json({ error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` });
+      return;
+    }
+
+    const incident = await prisma.incident.findUnique({ where: { id } });
+    if (!incident) {
+      res.status(404).json({ error: 'Incident not found' });
+      return;
+    }
+
+    const updated = await prisma.incident.update({
+      where: { id },
+      data: { status },
+    });
+
+    res.json({ data: updated });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const createAlert = async (req: Request, res: Response) => {
+  try {
+    const { senderId, type, priority, message, expiresAt } = req.body;
+
+    const alert = await prisma.alert.create({
+      data: {
+        senderId,
+        type,
+        priority,
+        message,
+        status: 'active',
+        expiresAt: expiresAt ? new Date(expiresAt) : null,
+      },
+    });
+
+    // Broadcast new alert to connected clients
+    const io = (req as any).io;
+    if (io) {
+      io.emit('emergency:alert:new', alert);
+    }
+
+    res.status(201).json({ data: alert });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const updateAlert = async (req: Request, res: Response) => {
+  try {
+    const id = String(req.params.id);
+    const { status } = req.body;
+
+    const validStatuses = ['active', 'resolved', 'dismissed'];
+    if (!validStatuses.includes(status)) {
+      res.status(400).json({ error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` });
+      return;
+    }
+
+    const alert = await prisma.alert.findUnique({ where: { id } });
+    if (!alert) {
+      res.status(404).json({ error: 'Alert not found' });
+      return;
+    }
+
+    const updated = await prisma.alert.update({
+      where: { id },
+      data: { status },
+    });
+
+    // Broadcast alert update
+    const io = (req as any).io;
+    if (io) {
+      io.emit('emergency:alert:update', updated);
+    }
+
+    res.json({ data: updated });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 export const triggerSOS = async (req: Request, res: Response) => {
   try {
     const { userId, latitude, longitude } = req.body;
@@ -58,7 +147,20 @@ export const triggerSOS = async (req: Request, res: Response) => {
         status: 'active',
       },
     });
-    // In a real implementation, this would emit an event to Kafka or trigger WebSocket notifications
+
+    // Broadcast SOS to all connected admin/emergency responder sockets
+    const io = (req as any).io;
+    if (io) {
+      io.to('admin:sos').emit('emergency:sos', {
+        id: sosRecord.id,
+        userId: sosRecord.userId,
+        latitude: sosRecord.latitude,
+        longitude: sosRecord.longitude,
+        status: sosRecord.status,
+        createdAt: sosRecord.createdAt,
+      });
+    }
+
     res.status(201).json({ data: sosRecord });
   } catch (error: any) {
     res.status(500).json({ error: error.message });

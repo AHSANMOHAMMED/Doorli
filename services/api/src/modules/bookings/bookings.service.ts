@@ -203,8 +203,31 @@ export async function createBooking(userId: string, input: CreateBookingInput) {
   const deposit = Number(input.depositAmount ?? 0);
   let payment = null;
   if (deposit > 0) {
-    // Mock initiatePayment since payments module was extracted
-    payment = { clientSecret: 'mock_secret' };
+    const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+    if (stripeSecretKey) {
+      // Real Stripe PaymentIntent
+      const stripe = (await import('stripe')).default;
+      const stripeInstance = new stripe(stripeSecretKey);
+      const paymentIntent = await stripeInstance.paymentIntents.create({
+        amount: Math.round(deposit * 100), // Convert to cents
+        currency: 'lkr',
+        metadata: {
+          bookingId: booking.id,
+          bookingNumber: booking.bookingNumber,
+        },
+      });
+      payment = {
+        clientSecret: paymentIntent.client_secret,
+        paymentIntentId: paymentIntent.id,
+      };
+    } else {
+      // Mock payment when Stripe is not configured
+      console.warn('Stripe not configured - using mock payment for deposit');
+      payment = {
+        clientSecret: 'mock_secret',
+        warning: 'Stripe not configured. This is a mock payment.',
+      };
+    }
   }
 
   const io = getSocketServer();

@@ -59,9 +59,9 @@ export const lockThread = async (req: AuthRequest, res: Response) => {
     const threadId = String(req.params.threadId);
     const thread = await prisma.thread.update({
       where: { id: threadId },
-      data: { updatedAt: new Date() },
+      data: { isLocked: true },
     });
-    res.json({ data: thread, message: 'Thread locked (mock)' });
+    res.json({ data: thread, message: 'Thread locked' });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import multer from 'multer';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, DeleteObjectCommand, ListObjectsV2Command, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { v4 as uuidv4 } from 'uuid';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -61,6 +62,70 @@ app.post('/api/storage/upload', upload.single('file') as any, async (req: Reques
   } catch (error) {
     console.error('Upload Error:', error);
     res.status(500).json({ error: 'Failed to upload file' });
+  }
+});
+
+app.delete('/api/storage/:key', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { key } = req.params;
+    const bucket = 'doorli-media';
+
+    const command = new DeleteObjectCommand({
+      Bucket: bucket,
+      Key: key,
+    });
+
+    await s3Client.send(command);
+
+    res.json({ success: true, message: `File ${key} deleted successfully` });
+  } catch (error) {
+    console.error('Delete Error:', error);
+    res.status(500).json({ error: 'Failed to delete file' });
+  }
+});
+
+app.get('/api/storage/list', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { prefix } = req.query;
+    const bucket = 'doorli-media';
+
+    const command = new ListObjectsV2Command({
+      Bucket: bucket,
+      Prefix: prefix as string || undefined,
+    });
+
+    const response = await s3Client.send(command);
+
+    const files = (response.Contents || []).map((item) => ({
+      key: item.Key,
+      size: item.Size,
+      lastModified: item.LastModified,
+    }));
+
+    res.json({ success: true, files, count: files.length });
+  } catch (error) {
+    console.error('List Error:', error);
+    res.status(500).json({ error: 'Failed to list files' });
+  }
+});
+
+app.get('/api/storage/presign/:key', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { key } = req.params;
+    const bucket = 'doorli-media';
+    const expiresIn = parseInt(req.query.expires as string) || 3600; // Default 1 hour
+
+    const command = new GetObjectCommand({
+      Bucket: bucket,
+      Key: key,
+    });
+
+    const url = await getSignedUrl(s3Client, command, { expiresIn });
+
+    res.json({ success: true, url, expiresAt: new Date(Date.now() + expiresIn * 1000) });
+  } catch (error) {
+    console.error('Presign Error:', error);
+    res.status(500).json({ error: 'Failed to generate presigned URL' });
   }
 });
 

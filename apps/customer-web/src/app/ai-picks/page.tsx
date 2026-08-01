@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Sparkles, Star, Store, Loader2, ArrowRight } from "lucide-react";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, getCustomerToken } from "@/lib/api";
 
 type Recommendation = {
   category: string;
@@ -20,9 +20,24 @@ export default function AIPicksPage() {
 
     async function load() {
       try {
+        // Get user ID from token or use a generic prompt
+        const token = getCustomerToken();
+        let userId = "anonymous";
+        
+        if (token) {
+          // Decode JWT to get user ID (simple base64 decode of payload)
+          try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            userId = payload.sub || payload.userId || payload.id || "anonymous";
+          } catch {
+            // If token parsing fails, use anonymous
+            userId = "anonymous";
+          }
+        }
+
         const data = await apiFetch<{ recommendations: Recommendation[] }>("/ai/recommendations", {
           method: "POST",
-          body: JSON.stringify({ userId: "mock-user-123" }), // Ideally from auth context
+          body: JSON.stringify({ userId }),
         });
 
         if (!cancelled) {
