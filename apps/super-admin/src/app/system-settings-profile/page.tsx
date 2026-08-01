@@ -8,10 +8,15 @@ export default function SystemSettingsProfilePage() {
   const [apiKeys, setApiKeys] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [config, setConfig] = useState<any>(null);
 
   useEffect(() => {
-    superAdminFetch('/admin/api-keys').then(res => {
-      if (res.success) setApiKeys(res.data);
+    Promise.all([
+      superAdminFetch('/admin/api-keys'),
+      superAdminFetch('/admin/diagnostics').catch(() => ({ success: false, data: {} })),
+    ]).then(([keysRes, diagRes]) => {
+      if (keysRes.success) setApiKeys(keysRes.data);
+      if (diagRes.success) setConfig(diagRes.data);
       setLoading(false);
     });
   }, []);
@@ -74,7 +79,7 @@ export default function SystemSettingsProfilePage() {
 </a>
 </nav>
 <div className="pt-sm border-t border-outline-variant">
-<div className="px-3 py-2 text-on-surface-variant font-caption text-caption uppercase tracking-wider">v2.4.0</div>
+<div className="px-3 py-2 text-on-surface-variant font-caption text-caption uppercase tracking-wider">v{config?.version ?? '2.4.0'}</div>
 <a className="flex items-center space-x-3 p-3 text-error hover:bg-error-container/20 rounded-lg transition-colors" href="#">
 <span className="material-symbols-outlined">logout</span>
 <span className="font-body-main text-body-main">Sign Out</span>
@@ -213,17 +218,17 @@ export default function SystemSettingsProfilePage() {
 <span className="material-symbols-outlined text-[120px]" >security</span>
 </div>
 <h3 className="font-label-medium text-label-medium text-on-surface-variant mb-base uppercase tracking-widest">Security Level</h3>
-<div className="font-kpi-number text-kpi-number text-tertiary mb-sm">ENCRYPTED</div>
+<div className="font-kpi-number text-kpi-number text-tertiary mb-sm">{config?.securityLevel ?? 'ENCRYPTED'}</div>
 <div className="space-y-sm">
 <div className="flex items-center justify-between text-xs">
 <span className="text-on-surface-variant">2FA Enforcement</span>
-<span className="text-tertiary font-bold">ACTIVE</span>
+<span className="text-tertiary font-bold">{config?.twoFactorStatus ?? 'ACTIVE'}</span>
 </div>
 <div className="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden">
-<div className="bg-tertiary h-full w-[85%] rounded-full"></div>
+<div className="bg-tertiary h-full rounded-full" style={{ width: `${config?.twoFactorEnforcementPercent ?? 85}%` }}></div>
 </div>
 <p className="font-caption text-caption text-on-surface-variant leading-tight">
-                                    System is operating under strict security protocols. Last audit: 4 hours ago.
+                                    {config?.securityAuditInfo ?? 'System is operating under strict security protocols. Last audit: 4 hours ago.'}
                                 </p>
 </div>
 </div>
@@ -258,15 +263,15 @@ export default function SystemSettingsProfilePage() {
 <div className="flex flex-col space-y-sm">
 <div className="flex justify-between items-center">
 <span className="font-caption text-caption text-on-surface-variant">Version</span>
-<span className="font-label-medium text-label-medium text-on-surface">2.4.0-build_732</span>
+<span className="font-label-medium text-label-medium text-on-surface">{config?.version ?? '2.4.0-build_732'}</span>
 </div>
 <div className="flex justify-between items-center">
 <span className="font-caption text-caption text-on-surface-variant">License</span>
-<span className="font-label-medium text-label-medium text-on-surface">Enterprise Pro</span>
+<span className="font-label-medium text-label-medium text-on-surface">{config?.license ?? 'Enterprise Pro'}</span>
 </div>
 <div className="flex justify-between items-center">
 <span className="font-caption text-caption text-on-surface-variant">Updated</span>
-<span className="font-label-medium text-label-medium text-on-surface">Oct 24, 2023</span>
+<span className="font-label-medium text-label-medium text-on-surface">{config?.lastUpdated ?? 'Oct 24, 2023'}</span>
 </div>
 <div className="pt-sm space-x-md">
 <a className="font-caption text-caption text-secondary hover:underline" href="#">Privacy Policy</a>

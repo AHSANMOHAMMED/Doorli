@@ -1,8 +1,57 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { superAdminFetch } from '@/lib/api';
 
 export default function MaintenanceCountdownPage() {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 });
+
+  useEffect(() => {
+    superAdminFetch('/admin/diagnostics')
+      .then(res => {
+        if (res.success) setData(res.data);
+        else setError(res.error || 'Failed to load diagnostics');
+      })
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const computeTimeLeft = useCallback(() => {
+    if (!data?.maintenanceWindow?.startTime) return { hours: 0, minutes: 0, seconds: 0 };
+    const start = new Date(data.maintenanceWindow.startTime).getTime();
+    const now = Date.now();
+    const diff = Math.max(0, start - now);
+    return {
+      hours: Math.floor(diff / 3600000),
+      minutes: Math.floor((diff % 3600000) / 60000),
+      seconds: Math.floor((diff % 60000) / 1000),
+    };
+  }, [data]);
+
+  useEffect(() => {
+    if (!data) return;
+    setTimeLeft(computeTimeLeft());
+    const interval = setInterval(() => setTimeLeft(computeTimeLeft()), 1000);
+    return () => clearInterval(interval);
+  }, [data, computeTimeLeft]);
+
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const timerDisplay = `${pad(timeLeft.hours)}:${pad(timeLeft.minutes)}:${pad(timeLeft.seconds)}`;
+
+  const activeSessions = data?.activeSessions ?? 0;
+  const drainRate = data?.drainRate ?? 0;
+  const broadcastStatus = data?.broadcastStatus ?? {};
+  const windowMinutes = data?.maintenanceWindow?.durationMinutes ?? 0;
+  const windowStatus = data?.maintenanceWindow?.status ?? 'Pending';
+  const windowScope = data?.maintenanceWindow?.scope ?? 'Global';
+  const windowType = data?.maintenanceWindow?.type ?? 'Critical';
+  const progressPercent = data?.maintenanceWindow?.progressPercent ?? 0;
+
+  if (loading) return <div className="min-h-screen bg-[#121212] flex items-center justify-center text-white">Loading...</div>;
+  if (error) return <div className="min-h-screen bg-[#121212] flex items-center justify-center text-red-400">Error: {error}</div>;
   return (
     <div className="min-h-screen bg-[#121212] text-[#e5e2e1]">
       
@@ -28,29 +77,29 @@ export default function MaintenanceCountdownPage() {
 <div className="md:col-span-8 space-y-gutter">
 <div className="glass-panel rounded-xl p-xl flex flex-col items-center justify-center text-center relative overflow-hidden">
 <div className="absolute top-0 left-0 w-full h-1 bg-surface-container-highest">
-<div className="h-full bg-primary transition-all duration-1000 ease-linear" id="progress-bar" ></div>
+<div className="h-full bg-primary transition-all duration-1000 ease-linear" id="progress-bar" style={{ width: `${progressPercent}%` }}></div>
 </div>
 <div className="flex items-center gap-2 text-primary mb-md">
 <span className="material-symbols-outlined animate-pulse" >warning</span>
 <span className="font-label-medium text-label-medium tracking-widest uppercase">System Maintenance Protocol Alpha-9</span>
 </div>
-<h1 className="font-screen-title text-5xl md:text-7xl mb-xl text-on-surface tracking-tighter countdown-digit" id="timer">00:14:59</h1>
+<h1 className="font-screen-title text-5xl md:text-7xl mb-xl text-on-surface tracking-tighter countdown-digit" id="timer">{timerDisplay}</h1>
 <div className="grid grid-cols-4 gap-xl w-full max-w-2xl border-t border-outline-variant pt-xl">
 <div>
 <div className="text-on-surface-variant font-caption text-caption uppercase mb-1">Status</div>
-<div className="text-tertiary font-section-header text-section-header">Pending</div>
+<div className="text-tertiary font-section-header text-section-header">{windowStatus}</div>
 </div>
 <div>
 <div className="text-on-surface-variant font-caption text-caption uppercase mb-1">Window</div>
-<div className="text-on-surface font-section-header text-section-header">120m</div>
+<div className="text-on-surface font-section-header text-section-header">{windowMinutes}m</div>
 </div>
 <div>
 <div className="text-on-surface-variant font-caption text-caption uppercase mb-1">Scope</div>
-<div className="text-on-surface font-section-header text-section-header">Global</div>
+<div className="text-on-surface font-section-header text-section-header">{windowScope}</div>
 </div>
 <div>
 <div className="text-on-surface-variant font-caption text-caption uppercase mb-1">Type</div>
-<div className="text-on-surface font-section-header text-section-header">Critical</div>
+<div className="text-on-surface font-section-header text-section-header">{windowType}</div>
 </div>
 </div>
 </div>
@@ -78,7 +127,7 @@ export default function MaintenanceCountdownPage() {
 <div className="flex items-end justify-between">
 <div>
 <div className="text-on-surface-variant font-caption text-caption mb-1">Active Sessions</div>
-<div className="font-kpi-number text-kpi-number text-on-surface">1,284</div>
+<div className="font-kpi-number text-kpi-number text-on-surface">{activeSessions.toLocaleString()}</div>
 </div>
 <div className="text-error font-label-medium text-label-medium mb-1 flex items-center">
 <span className="material-symbols-outlined text-sm">trending_up</span>
@@ -88,7 +137,7 @@ export default function MaintenanceCountdownPage() {
 <div className="space-y-sm">
 <div className="flex justify-between text-caption font-caption text-on-surface-variant">
 <span>Session Drain Rate</span>
-<span>42/min</span>
+<span>{drainRate}/min</span>
 </div>
 <div className="w-full bg-surface-container-highest h-1 rounded-full overflow-hidden">
 <div className="bg-secondary h-full" ></div>
@@ -106,7 +155,7 @@ export default function MaintenanceCountdownPage() {
 </div>
 <div className="flex-1">
 <div className="text-label-medium font-label-medium text-on-surface">Email Notification</div>
-<div className="text-caption font-caption text-on-surface-variant">100% Delivered</div>
+<div className="text-caption font-caption text-on-surface-variant">{broadcastStatus.email ?? 'N/A'}</div>
 </div>
 <span className="material-symbols-outlined text-tertiary">check_circle</span>
 </div>
@@ -116,7 +165,7 @@ export default function MaintenanceCountdownPage() {
 </div>
 <div className="flex-1">
 <div className="text-label-medium font-label-medium text-on-surface">Push Notification</div>
-<div className="text-caption font-caption text-on-surface-variant">100% Delivered</div>
+<div className="text-caption font-caption text-on-surface-variant">{broadcastStatus.push ?? 'N/A'}</div>
 </div>
 <span className="material-symbols-outlined text-tertiary">check_circle</span>
 </div>
@@ -126,9 +175,13 @@ export default function MaintenanceCountdownPage() {
 </div>
 <div className="flex-1">
 <div className="text-label-medium font-label-medium text-on-surface">External Webhooks</div>
-<div className="text-caption font-caption text-on-surface-variant">Processing (8/12)</div>
+<div className="text-caption font-caption text-on-surface-variant">{broadcastStatus.webhooks ?? 'N/A'}</div>
 </div>
-<div className="w-4 h-4 border-2 border-secondary border-t-transparent rounded-full animate-spin"></div>
+{broadcastStatus.webhooksPending ? (
+  <div className="w-4 h-4 border-2 border-secondary border-t-transparent rounded-full animate-spin"></div>
+) : (
+  <span className="material-symbols-outlined text-tertiary">check_circle</span>
+)}
 </div>
 </div>
 </div>

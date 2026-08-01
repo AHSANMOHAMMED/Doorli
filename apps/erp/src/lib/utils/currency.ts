@@ -204,6 +204,7 @@ export async function fetchExchangeRates(): Promise<ExchangeRates | null> {
       date: 'fallback', // Marked as fallback, not a real date
       rates: { ...FALLBACK_RATES },
       source: 'fallback',
+      fallback: true,
     }
   }
 

@@ -50,7 +50,10 @@ export function requireAuth(allowedRoles: UserRole[]) {
     }
 
     const token = authHeader.slice(7).trim();
-    const secret = process.env.JWT_SECRET || 'super_secret_jwt_key_doorli_2026';
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET environment variable is required');
+    }
+    const secret = process.env.JWT_SECRET;
 
     let payload: AuthUser;
     try {

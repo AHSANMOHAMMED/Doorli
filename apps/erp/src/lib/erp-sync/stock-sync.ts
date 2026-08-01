@@ -25,7 +25,10 @@ function marketplaceBaseUrl(): string | null {
 }
 
 function erpSecret(): string {
-  return (process.env.ERP_INTERNAL_SECRET || 'doorli_internal_sync_secret').replace(/^Bearer\s+/i, '')
+  if (!process.env.ERP_INTERNAL_SECRET) {
+    throw new Error('ERP_INTERNAL_SECRET environment variable is required')
+  }
+  return process.env.ERP_INTERNAL_SECRET.replace(/^Bearer\s+/i, '')
 }
 
 /**

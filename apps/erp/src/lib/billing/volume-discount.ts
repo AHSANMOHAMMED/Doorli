@@ -19,6 +19,7 @@ export interface VolumeDiscountResult {
   total: number
 }
 
+// WARNING: This is a sync fallback - prefer using async version from @/lib/billing/settings
 /** Synchronous fallback - uses hardcoded tiers. Prefer async version for server code. */
 export function getVolumeDiscountPercent(companyCount: number): number {
   if (companyCount >= 11) return 30

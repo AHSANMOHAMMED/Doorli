@@ -8,25 +8,42 @@ export default function TrafficReroutingControlsPage() {
   const [regions, setRegions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [rules, setRules] = useState<any[]>([]);
+  const [failover, setFailover] = useState<any>(null);
 
   useEffect(() => {
-    superAdminFetch('/admin/traffic-routing').then(res => {
-      if (res.success) {
-        setRegions(res.data.regions || []);
-      }
-      setLoading(false);
-    });
+    superAdminFetch('/admin/traffic-routing')
+      .then(res => {
+        if (res.success) {
+          setRegions(res.data.regions || []);
+          setRules(res.data.rules || []);
+          setFailover(res.data.failover || null);
+        } else {
+          setError(res.error || 'Failed to load traffic routing');
+        }
+      })
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
   }, []);
 
   const handleApply = async () => {
     setApplying(true);
-    // Simulate apply
-    await new Promise(r => setTimeout(r, 800));
-    alert('Traffic routing changes applied successfully');
-    setApplying(false);
+    try {
+      await superAdminFetch('/admin/traffic-routing', {
+        method: 'POST',
+        body: JSON.stringify({ regions })
+      });
+      alert('Traffic routing changes applied successfully');
+    } catch (err) {
+      alert('Failed to apply routing changes');
+    } finally {
+      setApplying(false);
+    }
   };
 
   if (loading) return <div className="min-h-screen bg-[#121212] flex items-center justify-center text-white">Loading...</div>;
+  if (error) return <div className="min-h-screen bg-[#121212] flex items-center justify-center text-red-400">Error: {error}</div>;
 
   return (
     <div className="min-h-screen bg-[#121212] text-[#e5e2e1]">
@@ -109,30 +126,40 @@ export default function TrafficReroutingControlsPage() {
 </div>
 </div>
 <div className="space-y-xl">
-{/*  Cluster Alpha  */}
-<div className="space-y-sm">
-<div className="flex justify-between items-center">
-<span className="font-label-medium text-on-surface">Cluster-Alpha (Primary)</span>
-<span className="font-kpi-number text-primary text-[20px]">45%</span>
-</div>
-<input className="w-full" type="range" value="45"/>
-</div>
-{/*  Cluster Beta  */}
-<div className="space-y-sm">
-<div className="flex justify-between items-center">
-<span className="font-label-medium text-on-surface">Cluster-Beta (Secondary)</span>
-<span className="font-kpi-number text-primary text-[20px]">30%</span>
-</div>
-<input className="w-full" type="range" value="30"/>
-</div>
-{/*  Cluster Gamma  */}
-<div className="space-y-sm">
-<div className="flex justify-between items-center">
-<span className="font-label-medium text-on-surface">Cluster-Gamma (Burst)</span>
-<span className="font-kpi-number text-primary text-[20px]">25%</span>
-</div>
-<input className="w-full" type="range" value="25"/>
-</div>
+  {regions.map((region: any, idx: number) => (
+    <div key={region.name || idx} className="space-y-sm">
+      <div className="flex justify-between items-center">
+        <span className="font-label-medium text-on-surface">{region.name}</span>
+        <span className="font-kpi-number text-primary text-[20px]">{region.load}%</span>
+      </div>
+      <input className="w-full" type="range" value={region.load} readOnly />
+    </div>
+  ))}
+  {regions.length === 0 && (
+    <>
+    <div className="space-y-sm">
+      <div className="flex justify-between items-center">
+        <span className="font-label-medium text-on-surface">Cluster-Alpha (Primary)</span>
+        <span className="font-kpi-number text-primary text-[20px]">45%</span>
+      </div>
+      <input className="w-full" type="range" value="45" readOnly />
+    </div>
+    <div className="space-y-sm">
+      <div className="flex justify-between items-center">
+        <span className="font-label-medium text-on-surface">Cluster-Beta (Secondary)</span>
+        <span className="font-kpi-number text-primary text-[20px]">30%</span>
+      </div>
+      <input className="w-full" type="range" value="30" readOnly />
+    </div>
+    <div className="space-y-sm">
+      <div className="flex justify-between items-center">
+        <span className="font-label-medium text-on-surface">Cluster-Gamma (Burst)</span>
+        <span className="font-kpi-number text-primary text-[20px]">25%</span>
+      </div>
+      <input className="w-full" type="range" value="25" readOnly />
+    </div>
+    </>
+  )}
 </div>
 </div>
 </div>
@@ -144,22 +171,35 @@ export default function TrafficReroutingControlsPage() {
 <span className="material-symbols-outlined text-doorli-red" data-icon="emergency_home">emergency_home</span>
                         Failover Strategy
                     </h3>
-<p className="font-caption text-on-surface-variant mb-md leading-relaxed">If US-East health drops below 85%, shift remaining traffic instantly.</p>
+<p className="font-caption text-on-surface-variant mb-md leading-relaxed">{failover?.description ?? 'If US-East health drops below 85%, shift remaining traffic instantly.'}</p>
 <div className="space-y-md">
-<div className="bg-surface-container-low border border-outline-variant p-sm rounded-lg">
-<label className="block font-caption text-on-surface-variant mb-1">Target Regional Peer 1</label>
-<div className="flex justify-between items-center">
-<span className="font-label-medium text-on-surface">EU-Central</span>
-<span className="font-label-medium text-primary">70%</span>
-</div>
-</div>
-<div className="bg-surface-container-low border border-outline-variant p-sm rounded-lg">
-<label className="block font-caption text-on-surface-variant mb-1">Target Regional Peer 2</label>
-<div className="flex justify-between items-center">
-<span className="font-label-medium text-on-surface">AP-South</span>
-<span className="font-label-medium text-primary">30%</span>
-</div>
-</div>
+  {failover?.peers?.map((peer: any, idx: number) => (
+    <div key={idx} className="bg-surface-container-low border border-outline-variant p-sm rounded-lg">
+      <label className="block font-caption text-on-surface-variant mb-1">Target Regional Peer {idx + 1}</label>
+      <div className="flex justify-between items-center">
+        <span className="font-label-medium text-on-surface">{peer.name}</span>
+        <span className="font-label-medium text-primary">{peer.percentage}%</span>
+      </div>
+    </div>
+  ))}
+  {(!failover?.peers || failover.peers.length === 0) && (
+    <>
+    <div className="bg-surface-container-low border border-outline-variant p-sm rounded-lg">
+      <label className="block font-caption text-on-surface-variant mb-1">Target Regional Peer 1</label>
+      <div className="flex justify-between items-center">
+        <span className="font-label-medium text-on-surface">EU-Central</span>
+        <span className="font-label-medium text-primary">70%</span>
+      </div>
+    </div>
+    <div className="bg-surface-container-low border border-outline-variant p-sm rounded-lg">
+      <label className="block font-caption text-on-surface-variant mb-1">Target Regional Peer 2</label>
+      <div className="flex justify-between items-center">
+        <span className="font-label-medium text-on-surface">AP-South</span>
+        <span className="font-label-medium text-primary">30%</span>
+      </div>
+    </div>
+    </>
+  )}
 <button className="w-full py-2 border border-dashed border-outline-variant rounded-lg text-on-surface-variant font-caption hover:bg-surface-bright transition-all">
                             + Add Failover Destination
                         </button>
@@ -177,30 +217,45 @@ export default function TrafficReroutingControlsPage() {
 </button>
 </div>
 <div className="space-y-sm">
-{/*  Rule 1  */}
-<div className="p-sm bg-surface-container-low border border-outline-variant rounded-lg group">
-<div className="flex justify-between items-start mb-2">
-<span className="font-label-medium text-on-surface">Latency Opt-01</span>
-<span className="px-1.5 py-0.5 rounded text-[10px] bg-tertiary-container/20 text-tertiary uppercase font-bold">Active</span>
-</div>
-<p className="font-caption text-on-surface-variant leading-tight mb-3">Reroute 10% EU-West → US-East for optimization.</p>
-<div className="flex justify-between items-center">
-<button className="text-xs text-primary hover:underline">Edit Rule</button>
-<span className="material-symbols-outlined text-on-surface-variant text-sm cursor-pointer" data-icon="more_vert">more_vert</span>
-</div>
-</div>
-{/*  Rule 2  */}
-<div className="p-sm bg-surface-container-low border border-outline-variant rounded-lg opacity-60">
-<div className="flex justify-between items-start mb-2">
-<span className="font-label-medium text-on-surface">CDN Bypass</span>
-<span className="px-1.5 py-0.5 rounded text-[10px] bg-outline-variant text-on-surface-variant uppercase font-bold">Paused</span>
-</div>
-<p className="font-caption text-on-surface-variant leading-tight mb-3">Force direct ingress for known static assets.</p>
-<div className="flex justify-between items-center">
-<button className="text-xs text-primary hover:underline">Edit Rule</button>
-<span className="material-symbols-outlined text-on-surface-variant text-sm cursor-pointer" data-icon="play_arrow">play_arrow</span>
-</div>
-</div>
+  {rules.map((rule: any, idx: number) => (
+    <div key={idx} className={`p-sm bg-surface-container-low border border-outline-variant rounded-lg group ${rule.status !== 'active' ? 'opacity-60' : ''}`}>
+      <div className="flex justify-between items-start mb-2">
+        <span className="font-label-medium text-on-surface">{rule.name}</span>
+        <span className={`px-1.5 py-0.5 rounded text-[10px] uppercase font-bold ${rule.status === 'active' ? 'bg-tertiary-container/20 text-tertiary' : 'bg-outline-variant text-on-surface-variant'}`}>{rule.status}</span>
+      </div>
+      <p className="font-caption text-on-surface-variant leading-tight mb-3">{rule.description}</p>
+      <div className="flex justify-between items-center">
+        <button className="text-xs text-primary hover:underline">Edit Rule</button>
+        <span className="material-symbols-outlined text-on-surface-variant text-sm cursor-pointer" data-icon={rule.status === 'active' ? 'more_vert' : 'play_arrow'}>{rule.status === 'active' ? 'more_vert' : 'play_arrow'}</span>
+      </div>
+    </div>
+  ))}
+  {rules.length === 0 && (
+    <>
+    <div className="p-sm bg-surface-container-low border border-outline-variant rounded-lg group">
+      <div className="flex justify-between items-start mb-2">
+        <span className="font-label-medium text-on-surface">Latency Opt-01</span>
+        <span className="px-1.5 py-0.5 rounded text-[10px] bg-tertiary-container/20 text-tertiary uppercase font-bold">Active</span>
+      </div>
+      <p className="font-caption text-on-surface-variant leading-tight mb-3">Reroute 10% EU-West → US-East for optimization.</p>
+      <div className="flex justify-between items-center">
+        <button className="text-xs text-primary hover:underline">Edit Rule</button>
+        <span className="material-symbols-outlined text-on-surface-variant text-sm cursor-pointer" data-icon="more_vert">more_vert</span>
+      </div>
+    </div>
+    <div className="p-sm bg-surface-container-low border border-outline-variant rounded-lg opacity-60">
+      <div className="flex justify-between items-start mb-2">
+        <span className="font-label-medium text-on-surface">CDN Bypass</span>
+        <span className="px-1.5 py-0.5 rounded text-[10px] bg-outline-variant text-on-surface-variant uppercase font-bold">Paused</span>
+      </div>
+      <p className="font-caption text-on-surface-variant leading-tight mb-3">Force direct ingress for known static assets.</p>
+      <div className="flex justify-between items-center">
+        <button className="text-xs text-primary hover:underline">Edit Rule</button>
+        <span className="material-symbols-outlined text-on-surface-variant text-sm cursor-pointer" data-icon="play_arrow">play_arrow</span>
+      </div>
+    </div>
+    </>
+  )}
 </div>
 </div>
 </div>

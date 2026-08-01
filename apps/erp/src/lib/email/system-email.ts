@@ -21,6 +21,7 @@ export async function sendSystemEmail(options: {
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) {
     // Dev fallback: log to console
+    console.warn('[WARN] Email dropped - SYSTEM_EMAIL_FROM not configured')
     console.log('=== SYSTEM EMAIL (RESEND_API_KEY not set) ===')
     console.log(`To: ${options.to}`)
     console.log(`Subject: ${options.subject}`)

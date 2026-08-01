@@ -1,11 +1,22 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { superAdminFetch } from '@/lib/api';
 
 export default function ScheduleMaintenanceWindowPage() {
   const [start, setStart] = useState('');
   const [end, setEnd] = useState('');
+  const [diagnostics, setDiagnostics] = useState<any>(null);
+  const [loadingDiagnostics, setLoadingDiagnostics] = useState(true);
+
+  useEffect(() => {
+    superAdminFetch('/admin/diagnostics')
+      .then(res => {
+        if (res.success) setDiagnostics(res.data);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingDiagnostics(false));
+  }, []);
 
   const handleSchedule = async () => {
     if (!start || !end) {
@@ -196,19 +207,19 @@ export default function ScheduleMaintenanceWindowPage() {
 <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
 <div className="max-w-md">
 <h4 className="font-section-header text-on-surface mb-2">Simulated Impact Analysis</h4>
-<p className="font-body-compact text-on-surface-variant">Current configuration will affect approximately 24.5k active sessions. Database load is expected to drop to 2% during the window.</p>
+<p className="font-body-compact text-on-surface-variant">Current configuration will affect approximately {diagnostics?.activeSessions?.toLocaleString() ?? 'N/A'} active sessions. Database load is expected to drop to 2% during the window.</p>
 </div>
 <div className="flex items-center gap-8">
 <div className="text-center">
-<span className="block font-kpi-number text-primary">24.5k</span>
+<span className="block font-kpi-number text-primary">{diagnostics?.activeSessions ? (diagnostics.activeSessions / 1000).toFixed(1) + 'k' : 'N/A'}</span>
 <span className="block font-caption text-on-surface-variant uppercase">Affected Users</span>
 </div>
 <div className="text-center">
-<span className="block font-kpi-number text-tertiary">98%</span>
+<span className="block font-kpi-number text-tertiary">{diagnostics?.resourceSavings ?? '98'}%</span>
 <span className="block font-caption text-on-surface-variant uppercase">Resource Savings</span>
 </div>
 <div className="text-center">
-<span className="block font-kpi-number text-secondary">0</span>
+<span className="block font-kpi-number text-secondary">{diagnostics?.writeErrors ?? 0}</span>
 <span className="block font-caption text-on-surface-variant uppercase">Write-Errors</span>
 </div>
 </div>

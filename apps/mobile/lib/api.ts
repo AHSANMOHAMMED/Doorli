@@ -97,8 +97,14 @@ export interface Review {
   id: string;
   rating: number;
   comment?: string | null;
+  photos?: string[] | null;
   createdAt: string;
   vendorId?: string | null;
+  vendor?: {
+    id: string;
+    businessName: string;
+    logoUrl?: string | null;
+  };
 }
 
 export interface Profile {
@@ -159,6 +165,11 @@ export async function fetchVendor(id: string): Promise<VendorDetail> {
 
 export async function fetchVendorReviews(vendorId: string) {
   const res = await apiClient.get(`/reviews/vendor/${vendorId}`);
+  return (res.data?.data?.items ?? res.data?.data ?? []) as Review[];
+}
+
+export async function fetchMyReviews() {
+  const res = await apiClient.get('/reviews/my');
   return (res.data?.data?.items ?? res.data?.data ?? []) as Review[];
 }
 

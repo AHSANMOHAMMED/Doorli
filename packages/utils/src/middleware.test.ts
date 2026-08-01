@@ -57,7 +57,7 @@ function makeNext(): { fn: NextFunction; called: () => boolean } {
 describe('requireAuth middleware', () => {
   // Save/restore JWT_SECRET env var so tests are isolated
   let originalSecret: string | undefined;
-  beforeEach(() => { originalSecret = process.env.JWT_SECRET; delete process.env.JWT_SECRET; });
+  beforeEach(() => { originalSecret = process.env.JWT_SECRET; process.env.JWT_SECRET = SECRET; });
   afterEach(() => {
     if (originalSecret === undefined) delete process.env.JWT_SECRET;
     else process.env.JWT_SECRET = originalSecret;

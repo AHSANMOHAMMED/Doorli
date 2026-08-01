@@ -18,7 +18,11 @@ const redis = new Redis({
   port: parseInt(process.env.REDIS_PORT || '6379'),
 });
 
-const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_jwt_key_doorli_2026';
+if (!process.env.JWT_SECRET) {
+  console.error('[FATAL] JWT_SECRET environment variable is required');
+  process.exit(1);
+}
+const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = '1h';              // access token — short-lived
 const REFRESH_TTL_SEC = 30 * 24 * 60 * 60; // 30 days in seconds
 
@@ -30,10 +34,41 @@ export const { requireFeature, hasFeature, invalidateFeatureCache } = featureAcc
 
 const isValidPhone = (phone: string) => /^\+[1-9]\d{1,14}$/.test(phone);
 
-/** Send SMS (mock in dev, replace with MSG91 / Twilio in prod) */
+/** Send SMS — uses MSG91 if configured, otherwise logs in dev mode */
 const sendSms = async (to: string, body: string) => {
-  await new Promise((resolve) => setTimeout(resolve, 50));
-  console.log(`[SMS] → ${to}: ${body}`);
+  const msg91ApiKey = process.env.MSG91_API_KEY;
+  const msg91FlowId = process.env.MSG91_FLOW_ID;
+  const twilioSid = process.env.TWILIO_ACCOUNT_SID;
+
+  if (msg91ApiKey && msg91FlowId) {
+    const phone = to.replace('+', '');
+    const response = await fetch('https://api.msg91.com/api/v5/flow', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'authkey': msg91ApiKey,
+      },
+      body: JSON.stringify({
+        flow_id: msg91FlowId,
+        mobiles: phone,
+        var1: body,
+      }),
+    });
+    if (!response.ok) {
+      const text = await response.text();
+      console.error(`[SMS] MSG91 request failed (${response.status}):`, text);
+      throw new Error(`SMS provider returned ${response.status}`);
+    }
+    return;
+  }
+
+  if (twilioSid) {
+    // TODO: Implement Twilio integration when TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN are set
+    console.warn('[SMS] Twilio env vars detected but integration not yet implemented.');
+  }
+
+  // Dev mode fallback — log explicitly so it's never silently swallowed
+  console.warn(`[SMS][DEV MODE] No MSG91_API_KEY/MSG91_FLOW_ID configured. Message to ${to}: ${body}`);
 };
 
 /** Issue an access + refresh token pair and persist the refresh token in Redis */
@@ -426,15 +461,19 @@ app.post('/auth/google/complete-registration', async (req: Request, res: Respons
       data: { role: validRole },
     });
 
-    // Create Vendor / Driver profile stubs as needed
+    // Create Vendor / Driver profile stubs as needed — category/vehicleType must be provided
     if (validRole === UserRole.vendor) {
       const existing = await prisma.vendor.findUnique({ where: { userId: user.id } });
       if (!existing) {
+        const { category } = req.body as { category?: string };
+        if (!category) {
+          return res.status(400).json({ error: 'category is required for vendor registration.' });
+        }
         await prisma.vendor.create({
           data: {
             userId: user.id,
             businessName: user.fullName,
-            category: 'grocery', // placeholder — vendor completes onboarding in dashboard
+            category: category as any,
           },
         });
       }
@@ -443,8 +482,12 @@ app.post('/auth/google/complete-registration', async (req: Request, res: Respons
     if (validRole === UserRole.driver) {
       const existing = await prisma.driver.findUnique({ where: { userId: user.id } });
       if (!existing) {
+        const { vehicleType } = req.body as { vehicleType?: string };
+        if (!vehicleType) {
+          return res.status(400).json({ error: 'vehicleType is required for driver registration.' });
+        }
         await prisma.driver.create({
-          data: { userId: user.id, vehicleType: 'bike' }, // placeholder
+          data: { userId: user.id, vehicleType: vehicleType as any },
         });
       }
     }

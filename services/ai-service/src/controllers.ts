@@ -4,7 +4,10 @@ import { PrismaClient } from '@doorli/db';
 
 const prisma = new PrismaClient();
 
-const apiKey = process.env.GEMINI_API_KEY || 'mock-api-key';
+const apiKey = process.env.GEMINI_API_KEY;
+if (!apiKey) {
+  throw new Error('[AI Service] FATAL: GEMINI_API_KEY is not set. AI service cannot start.');
+}
 const genAI = new GoogleGenerativeAI(apiKey);
 
 export const getRecommendations = async (req: Request, res: Response): Promise<void> => {
@@ -33,12 +36,6 @@ export const getRecommendations = async (req: Request, res: Response): Promise<v
       ? `A user recently bought these items: ${productNames.join(', ')}. What are 3 other generic product categories they might like? Return only a comma separated list.`
       : `Suggest 3 generic product categories for a new user exploring a local marketplace. Return only a comma separated list.`;
 
-    if (apiKey === 'mock-api-key') {
-      console.log(`[AI Service] Mocking response for prompt: ${prompt}`);
-      res.json({ recommendations: ['Groceries', 'Electronics', 'Books'] });
-      return;
-    }
-
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
     const result = await model.generateContent(prompt);
     const responseText = result.response.text();
@@ -57,11 +54,6 @@ export const analyzeReview = async (req: Request, res: Response): Promise<void> 
     const { reviewText } = req.body;
     if (!reviewText) {
       res.status(400).json({ error: 'reviewText is required' });
-      return;
-    }
-
-    if (apiKey === 'mock-api-key') {
-      res.json({ sentiment: 'positive', score: 0.8 });
       return;
     }
 

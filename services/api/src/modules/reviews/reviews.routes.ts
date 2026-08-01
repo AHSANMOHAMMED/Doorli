@@ -34,6 +34,16 @@ reviewsRouter.post('/', validate(createReviewSchema), async (req, res, next) => 
   }
 });
 
+reviewsRouter.get('/my', async (req, res, next) => {
+  try {
+    if (!req.user) throw new AppError(401, 'Authentication required');
+    const reviews = await reviewsService.getMyReviews(req.user.id);
+    res.json({ success: true, data: reviews });
+  } catch (err) {
+    next(err);
+  }
+});
+
 reviewsRouter.get('/vendor/:vendorId', async (req, res, next) => {
   try {
     const reviews = await reviewsService.getVendorReviews(req.params.vendorId as string);

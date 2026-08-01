@@ -1,38 +1,65 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, RefreshControl, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, Stack } from 'expo-router';
 import { ArrowLeft, Star, MessageSquare } from 'lucide-react-native';
+import { fetchMyReviews } from '../../lib/api';
 
 const PRIMARY = '#00B241';
 const ON_SURFACE = '#002b5b';
 
-const MOCK_REVIEWS = [
-  {
-    id: '1',
-    vendorName: 'Burger King',
-    date: 'Oct 12, 2026',
-    rating: 5,
-    comment: 'The food was amazing and the delivery was super fast! Will definitely order again.',
-    image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?q=80&w=200&auto=format&fit=crop'
-  },
-  {
-    id: '2',
-    vendorName: 'Fresh Mart Grocery',
-    date: 'Sep 28, 2026',
-    rating: 4,
-    comment: 'Good selection of vegetables. Delivery was slightly delayed but the quality made up for it.',
-    image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=200&auto=format&fit=crop'
-  },
-];
+interface Review {
+  id: string;
+  rating: number;
+  comment: string | null;
+  photos: string[] | null;
+  createdAt: string;
+  vendor: {
+    id: string;
+    businessName: string;
+    logoUrl: string | null;
+  };
+}
 
 export default function ReviewsScreen() {
   const router = useRouter();
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchReviews = useCallback(async () => {
+    try {
+      setError(null);
+      const data = await fetchMyReviews();
+      setReviews(data);
+    } catch (err: any) {
+      console.error('Failed to fetch reviews:', err);
+      setError(err?.response?.data?.error || 'Failed to load reviews');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchReviews();
+  }, [fetchReviews]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchReviews();
+  }, [fetchReviews]);
+
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <Stack.Screen options={{ headerShown: false }} />
-      
+
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.iconButton}>
           <ArrowLeft color={ON_SURFACE} size={24} />
@@ -41,32 +68,62 @@ export default function ReviewsScreen() {
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
-        {MOCK_REVIEWS.length === 0 ? (
-          <View style={styles.emptyState}>
-            <MessageSquare color="#9ca3af" size={48} />
-            <Text style={styles.emptyTitle}>No reviews yet</Text>
-            <Text style={styles.emptySubtitle}>You haven't left any reviews for your past orders.</Text>
-          </View>
-        ) : (
-          MOCK_REVIEWS.map((review) => (
-            <View key={review.id} style={styles.reviewCard}>
-              <View style={styles.cardHeader}>
-                <Image source={{ uri: review.image }} style={styles.vendorImage} />
-                <View style={styles.headerInfo}>
-                  <Text style={styles.vendorName}>{review.vendorName}</Text>
-                  <Text style={styles.dateText}>{review.date}</Text>
-                </View>
-                <View style={styles.ratingBadge}>
-                  <Star color="#914c00" size={14} fill="#914c00" />
-                  <Text style={styles.ratingText}>{review.rating}.0</Text>
-                </View>
-              </View>
-              <Text style={styles.commentText}>{review.comment}</Text>
+      {loading ? (
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={PRIMARY} />
+        </View>
+      ) : error ? (
+        <View style={styles.centered}>
+          <MessageSquare color="#9ca3af" size={48} />
+          <Text style={styles.emptyTitle}>Something went wrong</Text>
+          <Text style={styles.emptySubtitle}>{error}</Text>
+          <TouchableOpacity onPress={fetchReviews} style={styles.retryButton}>
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <ScrollView
+          contentContainerStyle={styles.content}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[PRIMARY]} />
+          }
+        >
+          {reviews.length === 0 ? (
+            <View style={styles.emptyState}>
+              <MessageSquare color="#9ca3af" size={48} />
+              <Text style={styles.emptyTitle}>No reviews yet</Text>
+              <Text style={styles.emptySubtitle}>You haven't left any reviews for your past orders.</Text>
             </View>
-          ))
-        )}
-      </ScrollView>
+          ) : (
+            reviews.map((review) => (
+              <View key={review.id} style={styles.reviewCard}>
+                <View style={styles.cardHeader}>
+                  {review.vendor.logoUrl ? (
+                    <Image source={{ uri: review.vendor.logoUrl }} style={styles.vendorImage} />
+                  ) : (
+                    <View style={[styles.vendorImage, styles.vendorPlaceholder]}>
+                      <Text style={styles.vendorPlaceholderText}>
+                        {review.vendor.businessName.charAt(0)}
+                      </Text>
+                    </View>
+                  )}
+                  <View style={styles.headerInfo}>
+                    <Text style={styles.vendorName}>{review.vendor.businessName}</Text>
+                    <Text style={styles.dateText}>{formatDate(review.createdAt)}</Text>
+                  </View>
+                  <View style={styles.ratingBadge}>
+                    <Star color="#914c00" size={14} fill="#914c00" />
+                    <Text style={styles.ratingText}>{review.rating}.0</Text>
+                  </View>
+                </View>
+                {review.comment && (
+                  <Text style={styles.commentText}>{review.comment}</Text>
+                )}
+              </View>
+            ))
+          )}
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
@@ -99,6 +156,12 @@ const styles = StyleSheet.create({
   content: {
     padding: 16,
   },
+  centered: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 32,
+  },
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -116,6 +179,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
     paddingHorizontal: 32,
+  },
+  retryButton: {
+    marginTop: 16,
+    backgroundColor: PRIMARY,
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryText: {
+    color: '#fff',
+    fontWeight: '600',
   },
   reviewCard: {
     backgroundColor: '#ffffff',
@@ -140,6 +214,16 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 12,
     backgroundColor: '#f3f4f6',
+  },
+  vendorPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: PRIMARY,
+  },
+  vendorPlaceholderText: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '700',
   },
   headerInfo: {
     flex: 1,

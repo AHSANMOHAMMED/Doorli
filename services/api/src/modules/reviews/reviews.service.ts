@@ -83,6 +83,16 @@ export async function getVendorReviews(vendorId: string) {
   });
 }
 
+export async function getMyReviews(userId: string) {
+  return prisma.review.findMany({
+    where: { reviewerId: userId },
+    include: {
+      vendor: true,
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
 export async function deleteReview(reviewId: string, userId: string, userRole: string) {
   const review = await prisma.review.findUnique({
     where: { id: reviewId },

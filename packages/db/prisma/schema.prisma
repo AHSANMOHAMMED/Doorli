@@ -203,6 +203,7 @@ model User {
   permits     Permit[]
   complaints  Complaint[]
   documents   DocumentVault[]
+  consultationComments ConsultationComment[]
 
   @@index([role])
   @@index([createdAt])
@@ -940,7 +941,24 @@ model PublicConsultation {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
+  comments ConsultationComment[]
+
   @@map("public_consultations")
+}
+
+model ConsultationComment {
+  id              String   @id @default(uuid()) @db.Uuid
+  consultationId  String   @map("consultation_id") @db.Uuid
+  userId          String   @map("user_id") @db.Uuid
+  content         String
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  consultation PublicConsultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([consultationId])
+  @@index([userId])
+  @@map("consultation_comments")
 }
 
 // -----------------------------------------

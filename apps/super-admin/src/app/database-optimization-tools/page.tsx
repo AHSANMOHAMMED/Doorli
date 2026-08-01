@@ -7,12 +7,16 @@ export default function DatabaseOptimizationToolsPage() {
 
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    superAdminFetch('/admin/db-stats').then(res => {
-      if (res.success) setStats(res.data);
-      setLoading(false);
-    });
+    superAdminFetch('/admin/db-stats')
+      .then(res => {
+        if (res.success) setStats(res.data);
+        else setError(res.error || 'Failed to load stats');
+      })
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
   }, []);
 
   const handleOptimize = async (table: string) => {
@@ -22,6 +26,7 @@ export default function DatabaseOptimizationToolsPage() {
   };
 
   if (loading) return <div className="min-h-screen bg-[#121212] flex items-center justify-center text-white">Loading...</div>;
+  if (error) return <div className="min-h-screen bg-[#121212] flex items-center justify-center text-red-400">Error: {error}</div>;
 
   return (
     <div className="min-h-screen bg-[#121212] text-[#e5e2e1]">
@@ -50,25 +55,25 @@ export default function DatabaseOptimizationToolsPage() {
 <span className="material-symbols-outlined text-tertiary text-4xl" data-icon="database">database</span>
 </div>
 <p className="font-label-medium text-label-medium text-on-surface-variant mb-xs">Total Records</p>
-<h3 className="font-kpi-number text-kpi-number text-on-surface">84.2M</h3>
+<h3 className="font-kpi-number text-kpi-number text-on-surface">{stats?.totalRecords ?? 'N/A'}</h3>
 <div className="flex items-center mt-xs text-tertiary gap-1">
 <span className="material-symbols-outlined text-sm" data-icon="trending_up">trending_up</span>
-<span className="text-xs font-bold">+1.2M this month</span>
+<span className="text-xs font-bold">{stats?.monthlyGrowth ?? '+0 this month'}</span>
 </div>
 </div>
 <div className="bg-surface-container border border-outline-variant p-md rounded-xl">
 <p className="font-label-medium text-label-medium text-on-surface-variant mb-xs">Index Coverage</p>
 <div className="flex items-baseline gap-xs">
-<span className="font-section-header text-section-header text-tertiary">98.4%</span>
+<span className="font-section-header text-section-header text-tertiary">{stats?.indexCoverage ?? '0%'}%</span>
 </div>
 <div className="w-full bg-surface-container-highest h-1 rounded-full mt-sm overflow-hidden">
-<div className="bg-tertiary h-full w-[98.4%]"></div>
+<div className="bg-tertiary h-full" style={{ width: `${stats?.indexCoverage ?? 0}%` }}></div>
 </div>
 </div>
 <div className="bg-surface-container border border-outline-variant p-md rounded-xl">
 <p className="font-label-medium text-label-medium text-on-surface-variant mb-xs">Query Latency</p>
 <div className="flex items-baseline gap-xs">
-<span className="font-section-header text-section-header text-primary">12ms</span>
+<span className="font-section-header text-section-header text-primary">{stats?.queryLatency ?? 'N/A'}ms</span>
 </div>
 <div className="flex items-center mt-xs text-primary gap-1">
 <span className="material-symbols-outlined text-xs" data-icon="bolt">bolt</span>
@@ -110,63 +115,33 @@ export default function DatabaseOptimizationToolsPage() {
 <section className="space-y-sm">
 <h4 className="font-section-header text-section-header text-on-surface">Active Shards</h4>
 <div className="space-y-xs">
-{/*  Shard 1  */}
-<div className="bg-surface-container border border-outline-variant p-md rounded-xl">
-<div className="flex justify-between items-center mb-sm">
-<div>
-<p className="font-label-medium text-on-surface">US-East</p>
-<p className="font-caption text-caption text-on-surface-variant">Primary Cluster</p>
-</div>
-<div className="text-right">
-<p className="font-section-header text-primary">64%</p>
-<p className="text-[10px] text-primary uppercase font-bold">Load</p>
-</div>
-</div>
-<div className="flex gap-sm">
-<div className="flex-1 bg-surface-container-highest h-1.5 rounded-full self-center">
-<div className="bg-primary h-full w-[64%] rounded-full shadow-[0_0_8px_rgba(255,179,177,0.3)]"></div>
-</div>
-<button className="bg-surface-bright text-on-surface text-xs font-bold px-3 py-1 rounded-lg hover:bg-tertiary-container transition-colors">Defragment</button>
-</div>
-</div>
-{/*  Shard 2  */}
-<div className="bg-surface-container border border-outline-variant p-md rounded-xl">
-<div className="flex justify-between items-center mb-sm">
-<div>
-<p className="font-label-medium text-on-surface">EU-Central</p>
-<p className="font-caption text-caption text-on-surface-variant">Replica Set 02</p>
-</div>
-<div className="text-right">
-<p className="font-section-header text-tertiary">22%</p>
-<p className="text-[10px] text-tertiary uppercase font-bold">Load</p>
-</div>
-</div>
-<div className="flex gap-sm">
-<div className="flex-1 bg-surface-container-highest h-1.5 rounded-full self-center">
-<div className="bg-tertiary h-full w-[22%] rounded-full shadow-[0_0_8px_rgba(111,216,200,0.3)]"></div>
-</div>
-<button className="bg-surface-bright text-on-surface text-xs font-bold px-3 py-1 rounded-lg hover:bg-tertiary-container transition-colors">Defragment</button>
-</div>
-</div>
-{/*  Shard 3  */}
-<div className="bg-surface-container border border-outline-variant p-md rounded-xl">
-<div className="flex justify-between items-center mb-sm">
-<div>
-<p className="font-label-medium text-on-surface">AP-South</p>
-<p className="font-caption text-caption text-on-surface-variant">Global Edge</p>
-</div>
-<div className="text-right">
-<p className="font-section-header text-on-surface">88%</p>
-<p className="text-[10px] text-error uppercase font-bold">Critical Load</p>
-</div>
-</div>
-<div className="flex gap-sm">
-<div className="flex-1 bg-surface-container-highest h-1.5 rounded-full self-center">
-<div className="bg-error h-full w-[88%] rounded-full"></div>
-</div>
-<button className="bg-primary-container text-on-primary-container text-xs font-bold px-3 py-1 rounded-lg transition-colors">Defragment</button>
-</div>
-</div>
+  {stats?.shards?.map((shard: any) => {
+    const loadColor = shard.load >= 80 ? 'error' : shard.load >= 50 ? 'primary' : 'tertiary';
+    const loadLabel = shard.load >= 80 ? 'Critical Load' : 'Load';
+    return (
+    <div key={shard.name} className="bg-surface-container border border-outline-variant p-md rounded-xl">
+      <div className="flex justify-between items-center mb-sm">
+        <div>
+          <p className="font-label-medium text-on-surface">{shard.name}</p>
+          <p className="font-caption text-caption text-on-surface-variant">{shard.description}</p>
+        </div>
+        <div className="text-right">
+          <p className={`font-section-header text-${loadColor}`}>{shard.load}%</p>
+          <p className={`text-[10px] text-${loadColor} uppercase font-bold`}>{loadLabel}</p>
+        </div>
+      </div>
+      <div className="flex gap-sm">
+        <div className="flex-1 bg-surface-container-highest h-1.5 rounded-full self-center">
+          <div className={`bg-${loadColor} h-full rounded-full`} style={{ width: `${shard.load}%`, boxShadow: shard.load >= 80 ? undefined : `0 0 8px rgba(255,179,177,0.3)` }}></div>
+        </div>
+        <button className="bg-surface-bright text-on-surface text-xs font-bold px-3 py-1 rounded-lg hover:bg-tertiary-container transition-colors">Defragment</button>
+      </div>
+    </div>
+    );
+  })}
+  {(!stats?.shards || stats.shards.length === 0) && (
+    <div className="bg-surface-container border border-outline-variant p-md rounded-xl text-on-surface-variant text-center">No shard data available</div>
+  )}
 </div>
 </section>
 {/*  Table Optimization  */}

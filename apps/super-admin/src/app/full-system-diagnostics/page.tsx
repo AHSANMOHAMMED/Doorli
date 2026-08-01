@@ -7,15 +7,28 @@ export default function FullSystemDiagnosticsPage() {
 
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    superAdminFetch('/admin/diagnostics').then(res => {
-      if (res.success) setData(res.data);
-      setLoading(false);
-    });
+    superAdminFetch('/admin/diagnostics')
+      .then(res => {
+        if (res.success) setData(res.data);
+        else setError(res.error || 'Failed to load diagnostics');
+      })
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
   }, []);
 
+  const progress = data?.progress ?? 0;
+  const elapsed = data?.elapsedTime ?? '--m --s';
+  const remaining = data?.estimatedRemaining ?? '--m --s';
+  const scanModules = data?.scanModules ?? [];
+  const loadedCount = scanModules.filter((m: any) => m.status !== 'pending').length;
+  const circumference = 2 * Math.PI * 80;
+  const dashOffset = circumference - (progress / 100) * circumference;
+
   if (loading) return <div className="min-h-screen bg-[#121212] flex items-center justify-center text-white">Loading...</div>;
+  if (error) return <div className="min-h-screen bg-[#121212] flex items-center justify-center text-red-400">Error: {error}</div>;
 
   return (
     <div className="min-h-screen bg-[#121212] text-[#e5e2e1]">
@@ -42,27 +55,27 @@ export default function FullSystemDiagnosticsPage() {
 {/*  1. Diagnostic Progress (The Core)  */}
 <section className="lg:col-span-5 bg-surface-container border border-outline-variant rounded-xl p-lg flex flex-col items-center justify-center relative overflow-hidden">
 <div className="absolute top-0 left-0 w-full h-1 bg-surface-container-highest">
-<div className="h-full bg-primary-container" ></div>
+<div className="h-full bg-primary-container transition-all duration-500" style={{ width: `${progress}%` }}></div>
 </div>
 <div className="relative flex flex-col items-center py-xl">
 {/*  Progress Circle SVG  */}
 <svg className="w-48 h-48">
 <circle className="text-surface-container-highest" cx="96" cy="96" fill="transparent" r="80" stroke="currentColor" strokeWidth="8"></circle>
-<circle className="text-primary-container progress-ring__circle" cx="96" cy="96" fill="transparent" r="80" stroke="currentColor" stroke-dasharray="502.6" stroke-dashoffset="160.8" strokeLinecap="round" strokeWidth="8"></circle>
+<circle className="text-primary-container progress-ring__circle" cx="96" cy="96" fill="transparent" r="80" stroke="currentColor" strokeDasharray={circumference} strokeDashoffset={dashOffset} strokeLinecap="round" strokeWidth="8"></circle>
 </svg>
 <div className="absolute inset-0 flex flex-col items-center justify-center">
-<span className="font-kpi-number text-kpi-number text-white">68%</span>
+<span className="font-kpi-number text-kpi-number text-white">{progress}%</span>
 <span className="font-label-medium text-label-medium text-on-surface-variant uppercase tracking-widest">Scanning</span>
 </div>
 </div>
 <div className="w-full mt-lg grid grid-cols-2 gap-sm">
 <div className="bg-surface-container-low p-sm rounded-lg border border-outline-variant/30">
 <p className="text-caption font-caption text-on-surface-variant">Elapsed Time</p>
-<p className="text-body-main font-body-main font-bold">04m 12s</p>
+<p className="text-body-main font-body-main font-bold">{elapsed}</p>
 </div>
 <div className="bg-surface-container-low p-sm rounded-lg border border-outline-variant/30">
 <p className="text-caption font-caption text-on-surface-variant">Est. Remaining</p>
-<p className="text-body-main font-body-main font-bold">01m 58s</p>
+<p className="text-body-main font-body-main font-bold">{remaining}</p>
 </div>
 </div>
 </section>
@@ -70,89 +83,78 @@ export default function FullSystemDiagnosticsPage() {
 <section className="lg:col-span-7 flex flex-col gap-sm">
 <div className="flex justify-between items-end px-1">
 <h2 className="font-section-header text-section-header">Active Scan Modules</h2>
-<span className="text-caption font-caption text-on-surface-variant">5/8 Modules Loaded</span>
+<span className="text-caption font-caption text-on-surface-variant">{loadedCount}/{scanModules.length || 8} Modules Loaded</span>
 </div>
 <div className="space-y-sm">
-{/*  Database Integrity  */}
-<div className="group bg-surface-container border border-outline-variant rounded-xl p-md flex items-center justify-between hover:bg-surface-container-high transition-colors">
-<div className="flex items-center gap-md">
-<div className="w-10 h-10 rounded-lg bg-tertiary/10 border border-tertiary/20 flex items-center justify-center">
-<span className="material-symbols-outlined text-tertiary">database</span>
-</div>
-<div>
-<h3 className="font-body-main font-bold">Database Integrity</h3>
-<p className="text-caption font-caption text-on-surface-variant">Validation of relational schemas and indexes</p>
-</div>
-</div>
-<div className="flex items-center gap-sm bg-tertiary/10 text-tertiary px-3 py-1 rounded-full border border-tertiary/20">
-<span className="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
-<span className="text-label-medium font-label-medium">Passed</span>
-</div>
-</div>
-{/*  API Endpoint Connectivity  */}
-<div className="group bg-surface-container border border-primary-container/30 rounded-xl p-md flex items-center justify-between hover:bg-surface-container-high transition-colors shadow-sm">
-<div className="flex items-center gap-md">
-<div className="w-10 h-10 rounded-lg bg-primary-container/10 border border-primary-container/20 flex items-center justify-center">
-<span className="material-symbols-outlined text-primary-container animate-spin" >sync</span>
-</div>
-<div>
-<h3 className="font-body-main font-bold">API Endpoint Connectivity</h3>
-<p className="text-caption font-caption text-on-surface-variant">Global edge latency and health checks</p>
-</div>
-</div>
-<div className="flex items-center gap-sm bg-primary-container/10 text-primary-container px-3 py-1 rounded-full border border-primary-container/20">
-<span className="w-1.5 h-1.5 rounded-full bg-primary-container animate-pulse"></span>
-<span className="text-label-medium font-label-medium">Running...</span>
-</div>
-</div>
-{/*  SSL & Security Certificates  */}
-<div className="group bg-surface-container border border-outline-variant rounded-xl p-md flex items-center justify-between hover:bg-surface-container-high transition-colors">
-<div className="flex items-center gap-md">
-<div className="w-10 h-10 rounded-lg bg-tertiary/10 border border-tertiary/20 flex items-center justify-center">
-<span className="material-symbols-outlined text-tertiary" data-weight="fill" >verified_user</span>
-</div>
-<div>
-<h3 className="font-body-main font-bold">SSL &amp; Security Certificates</h3>
-<p className="text-caption font-caption text-on-surface-variant">Certificate chain and encryption protocols</p>
-</div>
-</div>
-<div className="flex items-center gap-sm bg-tertiary/10 text-tertiary px-3 py-1 rounded-full border border-tertiary/20">
-<span className="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
-<span className="text-label-medium font-label-medium">Passed</span>
-</div>
-</div>
-{/*  Asset Storage Optimization  */}
-<div className="group bg-surface-container border border-outline-variant rounded-xl p-md flex items-center justify-between opacity-60">
-<div className="flex items-center gap-md">
-<div className="w-10 h-10 rounded-lg bg-surface-container-highest border border-outline-variant flex items-center justify-center">
-<span className="material-symbols-outlined text-on-surface-variant">cloud_queue</span>
-</div>
-<div>
-<h3 className="font-body-main font-bold">Asset Storage Optimization</h3>
-<p className="text-caption font-caption text-on-surface-variant">CDN invalidation and blob storage cleanup</p>
-</div>
-</div>
-<div className="flex items-center gap-sm bg-surface-container-highest text-on-surface-variant px-3 py-1 rounded-full border border-outline-variant">
-<span className="w-1.5 h-1.5 rounded-full bg-on-surface-variant"></span>
-<span className="text-label-medium font-label-medium">Pending</span>
-</div>
-</div>
-{/*  Third-party ERP Latency  */}
-<div className="group bg-surface-container border border-secondary/30 rounded-xl p-md flex items-center justify-between hover:bg-surface-container-high transition-colors">
-<div className="flex items-center gap-md">
-<div className="w-10 h-10 rounded-lg bg-secondary/10 border border-secondary/20 flex items-center justify-center">
-<span className="material-symbols-outlined text-secondary">extension</span>
-</div>
-<div>
-<h3 className="font-body-main font-bold">Third-party ERP Latency</h3>
-<p className="text-caption font-caption text-on-surface-variant">Response times for external integration hooks</p>
-</div>
-</div>
-<div className="flex items-center gap-sm bg-secondary/10 text-secondary px-3 py-1 rounded-full border border-secondary/20">
-<span className="material-symbols-outlined text-sm" >warning</span>
-<span className="text-label-medium font-label-medium">Warning - Spike</span>
-</div>
-</div>
+  {scanModules.map((mod: any) => {
+    let borderColor = 'border-outline-variant';
+    let bgColor = 'bg-tertiary/10';
+    let textColor = 'text-tertiary';
+    let iconBg = 'bg-tertiary/10 border border-tertiary/20';
+    let statusBg = 'bg-tertiary/10 text-tertiary border border-tertiary/20';
+    let opacity = '';
+    let animate = '';
+
+    if (mod.status === 'running') {
+      borderColor = 'border-primary-container/30';
+      bgColor = 'bg-primary-container/10';
+      textColor = 'text-primary-container';
+      iconBg = 'bg-primary-container/10 border border-primary-container/20';
+      statusBg = 'bg-primary-container/10 text-primary-container border border-primary-container/20';
+      animate = 'shadow-sm';
+    } else if (mod.status === 'warning') {
+      borderColor = 'border-secondary/30';
+      bgColor = 'bg-secondary/10';
+      textColor = 'text-secondary';
+      iconBg = 'bg-secondary/10 border border-secondary/20';
+      statusBg = 'bg-secondary/10 text-secondary border border-secondary/20';
+    } else if (mod.status === 'pending') {
+      opacity = 'opacity-60';
+      iconBg = 'bg-surface-container-highest border border-outline-variant';
+      textColor = 'text-on-surface-variant';
+      statusBg = 'bg-surface-container-highest text-on-surface-variant border border-outline-variant';
+    }
+
+    return (
+    <div key={mod.name} className={`group bg-surface-container border ${borderColor} rounded-xl p-md flex items-center justify-between hover:bg-surface-container-high transition-colors ${animate} ${opacity}`}>
+      <div className="flex items-center gap-md">
+        <div className={`w-10 h-10 rounded-lg ${iconBg} flex items-center justify-center`}>
+          <span className={`material-symbols-outlined ${textColor} ${mod.status === 'running' ? 'animate-spin' : ''}`}>{mod.icon || 'extension'}</span>
+        </div>
+        <div>
+          <h3 className="font-body-main font-bold">{mod.name}</h3>
+          <p className="text-caption font-caption text-on-surface-variant">{mod.description}</p>
+        </div>
+      </div>
+      <div className={`flex items-center gap-sm ${statusBg} px-3 py-1 rounded-full`}>
+        {mod.status === 'running' && <span className="w-1.5 h-1.5 rounded-full bg-primary-container animate-pulse"></span>}
+        {mod.status === 'passed' && <span className="w-1.5 h-1.5 rounded-full bg-tertiary"></span>}
+        {mod.status === 'warning' && <span className="material-symbols-outlined text-sm">warning</span>}
+        {mod.status === 'pending' && <span className="w-1.5 h-1.5 rounded-full bg-on-surface-variant"></span>}
+        <span className="text-label-medium font-label-medium">{mod.status === 'running' ? 'Running...' : mod.status.charAt(0).toUpperCase() + mod.status.slice(1)}</span>
+      </div>
+    </div>
+    );
+  })}
+  {scanModules.length === 0 && (
+    <>
+    <div className="group bg-surface-container border border-outline-variant rounded-xl p-md flex items-center justify-between">
+      <div className="flex items-center gap-md">
+        <div className="w-10 h-10 rounded-lg bg-tertiary/10 border border-tertiary/20 flex items-center justify-center">
+          <span className="material-symbols-outlined text-tertiary">database</span>
+        </div>
+        <div>
+          <h3 className="font-body-main font-bold">Database Integrity</h3>
+          <p className="text-caption font-caption text-on-surface-variant">Validation of relational schemas and indexes</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-sm bg-tertiary/10 text-tertiary px-3 py-1 rounded-full border border-tertiary/20">
+        <span className="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+        <span className="text-label-medium font-label-medium">Passed</span>
+      </div>
+    </div>
+    </>
+  )}
 </div>
 </section>
 </div>

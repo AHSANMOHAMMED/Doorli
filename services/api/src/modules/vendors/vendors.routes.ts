@@ -309,7 +309,11 @@ router.post(
           'http://127.0.0.1:3010/api/internal'
         ).replace(/\/$/, '');
 
-        const secret = (process.env.ERP_INTERNAL_SECRET || 'doorli_internal_sync_secret').replace(
+        const rawSecret = process.env.ERP_INTERNAL_SECRET;
+        if (!rawSecret) {
+          throw new AppError(500, 'ERP_INTERNAL_SECRET environment variable is required');
+        }
+        const secret = rawSecret.replace(
           /^Bearer\s+/i,
           '',
         );

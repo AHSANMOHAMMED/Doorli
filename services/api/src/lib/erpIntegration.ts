@@ -71,10 +71,10 @@ const REQUEST_TIMEOUT_MS = 8000;
 
 /** Shared secret used for both embedded and Enterprise auth. Never defaulted in prod. */
 function erpSecret(): string {
-  return (process.env.ERP_INTERNAL_SECRET || 'doorli_internal_sync_secret').replace(
-    /^Bearer\s+/i,
-    '',
-  );
+  if (!process.env.ERP_INTERNAL_SECRET) {
+    throw new Error('ERP_INTERNAL_SECRET environment variable is required');
+  }
+  return process.env.ERP_INTERNAL_SECRET.replace(/^Bearer\s+/i, '');
 }
 
 /** Embedded Retail Smart ERP internal base, e.g. http://host/erp/api/internal */
@@ -255,7 +255,13 @@ export class ErpIntegrationService {
     }
   }
 
-  /** Inventory lookup — stub until Frappe/embedded stock APIs are wired. */
+  /**
+   * Inventory lookup — not yet implemented.
+   * TODO: When ERP stock APIs are available, call:
+   *   GET ${embeddedBaseUrl()}/inventory/${erpTenantId}/${productId}  (embedded)
+   *   POST ${enterpriseCreateOrderUrl()} with method "get_stock"      (enterprise)
+   * Requires ERP_API_URL and ERP_API_KEY env vars to be set.
+   */
   static async getInventoryFromErp(
     _erpTenantId: string,
     _productId: string,
@@ -265,8 +271,8 @@ export class ErpIntegrationService {
     onHand?: number;
     data?: { quantity?: number };
     items?: Array<{ barcode?: string; sku?: string; quantity?: number }>;
-  } | null> {
-    return null;
+  }> {
+    throw new Error('ERP inventory lookup not yet implemented - configure ERP_API_URL and ERP_API_KEY');
   }
 }
 

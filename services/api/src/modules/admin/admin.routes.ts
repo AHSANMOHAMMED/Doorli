@@ -13,6 +13,7 @@ import {
 } from '../../lib/featureFlags.js';
 import { ErpIntegrationService } from '../../lib/erpIntegration.js';
 import { randomUUID } from 'crypto';
+import os from 'os';
 const syncOrderToErpIfLinked = async (orderId: string, options?: { force?: boolean }) => {
   try {
     const order = await prisma.order.findUnique({
@@ -1165,6 +1166,110 @@ adminRouter.post('/erp-only/provision', async (req, res, next) => {
           [POS_KEY]: true,
           [DOORLI_DELIVERY_KEY]: body.enableDoorliDelivery,
         },
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+adminRouter.get('/broadcasts', async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    const broadcasts = await prisma.notification.findMany({
+      where: { type: 'admin_broadcast' },
+      orderBy: { sentAt: 'desc' },
+      take: 50,
+    });
+
+    const seen = new Map<string, typeof broadcasts[0]>();
+    for (const b of broadcasts) {
+      const key = `${b.title}::${b.body}`;
+      if (!seen.has(key)) {
+        seen.set(key, b);
+      }
+    }
+    const unique = Array.from(seen.values());
+
+    res.json({ success: true, data: unique });
+  } catch (err) {
+    next(err);
+  }
+});
+
+adminRouter.get('/maintenance', async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    res.json({ success: true, data: maintenanceWindows });
+  } catch (err) {
+    next(err);
+  }
+});
+
+adminRouter.get('/health', async (req, res, next) => {
+  try {
+    requireAdmin(req);
+
+    const totalMem = os.totalmem();
+    const freeMem = os.freemem();
+    const usedMem = totalMem - freeMem;
+    const cpus = os.cpus();
+    const loadAvg = os.loadavg();
+
+    const [activeUsers, ordersToday, failedOrdersToday] = await Promise.all([
+      prisma.user.count({ where: { isActive: true } }),
+      prisma.order.count({
+        where: { createdAt: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } },
+      }),
+      prisma.order.count({
+        where: {
+          createdAt: { gte: new Date(new Date().setHours(0, 0, 0, 0)) },
+          status: 'cancelled',
+        },
+      }),
+    ]);
+
+    const erpLatencyCheck = await (async () => {
+      const embeddedBase = (
+        process.env.ERP_EMBEDDED_URL || process.env.ERP_API_URL || process.env.ERP_SERVICE_URL || 'http://127.0.0.1:3010/api/internal'
+      ).replace(/\/$/, '');
+      const embeddedHealth = embeddedBase.replace(/\/api\/internal$/, '') + '/';
+      const start = Date.now();
+      try {
+        const controller = new AbortController();
+        const t = setTimeout(() => controller.abort(), 3000);
+        await fetch(embeddedHealth, { signal: controller.signal });
+        clearTimeout(t);
+        return Date.now() - start;
+      } catch {
+        return -1;
+      }
+    })();
+
+    res.json({
+      success: true,
+      data: {
+        uptime: Math.round(process.uptime()),
+        platform: os.platform(),
+        nodeVersion: process.version,
+        memory: {
+          total: totalMem,
+          free: freeMem,
+          used: usedMem,
+          usagePercent: Math.round((usedMem / totalMem) * 100),
+        },
+        cpu: {
+          loadAverage: loadAvg.map((l) => parseFloat(l.toFixed(2))),
+          coreCount: cpus.length,
+          usagePercent: Math.round((loadAvg[0] / cpus.length) * 100),
+        },
+        activeSessions: activeUsers,
+        ordersToday,
+        errorRate: ordersToday > 0
+          ? parseFloat(((failedOrdersToday / ordersToday) * 100).toFixed(2))
+          : 0,
+        erpLatencyMs: erpLatencyCheck,
+        checkedAt: new Date().toISOString(),
       },
     });
   } catch (err) {

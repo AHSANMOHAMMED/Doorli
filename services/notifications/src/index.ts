@@ -7,6 +7,11 @@ import { NotificationService } from './notification.js';
 import { setSocketServer, registerSocketAuth } from './socket.js';
 import { startSocketBridge } from './socketBridge.js';
 
+if (!process.env.ERP_INTERNAL_SECRET) {
+  console.error('[FATAL] ERP_INTERNAL_SECRET environment variable is required');
+  process.exit(1);
+}
+
 dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
 const redisUrl = process.env.REDIS_URL ?? 'redis://localhost:6379';
@@ -44,7 +49,7 @@ async function main() {
   app.post('/api/notifications/enqueue', express.json(), async (req, res) => {
     try {
       const secret = req.headers['x-internal-secret'];
-      if (secret !== (process.env.ERP_INTERNAL_SECRET || 'doorli_internal_sync_secret')) {
+      if (secret !== process.env.ERP_INTERNAL_SECRET) {
         res.status(401).json({ error: 'Unauthorized' });
         return;
       }

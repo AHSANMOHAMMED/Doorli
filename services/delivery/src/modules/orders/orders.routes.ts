@@ -24,7 +24,10 @@ const router = Router();
  */
 router.post('/internal/dispatch', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const expected = process.env.ERP_INTERNAL_SECRET || 'doorli_internal_sync_secret';
+    const expected = process.env.ERP_INTERNAL_SECRET;
+    if (!expected) {
+      throw new AppError(500, 'ERP_INTERNAL_SECRET environment variable is required');
+    }
     const given = req.headers['x-internal-secret'];
     if (typeof given !== 'string' || given !== expected) {
       res.status(403).json({ success: false, error: 'Invalid internal secret' });
