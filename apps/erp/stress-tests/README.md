@@ -1,6 +1,6 @@
 # Stress Testing Suite
 
-Comprehensive stress testing suite for the Retail Smart POS system.
+Comprehensive stress testing suite for the Doorli POS system.
 
 ## Prerequisites
 

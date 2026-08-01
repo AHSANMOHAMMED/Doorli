@@ -286,7 +286,7 @@ function CompanyLoginForm({ slug }: { slug: string }) {
         <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-indigo-400/10 rounded-full blur-3xl" />
 
         <div className="w-full max-w-md relative z-10 animate-auth-fade-in">
-          {/* Mobile branding (replaces Retail Smart ERP logo) */}
+          {/* Mobile branding (replaces Doorli ERP logo) */}
           <div className="lg:hidden flex flex-col items-center mb-8 gap-3">
             <CompanyLogo logoUrl={companyLogo} name={displayName} size={64} variant="light" />
             <div className="text-center">

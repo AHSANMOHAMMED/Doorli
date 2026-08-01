@@ -1,4 +1,4 @@
-# Contributing to Retail Smart ERP
+# Contributing to Doorli ERP
 
 Thank you for your interest in contributing! This guide will help you get started.
 
@@ -6,7 +6,7 @@ Thank you for your interest in contributing! This guide will help you get starte
 
 ### Reporting Bugs
 
-1. Check [existing issues](https://github.com/ravindu2012/retail-smart-erp/issues) to avoid duplicates
+1. Check [existing issues](https://github.com/ravindu2012/doorli-erp/issues) to avoid duplicates
 2. Open a new issue using the **Bug Report** template
 3. Include steps to reproduce, expected behavior, and screenshots if possible
 
@@ -33,8 +33,8 @@ Thank you for your interest in contributing! This guide will help you get starte
 
 ### Finding Issues to Work On
 
-- Look for issues labeled [`good first issue`](https://github.com/ravindu2012/retail-smart-erp/labels/good%20first%20issue) — great for newcomers
-- Issues labeled [`help wanted`](https://github.com/ravindu2012/retail-smart-erp/labels/help%20wanted) are actively looking for contributors
+- Look for issues labeled [`good first issue`](https://github.com/ravindu2012/doorli-erp/labels/good%20first%20issue) — great for newcomers
+- Issues labeled [`help wanted`](https://github.com/ravindu2012/doorli-erp/labels/help%20wanted) are actively looking for contributors
 
 ## Development Setup
 
@@ -47,8 +47,8 @@ Thank you for your interest in contributing! This guide will help you get starte
 
 ```bash
 # Clone your fork
-git clone https://github.com/YOUR_USERNAME/retail-smart-erp.git
-cd retail-smart-erp
+git clone https://github.com/YOUR_USERNAME/doorli-erp.git
+cd doorli-erp
 
 # Install dependencies
 npm install
@@ -112,7 +112,7 @@ src/
 
 ## Need Help?
 
-- Open a [Discussion](https://github.com/ravindu2012/retail-smart-erp/discussions) for questions
+- Open a [Discussion](https://github.com/ravindu2012/doorli-erp/discussions) for questions
 - Check the [README](README.md) for project overview and setup
 
 We appreciate every contribution, no matter how small!

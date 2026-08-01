@@ -11,7 +11,7 @@ interface MockBrowserFrameProps {
 export function MockBrowserFrame({
   children,
   className = '',
-  url = 'app.retailsmarterp.com',
+  url = 'app.erp.doorli.me',
 }: MockBrowserFrameProps) {
   return (
     <div

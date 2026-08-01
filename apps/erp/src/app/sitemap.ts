@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://www.retailsmarterp.com'
+  const baseUrl = 'https://www.erp.doorli.me'
   const now = new Date().toISOString()
 
   return [

@@ -216,7 +216,7 @@ export default function SecurePaymentScreen() {
           </View>
         </ScrollView>
         <View style={styles.footer}>
-          <Text style={styles.footerText}>© 2024 LocalConnect. Powered by Stripe.</Text>
+          <Text style={styles.footerText}>© 2026 Doorli. Powered by Stripe.</Text>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>

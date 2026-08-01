@@ -1,6 +1,6 @@
 // System-level email transport for OTP and system emails
 // Independent of tenant email settings
-// Uses Resend API (retailsmarterp.com verified domain)
+// Uses Resend API (erp.doorli.me verified domain)
 
 /** Escape HTML entities to prevent XSS in email templates */
 function escapeHtml(s: string): string {
@@ -29,8 +29,8 @@ export async function sendSystemEmail(options: {
     return { success: true, dev: true }
   }
 
-  const senderEmail = process.env.SYSTEM_EMAIL_FROM || 'noreply@retailsmarterp.com'
-  const senderName = process.env.NEXT_PUBLIC_APP_NAME || 'Retail Smart POS'
+  const senderEmail = process.env.SYSTEM_EMAIL_FROM || 'noreply@erp.doorli.me'
+  const senderName = process.env.NEXT_PUBLIC_APP_NAME || 'Doorli POS'
 
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
@@ -63,7 +63,7 @@ export async function sendStaffInviteEmail(options: {
   role: string
   inviteUrl: string
 }) {
-  const appName = process.env.NEXT_PUBLIC_APP_NAME || 'Retail Smart POS'
+  const appName = process.env.NEXT_PUBLIC_APP_NAME || 'Doorli POS'
   const { email, inviterName, companyName, role, inviteUrl } = options
 
   // Escape user-provided values to prevent HTML injection in emails
@@ -140,7 +140,7 @@ export async function sendStaffInviteEmail(options: {
 }
 
 export async function sendOtpEmail(email: string, otp: string) {
-  const appName = process.env.NEXT_PUBLIC_APP_NAME || 'Retail Smart POS'
+  const appName = process.env.NEXT_PUBLIC_APP_NAME || 'Doorli POS'
   const digits = otp.split('')
 
   return sendSystemEmail({

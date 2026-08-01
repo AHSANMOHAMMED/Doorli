@@ -1198,7 +1198,7 @@ export default function SettingsPage() {
                     type="text"
                     value={contactInfo.companyName}
                     onChange={(e) => setContactInfo({ ...contactInfo, companyName: e.target.value })}
-                    placeholder="Retail Smart ERP"
+                    placeholder="Doorli ERP"
                     className={INPUT_CLASS}
                   />
                 </div>
@@ -1208,7 +1208,7 @@ export default function SettingsPage() {
                     type="email"
                     value={contactInfo.email}
                     onChange={(e) => setContactInfo({ ...contactInfo, email: e.target.value })}
-                    placeholder="support@retailsmarterp.com"
+                    placeholder="support@erp.doorli.me"
                     className={INPUT_CLASS}
                   />
                 </div>

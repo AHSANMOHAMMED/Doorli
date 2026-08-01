@@ -1,9 +1,9 @@
 /**
- * Retail Smart ERP Logo Component
+ * Doorli ERP Logo Component
  *
  * Usage:
  *   <Logo />                        — Icon only, default 32px
- *   <Logo variant="full" />         — Icon + "Retail Smart ERP" text
+ *   <Logo variant="full" />         — Icon + "Doorli ERP" text
  *   <Logo size={48} />              — Custom size
  *   <Logo onDark />                 — White text for dark backgrounds
  *   <Logo variant="full" subtitle="Point of Sale System" />
@@ -103,7 +103,7 @@ export function Logo({
       <LogoMark size={size} />
       <span className="flex flex-col leading-tight">
         <span className={`font-bold tracking-tight ${textSize} ${onDark ? 'text-white' : 'text-slate-900 dark:text-white'}`}>
-          Retail Smart ERP
+          Doorli ERP
         </span>
         {subtitle && (
           <span className={`${subSize} ${onDark ? 'text-white/60' : 'text-slate-500 dark:text-slate-400'}`}>

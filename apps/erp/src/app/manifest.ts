@@ -2,8 +2,8 @@ import type { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Retail Smart ERP',
-    short_name: 'RetailSmart',
+    name: 'Doorli ERP',
+    short_name: 'Doorli',
     description: 'Cloud-based Point of Sale System',
     start_url: '/account',
     display: 'standalone',

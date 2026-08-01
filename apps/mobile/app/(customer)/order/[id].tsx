@@ -40,7 +40,7 @@ export default function OrderSuccessScreen() {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <MapPin color={PRIMARY} size={24} />
-          <Text style={styles.headerTitle}>LocalConnect</Text>
+          <Text style={styles.headerTitle}>Doorli</Text>
         </View>
         <TouchableOpacity style={styles.searchBtn}>
           <Search color={PRIMARY} size={24} />

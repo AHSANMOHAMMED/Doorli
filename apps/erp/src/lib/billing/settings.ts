@@ -82,11 +82,11 @@ export interface ContactInfo {
 }
 
 const DEFAULT_CONTACT_INFO: ContactInfo = {
-  email: 'support@retailsmarterp.com',
+  email: 'support@erp.doorli.me',
   phone: '+94 11 234 5678',
   whatsapp: '+94 77 123 4567',
   address: 'Colombo, Sri Lanka',
-  companyName: 'Retail Smart ERP',
+  companyName: 'Doorli ERP',
   businessHours: 'Mon-Fri 9:00 AM - 6:00 PM (IST)',
 }
 

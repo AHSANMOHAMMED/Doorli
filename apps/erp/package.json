@@ -9,7 +9,7 @@
     "prebuild": "npm run validate:migrations",
     "postbuild": "node scripts/build-server.mjs",
     "build:server": "node scripts/build-server.mjs",
-    "start": "node -e \"console.log('Starting Retail Smart POS...'); if (process.env.SKIP_MIGRATIONS !== 'true') { const { execSync } = require('child_process'); console.log('Running database migrations...'); try { execSync('npm run db:migrate', { stdio: 'inherit' }); console.log('Migrations completed successfully'); } catch(e) { console.error('Migration failed:', e.message); if (process.env.REQUIRE_MIGRATIONS === 'true') { console.error('Migrations required - exiting'); process.exit(1); } else { console.warn('Continuing without migrations (database may already be up to date)...'); } } } process.exit(0);\" && node server.js",
+    "start": "node -e \"console.log('Starting Doorli POS...'); if (process.env.SKIP_MIGRATIONS !== 'true') { const { execSync } = require('child_process'); console.log('Running database migrations...'); try { execSync('npm run db:migrate', { stdio: 'inherit' }); console.log('Migrations completed successfully'); } catch(e) { console.error('Migration failed:', e.message); if (process.env.REQUIRE_MIGRATIONS === 'true') { console.error('Migrations required - exiting'); process.exit(1); } else { console.warn('Continuing without migrations (database may already be up to date)...'); } } } process.exit(0);\" && node server.js",
     "start:next": "next start -H 0.0.0.0",
     "lint": "eslint",
     "db:generate": "drizzle-kit generate",

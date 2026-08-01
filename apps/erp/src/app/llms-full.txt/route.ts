@@ -3,17 +3,17 @@ import { NextResponse } from 'next/server'
 export const dynamic = 'force-static'
 
 export async function GET() {
-  const content = `# RetailSmart ERP — Full Product Information
+  const content = `# Doorli ERP — Full Product Information
 
 > AI-powered cloud POS and ERP platform for retail stores, restaurants, supermarkets, auto service centers, and vehicle dealerships. All features on every plan. Unlimited users. Free to start.
 
 ## Overview
 
-RetailSmart ERP is a multi-tenant SaaS business management system supporting five business types: retail, restaurant, supermarket, auto service, and vehicle dealership. Built with modern web technology, it provides a complete suite of business tools in a single platform with real-time synchronization and AI-powered insights.
+Doorli ERP is a multi-tenant SaaS business management system supporting five business types: retail, restaurant, supermarket, auto service, and vehicle dealership. Built with modern web technology, it provides a complete suite of business tools in a single platform with real-time synchronization and AI-powered insights.
 
 Every plan includes every feature — businesses only pay for storage as they grow. The first company per account is free forever with no credit card required.
 
-Website: https://www.retailsmarterp.com
+Website: https://www.erp.doorli.me
 
 ## Features by Module
 
@@ -141,7 +141,7 @@ All plans include every feature. Pricing is based on storage only.
 
 ## Getting Started
 
-1. **Register**: Create a free account at https://www.retailsmarterp.com/register — no credit card needed
+1. **Register**: Create a free account at https://www.erp.doorli.me/register — no credit card needed
 2. **Create your company**: Choose your business type (retail, restaurant, supermarket, auto service, or dealership)
 3. **Configure**: Set up categories, add items or services, invite your team
 4. **Start selling**: Open the POS terminal and process your first transaction
@@ -160,23 +160,23 @@ All plans include every feature. Pricing is based on storage only.
 
 | Type | Key Use Case | URL |
 |------|-------------|-----|
-| Retail | Stores, shops, boutiques | https://www.retailsmarterp.com/retail |
-| Restaurant | Cafes, restaurants, food service | https://www.retailsmarterp.com/restaurant |
-| Supermarket | Grocery, departments, high-volume | https://www.retailsmarterp.com/supermarket |
-| Auto Service | Workshops, garages, service centers | https://www.retailsmarterp.com/auto-service |
-| Dealership | Vehicle sales, showrooms | https://www.retailsmarterp.com/dealership |
+| Retail | Stores, shops, boutiques | https://www.erp.doorli.me/retail |
+| Restaurant | Cafes, restaurants, food service | https://www.erp.doorli.me/restaurant |
+| Supermarket | Grocery, departments, high-volume | https://www.erp.doorli.me/supermarket |
+| Auto Service | Workshops, garages, service centers | https://www.erp.doorli.me/auto-service |
+| Dealership | Vehicle sales, showrooms | https://www.erp.doorli.me/dealership |
 
 ## Contact
 
-- Website: https://www.retailsmarterp.com
-- Support: support@retailsmarterp.com
-- About: https://www.retailsmarterp.com/about
-- Contact form: https://www.retailsmarterp.com/contact
+- Website: https://www.erp.doorli.me
+- Support: support@erp.doorli.me
+- About: https://www.erp.doorli.me/about
+- Contact form: https://www.erp.doorli.me/contact
 
 ## Legal
 
-- Privacy Policy: https://www.retailsmarterp.com/privacy
-- Terms of Service: https://www.retailsmarterp.com/terms
+- Privacy Policy: https://www.erp.doorli.me/privacy
+- Terms of Service: https://www.erp.doorli.me/terms
 `
 
   return new NextResponse(content, {

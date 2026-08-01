@@ -119,7 +119,7 @@ function LoginForm() {
 
             {/* App mockup preview */}
             <div className="my-6 rounded-md overflow-hidden shadow-2xl shadow-black/30 border border-white/20">
-              <MockBrowserFrame url="app.retailsmarterp.com/pos">
+              <MockBrowserFrame url="app.erp.doorli.me/pos">
                 <div className="max-h-[250px] overflow-hidden">
                   <MockPOS />
                 </div>

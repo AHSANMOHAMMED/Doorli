@@ -171,7 +171,7 @@ export default function RetailClient() {
             {/* Right: Hero mockup */}
             <FadeInRight className="hidden lg:block">
               <FloatingMockup>
-                <MockBrowserFrame url="app.retailsmarterp.com/pos">
+                <MockBrowserFrame url="app.erp.doorli.me/pos">
                   <MockPOS />
                 </MockBrowserFrame>
               </FloatingMockup>
@@ -229,7 +229,7 @@ export default function RetailClient() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <FadeInLeft>
-              <MockBrowserFrame url="app.retailsmarterp.com/pos">
+              <MockBrowserFrame url="app.erp.doorli.me/pos">
                 <MockPOS />
               </MockBrowserFrame>
             </FadeInLeft>
@@ -471,7 +471,7 @@ export default function RetailClient() {
             badge="Multi-Business Platform"
             title="Also built for other industries"
             highlight="other industries"
-            subtitle="RetailSmart ERP adapts to your business type with specialized modules and features."
+            subtitle="Doorli ERP adapts to your business type with specialized modules and features."
             gradientClass="gradient-text-retail"
           />
 

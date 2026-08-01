@@ -234,7 +234,7 @@ export default function SupermarketClient() {
             {/* Right: Hero mockup */}
             <FadeInRight className="hidden lg:block">
               <FloatingMockup>
-                <MockBrowserFrame url="app.retailsmarterp.com/inventory">
+                <MockBrowserFrame url="app.erp.doorli.me/inventory">
                   <MockInventory />
                 </MockBrowserFrame>
               </FloatingMockup>
@@ -305,7 +305,7 @@ export default function SupermarketClient() {
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <FadeInLeft>
               <FloatingMockup>
-                <MockBrowserFrame url="app.retailsmarterp.com/pos">
+                <MockBrowserFrame url="app.erp.doorli.me/pos">
                   <MockPOS />
                 </MockBrowserFrame>
               </FloatingMockup>
@@ -532,7 +532,7 @@ export default function SupermarketClient() {
             badge="Multi-Business Platform"
             title="Solutions for every business type"
             highlight="every business type"
-            subtitle="RetailSmart ERP adapts to your industry. Explore other purpose-built solutions."
+            subtitle="Doorli ERP adapts to your industry. Explore other purpose-built solutions."
             gradientClass="gradient-text-supermarket"
           />
 

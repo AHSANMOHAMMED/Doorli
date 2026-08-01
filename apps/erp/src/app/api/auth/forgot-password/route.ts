@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
     const resetUrl = `${appUrl}/reset-password?token=${token}`
 
     // Send password reset email
-    const appName = process.env.NEXT_PUBLIC_APP_NAME || 'Retail Smart POS'
+    const appName = process.env.NEXT_PUBLIC_APP_NAME || 'Doorli POS'
 
     await sendSystemEmail({
       to: normalizedEmail,

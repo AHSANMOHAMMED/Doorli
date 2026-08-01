@@ -88,7 +88,7 @@ export interface SendSmsResult {
 
 // ==================== EMAIL TYPES ====================
 
-// All notification emails are sent via platform Resend account (slug@retailsmarterp.com)
+// All notification emails are sent via platform Resend account (slug@erp.doorli.me)
 // No tenant email configuration needed
 
 export interface ResendConfig {

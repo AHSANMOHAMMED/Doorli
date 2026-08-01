@@ -10,7 +10,7 @@ function getStore() {
 }
 
 /**
- * Prefer EXPO_PUBLIC_API_URL (e.g. http://140.245.207.93 for OCI).
+ * Prefer EXPO_PUBLIC_API_URL (e.g. https://api.doorli.me for OCI).
  * Falls back to emulator/localhost for local API.
  */
 function resolveApiRoot(): string {

@@ -197,7 +197,7 @@ export default function RestaurantClient() {
             {/* Right: Hero mockup */}
             <FadeInRight className="hidden lg:block">
               <FloatingMockup>
-                <BrowserMockup url="retailsmarterp.com/kitchen">
+                <BrowserMockup url="erp.doorli.me/kitchen">
                   <MockKitchenDisplay />
                 </BrowserMockup>
               </FloatingMockup>
@@ -327,7 +327,7 @@ export default function RestaurantClient() {
             badge="Multi-Business Platform"
             title="Also built for other industries"
             highlight="other industries"
-            subtitle="RetailSmart ERP adapts to your business type with specialized modules and features."
+            subtitle="Doorli ERP adapts to your business type with specialized modules and features."
             gradientClass="gradient-text-restaurant"
           />
 

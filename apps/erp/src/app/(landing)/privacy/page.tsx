@@ -2,22 +2,22 @@ import { Metadata } from 'next'
 import { generateBreadcrumbJsonLd } from '@/lib/seo/breadcrumbs'
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy - RetailSmart ERP',
-  description: 'Privacy Policy for RetailSmart ERP. Learn how we collect, use, and protect your data.',
-  keywords: ['privacy policy', 'data protection', 'RetailSmart ERP privacy', 'data security'],
+  title: 'Privacy Policy - Doorli ERP',
+  description: 'Privacy Policy for Doorli ERP. Learn how we collect, use, and protect your data.',
+  keywords: ['privacy policy', 'data protection', 'Doorli ERP privacy', 'data security'],
   openGraph: {
-    title: 'Privacy Policy - RetailSmart ERP',
-    description: 'Privacy Policy for RetailSmart ERP. Learn how we collect, use, and protect your data.',
-    url: 'https://www.retailsmarterp.com/privacy',
+    title: 'Privacy Policy - Doorli ERP',
+    description: 'Privacy Policy for Doorli ERP. Learn how we collect, use, and protect your data.',
+    url: 'https://www.erp.doorli.me/privacy',
     type: 'website',
   },
   twitter: {
     card: 'summary',
-    title: 'Privacy Policy - RetailSmart ERP',
-    description: 'Privacy Policy for RetailSmart ERP. Learn how we collect, use, and protect your data.',
+    title: 'Privacy Policy - Doorli ERP',
+    description: 'Privacy Policy for Doorli ERP. Learn how we collect, use, and protect your data.',
   },
   alternates: {
-    canonical: 'https://www.retailsmarterp.com/privacy',
+    canonical: 'https://www.erp.doorli.me/privacy',
   },
 }
 
@@ -234,7 +234,7 @@ export default function PrivacyPage() {
 
           <section>
             <h2 className="text-xl font-semibold text-white mt-8 mb-3">10. Children&apos;s Privacy</h2>
-            <p>RetailSmart ERP is a business management platform intended for users aged 18 and above. We do not knowingly collect information from children under 18. If we learn that we have collected data from a child under 18, we will delete it promptly.</p>
+            <p>Doorli ERP is a business management platform intended for users aged 18 and above. We do not knowingly collect information from children under 18. If we learn that we have collected data from a child under 18, we will delete it promptly.</p>
           </section>
 
           <section>
@@ -254,7 +254,7 @@ export default function PrivacyPage() {
 
           <section>
             <h2 className="text-xl font-semibold text-white mt-8 mb-3">13. Contact</h2>
-            <p>If you have questions about this Privacy Policy or wish to exercise your data rights, please reach out through our <a href="/contact" className="text-emerald-400 hover:text-emerald-300 hover:underline">contact page</a> or email <a href="mailto:support@retailsmarterp.com" className="text-emerald-400 hover:text-emerald-300 hover:underline">support@retailsmarterp.com</a>.</p>
+            <p>If you have questions about this Privacy Policy or wish to exercise your data rights, please reach out through our <a href="/contact" className="text-emerald-400 hover:text-emerald-300 hover:underline">contact page</a> or email <a href="mailto:support@erp.doorli.me" className="text-emerald-400 hover:text-emerald-300 hover:underline">support@erp.doorli.me</a>.</p>
           </section>
         </div>
       </div>

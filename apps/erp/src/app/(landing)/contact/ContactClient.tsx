@@ -17,11 +17,11 @@ import ContactForm from '@/components/landing/ContactForm'
 import CTASection from '@/components/landing/CTASection'
 
 const defaultContactInfo = {
-  email: 'hello@retailsmarterp.com',
+  email: 'hello@erp.doorli.me',
   phone: '+94 77 840 7616',
   whatsapp: '+94 77 840 7616',
   address: 'No 31, Akuressa Road, Nupe, Matara, Sri Lanka',
-  companyName: 'Retail Smart ERP',
+  companyName: 'Doorli ERP',
   businessHours: 'Mon-Fri 9:00 AM - 6:00 PM (IST)',
 }
 
@@ -83,7 +83,7 @@ export default function ContactClient() {
           </BlurFadeIn>
           <BlurFadeIn delay={0.2}>
             <p className="mt-6 text-lg sm:text-xl text-zinc-400 leading-relaxed max-w-2xl mx-auto">
-              Have questions about RetailSmart ERP? We&apos;d love to hear from you. Our team is ready to help you get started — your first company is <span className="text-emerald-400 font-semibold">free forever</span>.
+              Have questions about Doorli ERP? We&apos;d love to hear from you. Our team is ready to help you get started — your first company is <span className="text-emerald-400 font-semibold">free forever</span>.
             </p>
           </BlurFadeIn>
         </div>

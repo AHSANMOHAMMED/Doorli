@@ -14,7 +14,7 @@
       "backgroundColor": "#0B1B2B"
     },
     "extra": {
-      "apiUrl": "http://140.245.207.93",
+      "apiUrl": "https://api.doorli.me",
       "eas": {
         "projectId": "doorli-preview"
       }

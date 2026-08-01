@@ -8,20 +8,20 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "http://140.245.207.93"
+        "EXPO_PUBLIC_API_URL": "https://api.doorli.me"
       }
     },
     "preview": {
       "distribution": "internal",
       "android": { "buildType": "apk" },
       "env": {
-        "EXPO_PUBLIC_API_URL": "http://140.245.207.93"
+        "EXPO_PUBLIC_API_URL": "https://api.doorli.me"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api.localconnect.app"
+        "EXPO_PUBLIC_API_URL": "https://api.doorli.me"
       },
       "ios": {
         "resourceClasses": ["2x", "3x"],

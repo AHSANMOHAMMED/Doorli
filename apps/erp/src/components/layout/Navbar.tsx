@@ -385,7 +385,7 @@ export function Navbar({ tenantName, userEmail, appVersion, companySlug }: Navba
           {helpMenuOpen && (
             <div className="absolute right-0 top-full mt-1 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-lg z-50 py-1 animate-dropdown">
               <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700">
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Retail Smart ERP</p>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Doorli ERP</p>
                 {appVersion && (
                   <p className="text-xs text-gray-400 dark:text-gray-500">Version {appVersion}</p>
                 )}
@@ -403,7 +403,7 @@ export function Navbar({ tenantName, userEmail, appVersion, companySlug }: Navba
                 <span className="ml-auto text-xs text-gray-400 font-mono">Ctrl+K</span>
               </button>
               <a
-                href="https://github.com/ravindu2012/retail-smart-erp"
+                href="https://github.com/ravindu2012/doorli-erp"
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => setHelpMenuOpen(false)}

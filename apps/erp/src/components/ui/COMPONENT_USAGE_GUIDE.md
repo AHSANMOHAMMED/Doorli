@@ -1,7 +1,7 @@
 # UI Component Library Usage Guide
 
 ## Overview
-This document provides guidelines for using the UI component library in the Retail Smart POS application. The library follows ERPNext-style patterns with mobile-first responsive design.
+This document provides guidelines for using the UI component library in the Doorli POS application. The library follows ERPNext-style patterns with mobile-first responsive design.
 
 ## Core Principles
 

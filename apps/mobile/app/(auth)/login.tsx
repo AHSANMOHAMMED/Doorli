@@ -191,7 +191,7 @@ export default function LoginScreen() {
           <View style={styles.header}>
             <View style={styles.logoRow}>
               <MapPin color={PRIMARY} size={32} />
-              <Text style={styles.title}>LocalConnect</Text>
+              <Text style={styles.title}>Doorli</Text>
             </View>
             <Text style={styles.subtitle}>Your community super-app for everything local.</Text>
           </View>

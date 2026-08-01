@@ -220,7 +220,7 @@ export default function HomeClient() {
             {/* Right column — Dashboard mockup */}
             <FadeIn className="hidden lg:block" delay={0.3}>
               <FloatingMockup>
-                <MockBrowserFrame url="app.retailsmarterp.com/dashboard">
+                <MockBrowserFrame url="app.erp.doorli.me/dashboard">
                   <MockDashboard />
                 </MockBrowserFrame>
               </FloatingMockup>
@@ -276,7 +276,7 @@ export default function HomeClient() {
             badge="Live Preview"
             title="Explore by category"
             highlight="category"
-            subtitle="Click any tab to see exactly how RetailSmart works for your business."
+            subtitle="Click any tab to see exactly how Doorli works for your business."
           />
           <FeatureTabSwitcher tabs={featureTabs} />
         </div>
@@ -681,7 +681,7 @@ export default function HomeClient() {
          ══════════════════════════════════════════════ */}
       <CTASection
         title="Ready to transform your business?"
-        subtitle="Start managing your business with RetailSmart ERP. All features included, unlimited users, free forever."
+        subtitle="Start managing your business with Doorli ERP. All features included, unlimited users, free forever."
       />
     </PageWrapper>
   )
