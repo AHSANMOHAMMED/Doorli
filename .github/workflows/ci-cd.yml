@@ -49,6 +49,9 @@ jobs:
   build-mobile:
     runs-on: ubuntu-latest
     needs: lint-and-build
+    env:
+      HAS_EXPO_TOKEN: ${{ secrets.EXPO_TOKEN && 'true' || 'false' }}
+    if: ${{ env.HAS_EXPO_TOKEN == 'true' }}
     steps:
       - uses: actions/checkout@v4
       
@@ -89,7 +92,7 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
-    needs: [lint-and-build, build-mobile]
+    needs: [lint-and-build]
     if: github.ref == 'refs/heads/main'
     environment: production
     steps:
