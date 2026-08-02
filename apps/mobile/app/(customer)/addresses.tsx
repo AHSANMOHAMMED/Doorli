@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { fetchAddresses, createAddress, DEFAULT_LOCATION } from '../../lib/api';
+import { fetchAddresses, createAddress, deleteAddress, DEFAULT_LOCATION } from '../../lib/api';
 import { MapPin, ArrowLeft } from 'lucide-react-native';
 import { useRouter, Stack } from 'expo-router';
 
@@ -53,6 +53,24 @@ export default function AddressesScreen() {
     } finally {
       setSaving(false);
     }
+  }
+
+  async function handleDelete(id: string) {
+    Alert.alert('Delete address', 'Are you sure you want to remove this address?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteAddress(id);
+            queryClient.invalidateQueries({ queryKey: ['addresses'] });
+          } catch (e: unknown) {
+            Alert.alert('Failed', e instanceof Error ? e.message : 'Try again');
+          }
+        },
+      },
+    ]);
   }
 
   return (
@@ -126,6 +144,12 @@ export default function AddressesScreen() {
                       <Text style={styles.defaultBadgeText}>Default</Text>
                     </View>
                   )}
+                  <TouchableOpacity 
+                    onPress={() => handleDelete(item.id)} 
+                    style={styles.deleteBtn}
+                  >
+                    <Text style={styles.deleteBtnText}>Remove</Text>
+                  </TouchableOpacity>
                 </View>
                 <View style={styles.cardContent}>
                   <Text style={styles.line}>{item.addressLine}</Text>
@@ -282,5 +306,17 @@ const styles = StyleSheet.create({
   emptyText: { 
     color: '#6b7280',
     fontSize: 14,
+  },
+  deleteBtn: {
+    marginLeft: 'auto',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: '#fee2e2',
+  },
+  deleteBtnText: {
+    color: '#ef4444',
+    fontSize: 12,
+    fontWeight: '600',
   },
 });

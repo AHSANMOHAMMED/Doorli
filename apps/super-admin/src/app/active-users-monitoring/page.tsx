@@ -67,7 +67,6 @@ export default function ActiveUsersMonitoringPage() {
 <div className="flex items-baseline gap-xs">
 <span className="font-kpi-number text-kpi-number text-white" id="active-connections">{users.length}</span>
 <span className="font-label-medium text-label-medium text-tertiary flex items-center gap-1">
-<span className="material-symbols-outlined text-[14px]">trending_up</span> 12%
                         </span>
 </div>
 <p className="font-caption text-caption text-outline mt-xs uppercase tracking-wider">Total Active Global Connections</p>
@@ -173,7 +172,7 @@ export default function ActiveUsersMonitoringPage() {
 </table>
 </div>
 <div className="p-md border-t border-outline-variant bg-surface-container flex flex-col md:flex-row justify-between items-center gap-md">
-<div className="font-caption text-caption text-outline">Showing 4 of 1,248 active sessions</div>
+<div className="font-caption text-caption text-outline">Showing {users.length} active sessions</div>
 <div className="flex items-center gap-2">
 <button className="p-2 rounded-lg bg-surface-container-high border border-outline-variant text-on-surface hover:bg-surface-variant transition-colors disabled:opacity-50" disabled>
 <span className="material-symbols-outlined">chevron_left</span>

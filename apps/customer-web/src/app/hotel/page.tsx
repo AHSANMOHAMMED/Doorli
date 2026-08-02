@@ -1,74 +1,54 @@
 "use client";
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Bed, Star, MapPin, ShoppingCart } from 'lucide-react';
+import { apiFetch } from '@/lib/api';
 
-// Sample hotel data (this will be replaced with real API calls)
-const hotels = [
-  {
-    id: 'hotel-001',
-    businessName: 'Grand Hotel Colombo',
-    category: 'hotel',
-    description: 'Luxury 5-star hotel with spa and pool',
-    city: 'Colombo',
-    pricePerNight: 8500,
-    rating: 4.7,
-    totalRooms: 120,
-    availableRooms: 15,
-    images: ['/images/hotel1.jpg', '/images/hotel2.jpg'],
-    amenities: ['Free WiFi', 'Parking', 'Breakfast', 'Pool', 'Spa', 'Air Conditioning', 'TV', 'Gym'],
-    isFeatured: true,
-    phone: '+94 11 123 4567',
-    address: '123 Galle Road, Colombo'
-  },
-  {
-    id: 'hotel-002',
-    businessName: 'Beach Resort Negombo',
-    category: 'hotel',
-    description: 'Beachfront resort perfect for families',
-    city: 'Negombo',
-    pricePerNight: 4500,
-    rating: 4.3,
-    totalRooms: 85,
-    availableRooms: 8,
-    images: ['/images/hotel3.jpg'],
-    amenities: ['Free WiFi', 'Parking', 'Beach Access', 'Swimming Pool', 'Restaurant'],
-    isFeatured: false,
-    phone: '+94 31 234 5678',
-    address: 'Beach Road, Negombo'
-  },
-  {
-    id: 'hotel-003',
-    businessName: 'Heritage Boutique Kandy',
-    category: 'hotel',
-    description: 'Historic boutique hotel in Kandy',
-    city: 'Kandy',
-    pricePerNight: 3500,
-    rating: 4.9,
-    totalRooms: 30,
-    availableRooms: 3,
-    images: ['/images/hotel4.jpg'],
-    amenities: ['Free WiFi', 'Heritage Decor', 'Restaurant', 'Garden'],
-    isFeatured: true,
-    phone: '+94 81 345 6789',
-    address: '123 Main Street, Kandy'
-  }
-];
+type HotelVendor = {
+  id: string;
+  businessName: string;
+  category: string;
+  description?: string | null;
+  city?: string | null;
+  pricePerNight?: number;
+  rating?: number;
+  totalRooms?: number;
+  availableRooms?: number;
+  images?: string[];
+  amenities?: string[];
+  isFeatured?: boolean;
+  phone?: string | null;
+  address?: string | null;
+};
 
 export default function HotelsPage() {
+  const [hotels, setHotels] = useState<HotelVendor[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCity, setSelectedCity] = useState('all');
   const [priceRange, setPriceRange] = useState({ min: 0, max: 20000 });
 
-  const cities = ['Colombo', 'Negombo', 'Kandy'];
+  useEffect(() => {
+    apiFetch<{ items: HotelVendor[] } | HotelVendor[]>('/vendors?category=hotel')
+      .then((d) => {
+        const items = Array.isArray(d) ? d : d?.items || [];
+        setHotels(items);
+      })
+      .catch((e) => setError(e instanceof Error ? e.message : 'Failed to load hotels'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const cities = [...new Set(hotels.map(h => h.city).filter(Boolean))] as string[];
 
   const filteredHotels = hotels.filter(hotel => {
     const matchesSearch = hotel.businessName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         hotel.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         hotel.description.toLowerCase().includes(searchTerm.toLowerCase());
+                         (hotel.city || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (hotel.description || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCity = selectedCity === 'all' || hotel.city === selectedCity;
-    const matchesPrice = hotel.pricePerNight >= priceRange.min && hotel.pricePerNight <= priceRange.max;
+    const price = hotel.pricePerNight || 0;
+    const matchesPrice = price >= priceRange.min && price <= priceRange.max;
     return matchesSearch && matchesCity && matchesPrice;
   });
 
@@ -92,7 +72,6 @@ export default function HotelsPage() {
 
   return (
     <div className="min-h-screen bg-[#121212] text-white">
-      {/* Header */}
       <header className="w-full top-0 sticky border-b border-surface-variant bg-[#121212] z-50 flex justify-between items-center px-margin-mobile md:px-margin-desktop h-16">
         <div className="flex items-center gap-4">
           <Link href="/" className="text-primary hover:text-primary/80">← Home</Link>
@@ -107,7 +86,6 @@ export default function HotelsPage() {
       </header>
 
       <main className="max-w-screen-xl mx-auto px-margin-mobile md:px-margin-desktop py-lg">
-        {/* Search & Filter Section */}
         <div className="bg-surface-container-high rounded-xl border border-surface-variant p-md mb-lg animate-slide-up">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-md">
             <div>
@@ -155,100 +133,115 @@ export default function HotelsPage() {
           </div>
         </div>
 
-        {/* Hotels Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter mb-lg">
-          {filteredHotels.map((hotel, index) => (
-            <Link
-              key={hotel.id}
-              href={`/hotel/${hotel.id}`}
-              className="group relative p-lg rounded-2xl bg-surface-container-high border border-surface-variant hover:border-primary/50 transition-all duration-300 flex flex-col justify-between overflow-hidden animate-slide-up hover:scale-105 hover:-translate-y-1"
-              style={{ animationDelay: `${0.1 + (index * 0.1)}s` }}
-            >
-              {/* Hotel Image */}
-              <div className="relative h-48 bg-surface-variant rounded-lg mb-md">
-                <div className="flex items-center justify-center h-full">
-                  <span className="material-symbols-outlined text-surface-variant text-6xl">hotel</span>
-                </div>
-                {hotel.isFeatured && (
-                  <div className="absolute top-2 right-2">
-                    <span className="px-2 py-1 bg-[#fac775] text-[#121212] text-xs font-bold rounded-full">
-                      FEATURED
+        {loading && (
+          <div className="col-span-full py-12 text-center">
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-2 border-white/15 border-t-primary" />
+            <p className="text-[#9bb4d0] mt-4">Loading hotels...</p>
+          </div>
+        )}
+
+        {error && (
+          <div className="col-span-full py-12 text-center">
+            <p className="text-red-400 mb-2">{error}</p>
+            <p className="text-xs text-surface-variant">Please try again later</p>
+          </div>
+        )}
+
+        {!loading && !error && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter mb-lg">
+            {filteredHotels.map((hotel, index) => (
+              <Link
+                key={hotel.id}
+                href={`/hotel/${hotel.id}`}
+                className="group relative p-lg rounded-2xl bg-surface-container-high border border-surface-variant hover:border-primary/50 transition-all duration-300 flex flex-col justify-between overflow-hidden animate-slide-up hover:scale-105 hover:-translate-y-1"
+                style={{ animationDelay: `${0.1 + (index * 0.1)}s` }}
+              >
+                <div className="relative h-48 bg-surface-variant rounded-lg mb-md">
+                  <div className="flex items-center justify-center h-full">
+                    <span className="material-symbols-outlined text-surface-variant text-6xl">hotel</span>
+                  </div>
+                  {hotel.isFeatured && (
+                    <div className="absolute top-2 right-2">
+                      <span className="px-2 py-1 bg-[#fac775] text-[#121212] text-xs font-bold rounded-full">
+                        FEATURED
+                      </span>
+                    </div>
+                  )}
+                  <div className="absolute bottom-2 left-2">
+                    <span className="px-2 py-1 bg-[#185fa5]/80 text-white text-xs rounded-full">
+                      {hotel.city}
                     </span>
-                  </div>
-                )}
-                <div className="absolute bottom-2 left-2">
-                  <span className="px-2 py-1 bg-[#185fa5]/80 text-white text-xs rounded-full">
-                    {hotel.city}
-                  </span>
-                </div>
-              </div>
-
-              {/* Hotel Info */}
-              <div className="flex-1">
-                <h3 className="font-display text-xl font-bold text-white mb-2 group-hover:text-primary transition-colors">
-                  {hotel.businessName}
-                </h3>
-
-                <div className="flex items-center gap-4 mb-3 text-sm text-[#9bb4d0]">
-                  <div className="flex items-center gap-1">
-                    <Star className="w-4 h-4 text-[#fac775]" />
-                    <span>{hotel.rating}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <MapPin className="w-4 h-4 text-[#378add]" />
-                    <span>{hotel.city}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Bed className="w-4 h-4 text-[#5dcaa5]" />
-                    <span>{hotel.availableRooms} Rooms Available</span>
                   </div>
                 </div>
 
-                <p className="text-sm text-[#9bb4d0] mb-3 line-clamp-2">
-                  {hotel.description}
-                </p>
+                <div className="flex-1">
+                  <h3 className="font-display text-xl font-bold text-white mb-2 group-hover:text-primary transition-colors">
+                    {hotel.businessName}
+                  </h3>
 
-                {/* Amenities */}
-                <div className="flex flex-wrap gap-1 mb-4">
-                  {hotel.amenities.slice(0, 4).map((amenity, i) => (
-                    <span key={i} className="text-xs bg-surface-variant px-2 py-1 rounded text-[#9bb4d0]">
-                      {getAmenityIcon(amenity)} {amenity}
-                    </span>
-                  ))}
-                  {hotel.amenities.length > 4 && (
-                    <span className="text-xs bg-surface-variant px-2 py-1 rounded text-[#9bb4d0]">
-                      +{hotel.amenities.length - 4} more
-                    </span>
+                  <div className="flex items-center gap-4 mb-3 text-sm text-[#9bb4d0]">
+                    <div className="flex items-center gap-1">
+                      <Star className="w-4 h-4 text-[#fac775]" />
+                      <span>{hotel.rating || 'N/A'}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <MapPin className="w-4 h-4 text-[#378add]" />
+                      <span>{hotel.city}</span>
+                    </div>
+                    {hotel.availableRooms != null && (
+                      <div className="flex items-center gap-1">
+                        <Bed className="w-4 h-4 text-[#5dcaa5]" />
+                        <span>{hotel.availableRooms} Rooms Available</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <p className="text-sm text-[#9bb4d0] mb-3 line-clamp-2">
+                    {hotel.description || `${hotel.businessName} - Hotel accommodation`}
+                  </p>
+
+                  {(hotel.amenities || []).length > 0 && (
+                    <div className="flex flex-wrap gap-1 mb-4">
+                      {hotel.amenities!.slice(0, 4).map((amenity, i) => (
+                        <span key={i} className="text-xs bg-surface-variant px-2 py-1 rounded text-[#9bb4d0]">
+                          {getAmenityIcon(amenity)} {amenity}
+                        </span>
+                      ))}
+                      {hotel.amenities!.length > 4 && (
+                        <span className="text-xs bg-surface-variant px-2 py-1 rounded text-[#9bb4d0]">
+                          +{hotel.amenities!.length - 4} more
+                        </span>
+                      )}
+                    </div>
                   )}
                 </div>
-              </div>
 
-              {/* Price and Book */}
-              <div className="mt-md pt-md border-t border-surface-variant">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-xs text-[#9bb4d0] uppercase tracking-wider">Starting from</div>
-                    <div className="font-display text-lg font-bold text-[#5dcaa5]">
-                      Rs. {hotel.pricePerNight.toLocaleString()}<span className="text-xs font-normal text-[#9bb4d0]">/night</span>
+                <div className="mt-md pt-md border-t border-surface-variant">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-xs text-[#9bb4d0] uppercase tracking-wider">Starting from</div>
+                      <div className="font-display text-lg font-bold text-[#5dcaa5]">
+                        Rs. {(hotel.pricePerNight || 0).toLocaleString()}<span className="text-xs font-normal text-[#9bb4d0]">/night</span>
+                      </div>
                     </div>
+                    <button
+                      className="doorli-cta-primary px-4 py-2 flex items-center gap-2 hover:scale-105 transition-transform"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                    >
+                      <ShoppingCart className="w-4 h-4" />
+                      Book Now
+                    </button>
                   </div>
-                  <button
-                    className="doorli-cta-primary px-4 py-2 flex items-center gap-2 hover:scale-105 transition-transform"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                    }}
-                  >
-                    <ShoppingCart className="w-4 h-4" />
-                    Book Now
-                  </button>
                 </div>
-              </div>
-            </Link>
-          ))}
-        </div>
+              </Link>
+            ))}
+          </div>
+        )}
 
-        {filteredHotels.length === 0 && (
+        {!loading && !error && filteredHotels.length === 0 && (
           <div className="col-span-full py-12 text-center">
             <div className="text-[#9bb4d0] mb-2">No hotels found matching your criteria</div>
             <div className="text-xs text-surface-variant">Try adjusting your search or filters</div>

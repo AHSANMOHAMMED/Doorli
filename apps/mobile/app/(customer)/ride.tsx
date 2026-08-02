@@ -26,14 +26,13 @@ import { MapPin, Navigation, Car } from 'lucide-react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '../../store/auth';
 
-const DROPOFF = { lat: 6.8649, lng: 79.8997, label: 'Nugegoda junction' };
-
 export default function RideScreen() {
   const router = useRouter();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [pickupAddress, setPickupAddress] = useState('Current location');
-  const [dropoffAddress, setDropoffAddress] = useState(DROPOFF.label);
+  const [dropoffAddress, setDropoffAddress] = useState('');
   const [pickup, setPickup] = useState(DEFAULT_LOCATION);
+  const [dropoff, setDropoff] = useState<{ lat: number; lng: number } | null>(null);
   const [estimate, setEstimate] = useState<RideEstimate | null>(null);
   const [loadingEstimate, setLoadingEstimate] = useState(false);
   const [requesting, setRequesting] = useState(false);
@@ -60,13 +59,28 @@ export default function RideScreen() {
   }, []);
 
   async function handleEstimate() {
+    if (!dropoffAddress.trim()) {
+      Alert.alert('Drop-off required', 'Please enter a drop-off address.');
+      return;
+    }
     setLoadingEstimate(true);
     try {
+      let dropoffCoords = dropoff;
+      if (!dropoffCoords) {
+        const results = await Location.geocodeAsync(dropoffAddress.trim());
+        if (results.length === 0) {
+          Alert.alert('Address not found', 'Please try a different address.');
+          setLoadingEstimate(false);
+          return;
+        }
+        dropoffCoords = { lat: results[0].latitude, lng: results[0].longitude };
+        setDropoff(dropoffCoords);
+      }
       const data = await estimateRide({
         pickupLat: pickup.lat,
         pickupLng: pickup.lng,
-        dropoffLat: DROPOFF.lat,
-        dropoffLng: DROPOFF.lng,
+        dropoffLat: dropoffCoords.lat,
+        dropoffLng: dropoffCoords.lng,
       });
       setEstimate(data);
     } catch (e: unknown) {
@@ -82,14 +96,37 @@ export default function RideScreen() {
       router.push('/(auth)/login');
       return;
     }
+    if (!dropoffAddress.trim()) {
+      Alert.alert('Drop-off required', 'Please enter a drop-off address.');
+      return;
+    }
     setRequesting(true);
     try {
-      if (!estimate) await handleEstimate();
+      let dropoffCoords = dropoff;
+      if (!dropoffCoords) {
+        const results = await Location.geocodeAsync(dropoffAddress.trim());
+        if (results.length === 0) {
+          Alert.alert('Address not found', 'Please try a different address.');
+          setRequesting(false);
+          return;
+        }
+        dropoffCoords = { lat: results[0].latitude, lng: results[0].longitude };
+        setDropoff(dropoffCoords);
+      }
+      if (!estimate) {
+        const estData = await estimateRide({
+          pickupLat: pickup.lat,
+          pickupLng: pickup.lng,
+          dropoffLat: dropoffCoords.lat,
+          dropoffLng: dropoffCoords.lng,
+        });
+        setEstimate(estData);
+      }
       const ride = await createRide({
         pickupLat: pickup.lat,
         pickupLng: pickup.lng,
-        dropoffLat: DROPOFF.lat,
-        dropoffLng: DROPOFF.lng,
+        dropoffLat: dropoffCoords.lat,
+        dropoffLng: dropoffCoords.lng,
         pickupAddress,
         dropoffAddress,
       });

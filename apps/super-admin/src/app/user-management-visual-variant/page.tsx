@@ -77,162 +77,46 @@ export default function UserManagementVisualVariantPage() {
 </div>
 {/*  User Cards Grid: Visual Explorer Variant  */}
 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-lg">
-{/*  User Card 1  */}
-<div className="bg-surface-container-low border border-outline-variant rounded-3xl p-lg user-card-glow transition-all duration-300 flex flex-col gap-lg group">
-<div className="flex gap-lg items-start">
-{/*  Enlarged Avatar with Overlay Status  */}
-<div className="relative flex-shrink-0">
-<div className="w-24 h-24 rounded-3xl overflow-hidden border-2 border-primary-container/30 ring-4 ring-surface-container-low">
-<img className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB5wQnElIE3rfVibN9AKn6ZnvRH_9EVmoeh7t_9uL-y3YWPBkQ17s6HEqtGQoFqckQ4VDLoRoCzIhAIZXwDlgrJFzrX5GlXdJjH_ZmhYLHGToab8R6NSnDG8m-M2nbS2p4K1IuMBhqzALGt9iY8aXmKDtcGf-hsmnONeSArkzntidh6SaHUGSH8WmFp5x7Peezwsfc6NPGnzhWajEOYr8pKGP37ROJwWsT2XAmLwhBDLXWqg9qX7RlE1D_P2KpdJespvPgWH67CqN5w"/>
-</div>
-<div className="absolute -bottom-1 -right-1 bg-tertiary text-on-tertiary px-2 py-0.5 rounded-lg font-caption text-[10px] uppercase font-bold border-2 border-surface-container-low shadow-lg">Active</div>
-</div>
-<div className="flex-1 min-w-0">
-<div className="flex justify-between items-start">
-<div>
-<h3 className="font-screen-title text-xl text-on-background truncate">Marcus Chen</h3>
-<p className="font-body-compact text-on-surface-variant">Logistics Lead • Global Express</p>
-</div>
-<button className="material-symbols-outlined text-on-surface-variant hover:text-on-surface">more_vert</button>
-</div>
-{/*  Metadata Horizontal Scroll  */}
-<div className="mt-md flex gap-2 overflow-x-auto pb-2 custom-scrollbar scroll-smooth no-scrollbar">
-<span className="flex-shrink-0 bg-surface-container-high px-3 py-1.5 rounded-xl border border-outline-variant font-label-medium text-secondary flex items-center gap-2">
-<span className="material-symbols-outlined text-[18px]">verified_user</span> Vendor Staff
-                </span>
-<span className="flex-shrink-0 bg-surface-container-high px-3 py-1.5 rounded-xl border border-outline-variant font-label-medium text-on-surface-variant flex items-center gap-2">
-<span className="material-symbols-outlined text-[18px]">history</span> ID: 88291
-                </span>
-<span className="flex-shrink-0 bg-surface-container-high px-3 py-1.5 rounded-xl border border-outline-variant font-label-medium text-on-surface-variant flex items-center gap-2">
-<span className="material-symbols-outlined text-[18px]">location_on</span> NYC Hub
-                </span>
-</div>
-</div>
-</div>
-{/*  Quick Action Tray  */}
-<div className="flex items-center justify-between bg-surface-container-high/50 p-2 rounded-2xl border border-outline-variant/30">
-<div className="flex gap-1">
-<button className="w-10 h-10 rounded-xl hover:bg-primary-container hover:text-on-primary-container transition-colors flex items-center justify-center text-on-surface-variant" title="Message">
-<span className="material-symbols-outlined text-[20px]">chat_bubble</span>
-</button>
-<button className="w-10 h-10 rounded-xl hover:bg-secondary-container hover:text-on-secondary-container transition-colors flex items-center justify-center text-on-surface-variant" title="Edit Profile">
-<span className="material-symbols-outlined text-[20px]">edit</span>
-</button>
-<button className="w-10 h-10 rounded-xl hover:bg-error-container hover:text-on-error-container transition-colors flex items-center justify-center text-on-surface-variant" title="Force Logout">
-<span className="material-symbols-outlined text-[20px]">logout</span>
-</button>
-</div>
-<button className="px-4 py-2 bg-surface-container-highest hover:bg-primary-container hover:text-on-primary-container rounded-xl font-label-medium transition-all">View Details</button>
-</div>
-</div>
-{/*  User Card 2  */}
-<div className="bg-surface-container-low border border-outline-variant rounded-3xl p-lg user-card-glow transition-all duration-300 flex flex-col gap-lg group">
-<div className="flex gap-lg items-start">
-<div className="relative flex-shrink-0">
-<div className="w-24 h-24 rounded-3xl overflow-hidden border-2 border-secondary/30 ring-4 ring-surface-container-low">
-<img className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDLsTAC8xhYRWVszLPCTu2Mq1vv1Pr_HrtmomY5TNN1ZqM-73yI8_2d2TkHRhE3R0DP5rJNKQJZjgbEmHvhE0JefdiO2h8vPqxDzaZQuGyYk_q8-HLzrQ-axRUwmYYhqqOknO-_CY3oSRvR-y3Jk2kYRWaz6iXZEQF5_f1yIPhUshoTBpm9u5GR2lb3UQTQkUa-DjrD4xqjTYtdeIm6w6TuWSaMLwM16cuko5t5PupK3UsHWDYsZzvBsWisl_3JZ1DYOnmRNEknj6MJ"/>
-</div>
-<div className="absolute -bottom-1 -right-1 bg-tertiary text-on-tertiary px-2 py-0.5 rounded-lg font-caption text-[10px] uppercase font-bold border-2 border-surface-container-low shadow-lg">Active</div>
-</div>
-<div className="flex-1 min-w-0">
-<div className="flex justify-between items-start">
-<div>
-<h3 className="font-screen-title text-xl text-on-background truncate">Elena Rodriguez</h3>
-<p className="font-body-compact text-on-surface-variant">System Admin • Doorli HQ</p>
-</div>
-<button className="material-symbols-outlined text-on-surface-variant">more_vert</button>
-</div>
-<div className="mt-md flex gap-2 overflow-x-auto pb-2 custom-scrollbar scroll-smooth">
-<span className="flex-shrink-0 bg-surface-container-high px-3 py-1.5 rounded-xl border border-outline-variant font-label-medium text-secondary flex items-center gap-2">
-<span className="material-symbols-outlined text-[18px]">key</span> Super Admin
-                </span>
-<span className="flex-shrink-0 bg-surface-container-high px-3 py-1.5 rounded-xl border border-outline-variant font-label-medium text-on-surface-variant flex items-center gap-2">
-<span className="material-symbols-outlined text-[18px]">security</span> Root Access
-                </span>
-</div>
-</div>
-</div>
-<div className="flex items-center justify-between bg-surface-container-high/50 p-2 rounded-2xl border border-outline-variant/30">
-<div className="flex gap-1">
-<button className="w-10 h-10 rounded-xl hover:bg-primary-container hover:text-on-primary-container transition-colors flex items-center justify-center text-on-surface-variant"><span className="material-symbols-outlined text-[20px]">chat_bubble</span></button>
-<button className="w-10 h-10 rounded-xl hover:bg-secondary-container hover:text-on-secondary-container transition-colors flex items-center justify-center text-on-surface-variant"><span className="material-symbols-outlined text-[20px]">edit</span></button>
-<button className="w-10 h-10 rounded-xl hover:bg-error-container hover:text-on-error-container transition-colors flex items-center justify-center text-on-surface-variant"><span className="material-symbols-outlined text-[20px]">logout</span></button>
-</div>
-<button className="px-4 py-2 bg-surface-container-highest hover:bg-primary-container hover:text-on-primary-container rounded-xl font-label-medium transition-all">Console</button>
-</div>
-</div>
-{/*  User Card 3  */}
-<div className="bg-surface-container-low border border-outline-variant rounded-3xl p-lg user-card-glow transition-all duration-300 flex flex-col gap-lg group">
-<div className="flex gap-lg items-start">
-<div className="relative flex-shrink-0">
-<div className="w-24 h-24 rounded-3xl overflow-hidden border-2 border-outline-variant ring-4 ring-surface-container-low grayscale opacity-70">
-<img className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDr-XI25aPQ_YTmncLeBsK7i2d6SINWrUwWvAlnaQiDVJ7HNhBJZSR9cJ5kAw8lRwDLWPQcQa_wXe_Drd3wsAWyBljaUwUnULFISmaVHEXBJANqVAt_OJSvyiyfezD7X3bS-d2X-6afioTr6SUnFG7iyMxBzIwbne0RIi94PgtHGtBHyEt9hpzzJplLxVOoYWvhO1mO-nRJm6dTZJSb_5GOMYxWU3kM7p5Qd24aQTluElEji-iM1milOD1n_XthTh-woH0UcVLDOiKM"/>
-</div>
-<div className="absolute -bottom-1 -right-1 bg-surface-container-highest text-outline px-2 py-0.5 rounded-lg font-caption text-[10px] uppercase font-bold border-2 border-surface-container-low shadow-lg">Suspended</div>
-</div>
-<div className="flex-1 min-w-0">
-<div className="flex justify-between items-start">
-<div>
-<h3 className="font-screen-title text-xl text-on-background truncate">Jared Smith</h3>
-<p className="font-body-compact text-on-surface-variant">Support L2 • SwiftDelivery</p>
-</div>
-<button className="material-symbols-outlined text-on-surface-variant">more_vert</button>
-</div>
-<div className="mt-md flex gap-2 overflow-x-auto pb-2 custom-scrollbar scroll-smooth">
-<span className="flex-shrink-0 bg-surface-container-high px-3 py-1.5 rounded-xl border border-outline-variant font-label-medium text-secondary flex items-center gap-2">
-<span className="material-symbols-outlined text-[18px]">verified_user</span> Vendor Staff
-                </span>
-<span className="flex-shrink-0 bg-surface-container-high px-3 py-1.5 rounded-xl border border-outline-variant font-label-medium text-on-surface-variant flex items-center gap-2">
-<span className="material-symbols-outlined text-[18px]">report</span> Violation
-                </span>
-</div>
-</div>
-</div>
-<div className="flex items-center justify-between bg-surface-container-high/50 p-2 rounded-2xl border border-outline-variant/30">
-<div className="flex gap-1">
-<button className="w-10 h-10 rounded-xl hover:bg-primary-container hover:text-on-primary-container transition-colors flex items-center justify-center text-on-surface-variant"><span className="material-symbols-outlined text-[20px]">chat_bubble</span></button>
-<button className="w-10 h-10 rounded-xl hover:bg-secondary-container hover:text-on-secondary-container transition-colors flex items-center justify-center text-on-surface-variant"><span className="material-symbols-outlined text-[20px]">edit</span></button>
-<button className="w-10 h-10 rounded-xl bg-primary-container text-on-primary-container flex items-center justify-center" title="Restore"><span className="material-symbols-outlined text-[20px]">settings_backup_restore</span></button>
-</div>
-<button className="px-4 py-2 bg-surface-container-highest hover:bg-primary-container hover:text-on-primary-container rounded-xl font-label-medium transition-all">Incident Log</button>
-</div>
-</div>
-{/*  User Card 4  */}
-<div className="bg-surface-container-low border border-outline-variant rounded-3xl p-lg user-card-glow transition-all duration-300 flex flex-col gap-lg group">
-<div className="flex gap-lg items-start">
-<div className="relative flex-shrink-0">
-<div className="w-24 h-24 rounded-3xl overflow-hidden border-2 border-primary-container/30 ring-4 ring-surface-container-low">
-<img className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC1VfptXYGm4JfgSphPUTUZlrFdmJOawc9txVltHObiISoyoakpcHYJ7HEJYmanJH297In_GTYFUzHwhlejcrmRv5GXNo6MakuPXgZ0twsm7Bq-NivwCwDBKRhvIuTqLM08H5dXAdNXum0CXKA55bKgKGXx_a4BXACfPPGfyIrbxf3TS96oZaA5bLLopnctNQ38isCdjkd6Mcpb70UKAaB-I3gL8CJtYtAeutvNEU0X8G_2FWZ8T19rXr5oOqyh3qNiTj9jSboAlkFc"/>
-</div>
-<div className="absolute -bottom-1 -right-1 bg-tertiary text-on-tertiary px-2 py-0.5 rounded-lg font-caption text-[10px] uppercase font-bold border-2 border-surface-container-low shadow-lg">Active</div>
-</div>
-<div className="flex-1 min-w-0">
-<div className="flex justify-between items-start">
-<div>
-<h3 className="font-screen-title text-xl text-on-background truncate">Sarah Jenkins</h3>
-<p className="font-body-compact text-on-surface-variant">Operations Analyst • Doorli HQ</p>
-</div>
-<button className="material-symbols-outlined text-on-surface-variant">more_vert</button>
-</div>
-<div className="mt-md flex gap-2 overflow-x-auto pb-2 custom-scrollbar scroll-smooth">
-<span className="flex-shrink-0 bg-surface-container-high px-3 py-1.5 rounded-xl border border-outline-variant font-label-medium text-secondary flex items-center gap-2">
-<span className="material-symbols-outlined text-[18px]">admin_panel_settings</span> Admin
-                </span>
-<span className="flex-shrink-0 bg-surface-container-high px-3 py-1.5 rounded-xl border border-outline-variant font-label-medium text-on-surface-variant flex items-center gap-2">
-<span className="material-symbols-outlined text-[18px]">monitoring</span> Analytics
-                </span>
-</div>
-</div>
-</div>
-<div className="flex items-center justify-between bg-surface-container-high/50 p-2 rounded-2xl border border-outline-variant/30">
-<div className="flex gap-1">
-<button className="w-10 h-10 rounded-xl hover:bg-primary-container hover:text-on-primary-container transition-colors flex items-center justify-center text-on-surface-variant"><span className="material-symbols-outlined text-[20px]">chat_bubble</span></button>
-<button className="w-10 h-10 rounded-xl hover:bg-secondary-container hover:text-on-secondary-container transition-colors flex items-center justify-center text-on-surface-variant"><span className="material-symbols-outlined text-[20px]">edit</span></button>
-<button className="w-10 h-10 rounded-xl hover:bg-error-container hover:text-on-error-container transition-colors flex items-center justify-center text-on-surface-variant"><span className="material-symbols-outlined text-[20px]">logout</span></button>
-</div>
-<button className="px-4 py-2 bg-surface-container-highest hover:bg-primary-container hover:text-on-primary-container rounded-xl font-label-medium transition-all">Reports</button>
-</div>
-</div>
+  {users.length === 0 ? (
+    <div className="col-span-full text-center py-8 text-on-surface-variant">No users found</div>
+  ) : (
+    users.map((user: any) => (
+      <div key={user.id} className="bg-surface-container-low border border-outline-variant rounded-3xl p-lg user-card-glow transition-all duration-300 flex flex-col gap-lg group">
+        <div className="flex gap-lg items-start">
+          <div className="relative flex-shrink-0">
+            <div className={`w-24 h-24 rounded-3xl overflow-hidden border-2 ring-4 ring-surface-container-low ${user.isActive ? 'border-primary-container/30' : 'border-outline-variant grayscale opacity-70'}`}>
+              <img className="w-full h-full object-cover" src={`https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.fullName)}&backgroundColor=000000`} alt={user.fullName} />
+            </div>
+            <div className={`absolute -bottom-1 -right-1 px-2 py-0.5 rounded-lg font-caption text-[10px] uppercase font-bold border-2 border-surface-container-low shadow-lg ${user.isActive ? 'bg-tertiary text-on-tertiary' : 'bg-surface-container-highest text-outline'}`}>
+              {user.isActive ? 'Active' : 'Suspended'}
+            </div>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="font-screen-title text-xl text-on-background truncate">{user.fullName}</h3>
+                <p className="font-body-compact text-on-surface-variant capitalize">{user.role}</p>
+              </div>
+              <button className="material-symbols-outlined text-on-surface-variant hover:text-on-surface">more_vert</button>
+            </div>
+            <div className="mt-md flex gap-2 overflow-x-auto pb-2 custom-scrollbar scroll-smooth no-scrollbar">
+              <span className={`flex-shrink-0 bg-surface-container-high px-3 py-1.5 rounded-xl border border-outline-variant font-label-medium flex items-center gap-2 ${user.role === 'admin' ? 'text-primary' : 'text-secondary'}`}>
+                <span className="material-symbols-outlined text-[18px]">{user.role === 'admin' ? 'admin_panel_settings' : 'verified_user'}</span> {user.role}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center justify-between bg-surface-container-high/50 p-2 rounded-2xl border border-outline-variant/30">
+          <div className="flex gap-1">
+            <button className="w-10 h-10 rounded-xl hover:bg-primary-container hover:text-on-primary-container transition-colors flex items-center justify-center text-on-surface-variant"><span className="material-symbols-outlined text-[20px]">chat_bubble</span></button>
+            <button className="w-10 h-10 rounded-xl hover:bg-secondary-container hover:text-on-secondary-container transition-colors flex items-center justify-center text-on-surface-variant"><span className="material-symbols-outlined text-[20px]">edit</span></button>
+            <button className="w-10 h-10 rounded-xl hover:bg-error-container hover:text-on-error-container transition-colors flex items-center justify-center text-on-surface-variant"><span className="material-symbols-outlined text-[20px]">logout</span></button>
+          </div>
+          <button className="px-4 py-2 bg-surface-container-highest hover:bg-primary-container hover:text-on-primary-container rounded-xl font-label-medium transition-all">View Details</button>
+        </div>
+      </div>
+    ))
+  )}
 </div>
 {/*  Empty State  */}
 <div className="mt-xl p-xl border-2 border-dashed border-outline-variant rounded-3xl flex flex-col items-center justify-center text-center opacity-40">

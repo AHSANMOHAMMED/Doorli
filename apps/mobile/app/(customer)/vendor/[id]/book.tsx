@@ -53,7 +53,7 @@ export default function BookingScreen() {
         bookingDate,
         startTime,
         partySize: parseInt(partySize, 10) || 1,
-        totalAmount: 500,
+        totalAmount: vendor.minOrderAmount ?? 0,
         contactName,
         contactPhone,
         specialRequests: specialRequests || undefined,

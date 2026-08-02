@@ -270,7 +270,7 @@ export default function CustomerHome() {
                           <Star color="#914c00" size={14} fill="#914c00" />
                           <Text style={styles.popularRatingText}>{vendor.avgRating ? Number(vendor.avgRating).toFixed(1) : 'New'}</Text>
                         </View>
-                        <Text style={styles.popularMinOrder}>Min order: $10</Text>
+                        <Text style={styles.popularMinOrder}>Min order: {vendor.minOrderAmount ? `LKR ${vendor.minOrderAmount}` : 'N/A'}</Text>
                       </View>
                     </View>
                   </TouchableOpacity>

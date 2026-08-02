@@ -1,11 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getToken } from '@/lib/api';
-
-function getApiBase() {
-  return process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:4000');
-}
+import { apiFetch, getToken } from '@/lib/api';
 
 type Order = {
   id: string;
@@ -30,12 +26,8 @@ export default function KitchenBoardPage() {
   useEffect(() => {
     if (!token) return;
     const load = async () => {
-      const res = await fetch(`${getApiBase()}/api/v1/orders/vendor/mine`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) return;
-      const json = await res.json();
-      setOrders(json.data?.items ?? json.data ?? []);
+      const res = await apiFetch<{ items: Order[] }>('/orders/vendor/mine');
+      setOrders(res.data?.items ?? []);
     };
     load();
     const id = setInterval(load, 8000);
@@ -43,12 +35,8 @@ export default function KitchenBoardPage() {
   }, [token]);
 
   async function setStatus(orderId: string, status: string) {
-    await fetch(`${getApiBase()}/api/v1/orders/${orderId}/status`, {
+    await apiFetch(`/orders/${orderId}/status`, {
       method: 'PATCH',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify({ status }),
     });
     setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status } : o)));

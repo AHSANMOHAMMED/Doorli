@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { MessageSquare, Users, Clock, ArrowLeft, Plus } from "lucide-react";
+import { apiFetch } from "@/lib/api";
 
 type Forum = {
   id: string;
@@ -27,9 +28,11 @@ export default function ForumsPage() {
   const [activeCategory, setActiveCategory] = useState("All");
 
   useEffect(() => {
-    fetch("/api/forums")
-      .then((res) => res.json())
-      .then((data) => setForums(data.items || []))
+    apiFetch<{ items: Forum[] } | Forum[]>("/forums")
+      .then((d) => {
+        const items = Array.isArray(d) ? d : d?.items || [];
+        setForums(items);
+      })
       .catch(() => setForums([]))
       .finally(() => setLoading(false));
   }, []);

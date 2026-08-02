@@ -731,3 +731,9 @@ export async function createAddress(params: {
   if (!res.data?.success) throw new Error(res.data?.error || 'Failed to save address');
   return res.data.data as SavedAddress;
 }
+
+export async function deleteAddress(id: string) {
+  const res = await apiClient.delete(`/users/addresses/${id}`);
+  if (!res.data?.success) throw new Error(res.data?.error || 'Failed to delete address');
+  return res.data.data;
+}

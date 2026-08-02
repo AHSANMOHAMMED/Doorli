@@ -8,21 +8,25 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Lock, CreditCard, Info, Shield, Landmark, BadgeCheck } from 'lucide-react-native';
 import { DoorliColors } from '../../../constants/colors';
+import { confirmPaymentDev } from '../../../lib/api';
 
 export default function SecurePaymentScreen() {
   const router = useRouter();
-  const { amount = '142.50', orderId } = useLocalSearchParams<{ amount: string, orderId: string }>();
+  const { amount = '0', orderId, paymentId } = useLocalSearchParams<{ amount: string, orderId: string, paymentId?: string }>();
 
   const [cardName, setCardName] = useState('');
   const [cardNumber, setCardNumber] = useState('');
   const [expiry, setExpiry] = useState('');
   const [cvv, setCvv] = useState('');
   const [saveCard, setSaveCard] = useState(false);
+  const [processing, setProcessing] = useState(false);
 
   // Formatters
   const formatCardNumber = (text: string) => {
@@ -47,6 +51,28 @@ export default function SecurePaymentScreen() {
   const displayNumber = cardNumber || '•••• •••• •••• ••••';
   const displayName = cardName || 'Full Name';
   const displayExpiry = expiry || 'MM/YY';
+
+  async function handlePay() {
+    if (!cardName.trim() || !cardNumber.trim() || !expiry.trim() || !cvv.trim()) {
+      Alert.alert('Missing fields', 'Please fill in all card details.');
+      return;
+    }
+    if (!paymentId) {
+      Alert.alert('Error', 'No payment reference found. Please go back and try again.');
+      return;
+    }
+    setProcessing(true);
+    try {
+      await confirmPaymentDev(paymentId);
+      Alert.alert('Payment successful', 'Your order has been placed.', [
+        { text: 'OK', onPress: () => router.replace(`/(customer)/order/${orderId}`) },
+      ]);
+    } catch (e: unknown) {
+      Alert.alert('Payment failed', e instanceof Error ? e.message : 'Please try again.');
+    } finally {
+      setProcessing(false);
+    }
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -186,9 +212,20 @@ export default function SecurePaymentScreen() {
                 <Text style={styles.summaryValue}>${amount}</Text>
               </View>
 
-              <TouchableOpacity style={styles.payButton} activeOpacity={0.8} onPress={() => {}}>
-                <Lock color="#ffffff" size={20} />
-                <Text style={styles.payButtonText}>Pay ${amount} Now</Text>
+              <TouchableOpacity 
+                style={[styles.payButton, processing && { opacity: 0.6 }]} 
+                activeOpacity={0.8} 
+                onPress={handlePay}
+                disabled={processing}
+              >
+                {processing ? (
+                  <ActivityIndicator color="#ffffff" />
+                ) : (
+                  <>
+                    <Lock color="#ffffff" size={20} />
+                    <Text style={styles.payButtonText}>Pay ${amount} Now</Text>
+                  </>
+                )}
               </TouchableOpacity>
 
               <View style={styles.encryptionRow}>

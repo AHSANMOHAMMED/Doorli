@@ -6,7 +6,7 @@ import { superAdminFetch } from '@/lib/api';
 export default function GlobalOrdersFinalizedPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({ total: 0, pending: 0, avgProcessing: '8.4m', alerts: 0 });
+  const [stats, setStats] = useState({ total: 0, pending: 0, avgProcessing: '—', alerts: 0 });
 
   useEffect(() => {
     superAdminFetch('/admin/orders').then((res) => {
@@ -133,9 +133,7 @@ export default function GlobalOrdersFinalizedPage() {
 <div className="bg-surface-container-low p-md rounded-xl border border-outline-variant">
 <p className="text-caption text-on-surface-variant">Active Today</p>
 <h4 className="font-kpi-number text-kpi-number text-on-surface">{stats.total}</h4>
-<p className="text-caption text-tertiary mt-1 flex items-center gap-1">
-<span className="material-symbols-outlined text-xs">trending_up</span> +12%
-                        </p>
+          <p className="text-caption text-on-surface-variant mt-1">All statuses</p>
 </div>
 <div className="bg-surface-container-low p-md rounded-xl border border-outline-variant">
 <p className="text-caption text-on-surface-variant">Pending Sync</p>

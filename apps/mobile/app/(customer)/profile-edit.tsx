@@ -1,23 +1,61 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Image } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Image, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, Stack } from 'expo-router';
 import { ArrowLeft, Camera, User, Phone, Mail, MapPin } from 'lucide-react-native';
+import { fetchProfile, updateProfile } from '../../lib/api';
 
 const PRIMARY = '#00B241';
 const ON_SURFACE = '#002b5b';
 
 export default function ProfileEditScreen() {
   const router = useRouter();
-  
-  const [name, setName] = useState('Ahsan');
-  const [phone, setPhone] = useState('+94 77 123 4567');
-  const [email, setEmail] = useState('ahsan@doorli.com');
-  const [address, setAddress] = useState('Colombo 07, Sri Lanka');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  const handleSave = () => {
-    router.back();
-  };
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState('');
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const profile = await fetchProfile();
+        if (profile) {
+          setName(profile.fullName ?? '');
+          setPhone(profile.phone ?? '');
+          setEmail(profile.email ?? '');
+          setProfilePhotoUrl(profile.profilePhotoUrl ?? '');
+        }
+      } catch {
+        Alert.alert('Error', 'Could not load profile');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  async function handleSave() {
+    if (!name.trim()) {
+      Alert.alert('Name required', 'Please enter your name.');
+      return;
+    }
+    setSaving(true);
+    try {
+      await updateProfile({
+        fullName: name.trim(),
+        email: email.trim() || undefined,
+        profilePhotoUrl: profilePhotoUrl || undefined,
+      });
+      Alert.alert('Saved', 'Profile updated successfully.');
+      router.back();
+    } catch (e: unknown) {
+      Alert.alert('Failed', e instanceof Error ? e.message : 'Try again');
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -28,16 +66,20 @@ export default function ProfileEditScreen() {
           <ArrowLeft color={ON_SURFACE} size={24} />
         </TouchableOpacity>
         <Text style={styles.title}>Edit Profile</Text>
-        <TouchableOpacity onPress={handleSave} style={styles.saveBtn}>
-          <Text style={styles.saveBtnText}>Save</Text>
+        <TouchableOpacity onPress={handleSave} style={[styles.saveBtn, saving && { opacity: 0.6 }]} disabled={saving}>
+          <Text style={styles.saveBtnText}>{saving ? 'Saving...' : 'Save'}</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
+        {loading ? (
+          <ActivityIndicator color={PRIMARY} style={{ marginTop: 48 }} />
+        ) : (
+        <>
         <View style={styles.avatarSection}>
           <View style={styles.avatarContainer}>
             <Image 
-              source={{ uri: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200' }} 
+              source={{ uri: profilePhotoUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200' }} 
               style={styles.avatar} 
             />
             <TouchableOpacity style={styles.cameraBtn}>
@@ -88,19 +130,8 @@ export default function ProfileEditScreen() {
           </View>
         </View>
 
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>Delivery Address</Text>
-          <View style={styles.inputContainer}>
-            <MapPin color="#9ca3af" size={20} />
-            <TextInput 
-              style={styles.input} 
-              value={address} 
-              onChangeText={setAddress} 
-              placeholderTextColor="#9ca3af"
-            />
-          </View>
-        </View>
-
+        </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

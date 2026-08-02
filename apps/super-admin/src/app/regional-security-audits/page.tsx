@@ -7,12 +7,17 @@ export default function RegionalSecurityAuditsPage() {
 
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [audits, setAudits] = useState<any[]>([]);
 
   useEffect(() => {
-    superAdminFetch('/admin/audits').then(res => {
-      if (res.success) setLogs(res.data);
+    Promise.all([
+      superAdminFetch('/admin/audits'),
+      superAdminFetch('/admin/diagnostics'),
+    ]).then(([auditRes, diagRes]) => {
+      if (auditRes.success) setLogs(auditRes.data);
+      if (diagRes.success) setAudits(diagRes.data?.audits || diagRes.data?.logs || []);
       setLoading(false);
-    });
+    }).catch(() => setLoading(false));
   }, []);
 
   if (loading) return <div className="min-h-screen bg-[#121212] flex items-center justify-center text-white">Loading...</div>;
@@ -155,50 +160,24 @@ export default function RegionalSecurityAuditsPage() {
 <span className="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-on-surface" data-icon="filter_list">filter_list</span>
 </div>
 <div className="flex-1 overflow-y-auto max-h-[400px]">
-{/*  Item 1  */}
-<div className="p-md border-b border-outline-variant/20 hover:bg-surface-variant transition-colors group">
-<div className="flex justify-between items-start mb-xs">
-<span className="text-body-compact font-bold text-on-surface">DDoS Mitigation</span>
-<span className="text-caption font-caption bg-tertiary/10 text-tertiary px-2 py-0.5 rounded">INTERCEPTED</span>
-</div>
-<div className="flex items-center justify-between text-caption text-on-surface-variant">
-<span>Src: 192.168.1.104 (RU)</span>
-<span>2 mins ago</span>
-</div>
-</div>
-{/*  Item 2  */}
-<div className="p-md border-b border-outline-variant/20 hover:bg-surface-variant transition-colors group">
-<div className="flex justify-between items-start mb-xs">
-<span className="text-body-compact font-bold text-on-surface">SQLi Blocked</span>
-<span className="text-caption font-caption bg-tertiary/10 text-tertiary px-2 py-0.5 rounded">INTERCEPTED</span>
-</div>
-<div className="flex items-center justify-between text-caption text-on-surface-variant">
-<span>Src: 45.23.11.201 (Unknown)</span>
-<span>14 mins ago</span>
-</div>
-</div>
-{/*  Item 3  */}
-<div className="p-md border-b border-outline-variant/20 hover:bg-surface-variant transition-colors group">
-<div className="flex justify-between items-start mb-xs">
-<span className="text-body-compact font-bold text-on-surface">Auth Bypass Attempt</span>
-<span className="text-caption font-caption bg-error/10 text-error px-2 py-0.5 rounded">LOGGED</span>
-</div>
-<div className="flex items-center justify-between text-caption text-on-surface-variant">
-<span>Src: 102.14.99.12 (CN)</span>
-<span>45 mins ago</span>
-</div>
-</div>
-{/*  Item 4  */}
-<div className="p-md border-b border-outline-variant/20 hover:bg-surface-variant transition-colors group">
-<div className="flex justify-between items-start mb-xs">
-<span className="text-body-compact font-bold text-on-surface">Rate Limit Exceeded</span>
-<span className="text-caption font-caption bg-tertiary/10 text-tertiary px-2 py-0.5 rounded">INTERCEPTED</span>
-</div>
-<div className="flex items-center justify-between text-caption text-on-surface-variant">
-<span>Src: 88.10.4.52 (EU)</span>
-<span>1h ago</span>
-</div>
-</div>
+{audits.length === 0 ? (
+  <div className="p-md text-center text-on-surface-variant text-caption">No recent threats</div>
+) : (
+  audits.slice(0, 4).map((audit: any, i: number) => (
+    <div key={audit.id || i} className="p-md border-b border-outline-variant/20 hover:bg-surface-variant transition-colors group">
+      <div className="flex justify-between items-start mb-xs">
+        <span className="text-body-compact font-bold text-on-surface">{audit.action || audit.type || 'Security Event'}</span>
+        <span className={`text-caption font-caption px-2 py-0.5 rounded ${audit.status === 'SUCCESS' ? 'bg-tertiary/10 text-tertiary' : 'bg-error/10 text-error'}`}>
+          {audit.status === 'SUCCESS' ? 'INTERCEPTED' : 'LOGGED'}
+        </span>
+      </div>
+      <div className="flex items-center justify-between text-caption text-on-surface-variant">
+        <span>{audit.user || audit.actor || 'System'}</span>
+        <span>{audit.timestamp ? new Date(audit.timestamp).toLocaleTimeString() : 'Recent'}</span>
+      </div>
+    </div>
+  ))
+)}
 </div>
 <div className="p-sm text-center bg-surface-container-high/30">
 <button className="text-caption font-caption text-secondary hover:underline">View All Interceptions</button>
@@ -248,7 +227,7 @@ export default function RegionalSecurityAuditsPage() {
 </table>
 </div>
 <div className="mt-auto border-t border-outline-variant p-md bg-surface-container-high/20 flex items-center justify-between">
-<span className="text-caption text-on-surface-variant">Showing 4 of 1,249 entries</span>
+<span className="text-caption text-on-surface-variant">Showing {logs.length} entries</span>
 <div className="flex items-center gap-sm">
 <button className="p-xs hover:bg-surface-variant rounded transition-colors text-on-surface-variant active:opacity-50">
 <span className="material-symbols-outlined" data-icon="chevron_left">chevron_left</span>

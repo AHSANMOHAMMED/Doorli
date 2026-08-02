@@ -1,8 +1,29 @@
-import { View, Text, StyleSheet, TextInput } from 'react-native';
+import { useState } from 'react';
+import { View, Text, StyleSheet, TextInput, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
 import { Search as SearchIcon } from 'lucide-react-native';
+import { fetchVendors, type Vendor } from '../../lib/api';
+import { VendorCard } from '../../components/VendorCard';
 
 export default function Search() {
+  const router = useRouter();
+  const [query, setQuery] = useState('');
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['vendors-tabs-search'],
+    queryFn: () => fetchVendors('all'),
+  });
+
+  const filtered = (data ?? []).filter(
+    (v) =>
+      !query ||
+      v.businessName.toLowerCase().includes(query.toLowerCase()) ||
+      v.category.toLowerCase().includes(query.toLowerCase()) ||
+      (v.city?.toLowerCase().includes(query.toLowerCase()) ?? false),
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -13,16 +34,39 @@ export default function Search() {
             style={styles.searchInput} 
             placeholder="Search stores, dishes, products..." 
             placeholderTextColor="#9ca3af"
+            value={query}
+            onChangeText={setQuery}
             autoFocus
           />
         </View>
       </View>
-      <View style={styles.content}>
-        <Text style={styles.subtitle}>Recent Searches</Text>
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyText}>No recent searches.</Text>
-        </View>
-      </View>
+      {isLoading ? (
+        <ActivityIndicator color="#00B241" style={{ marginTop: 40 }} />
+      ) : (
+        <FlatList
+          data={filtered}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.list}
+          renderItem={({ item }) => (
+            <VendorCard
+              vendor={item}
+              onPress={() => router.push(`/(customer)/vendor/${item.id}`)}
+            />
+          )}
+          ListHeaderComponent={
+            query ? null : (
+              <Text style={styles.subtitle}>All Shops</Text>
+            )
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyText}>
+                {query ? `No results for "${query}"` : 'No shops available'}
+              </Text>
+            </View>
+          }
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -62,9 +106,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#111827',
   },
-  content: {
-    flex: 1,
-    padding: 24,
+  list: {
+    padding: 16,
+    paddingBottom: 100,
   },
   subtitle: {
     fontSize: 18,
@@ -76,6 +120,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingTop: 40,
   },
   emptyText: {
     color: '#9ca3af',
