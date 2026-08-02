@@ -21,6 +21,9 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps --no-audit --no-fund
 
+      - name: Disable corepack
+        run: corepack disable || true
+
       - name: Build all packages
         run: npx turbo run build --filter='!@doorli/erp' --filter='!@doorli/mobile'
 
