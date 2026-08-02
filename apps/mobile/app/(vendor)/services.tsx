@@ -14,7 +14,8 @@ import {
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Wrench, Clock, MapPin, User, X, CheckCircle, Play, Check } from 'lucide-react-native';
-import { apiClient, formatStatus } from '../../lib/api';
+import { apiClient } from '../../lib/axios';
+import { formatStatus } from '../../lib/api';
 
 type Service = {
   id: string;

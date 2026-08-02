@@ -17,12 +17,12 @@ function resolveApiRoot(): string {
   const fromEnv = process.env.EXPO_PUBLIC_API_URL?.replace(/\/$/, '');
   
   if (fromEnv) {
-    console.log(`[API] Using EXPO_PUBLIC_API_URL: ${fromEnv}`);
+    if (__DEV__) console.log(`[API] Using EXPO_PUBLIC_API_URL: ${fromEnv}`);
     return fromEnv;
   }
   
   const defaultUrl = Platform.OS === 'android' ? 'http://10.0.2.2:4000' : 'http://localhost:4000';
-  console.log(`[API] No EXPO_PUBLIC_API_URL set, defaulting to: ${defaultUrl}`);
+  if (__DEV__) console.log(`[API] No EXPO_PUBLIC_API_URL set, defaulting to: ${defaultUrl}`);
   return defaultUrl;
 }
 
@@ -44,26 +44,26 @@ apiClient.interceptors.request.use(
     if (accessToken && config.headers) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
-    console.log(`[API Req] ${config.method?.toUpperCase()} ${config.url}`);
+    if (__DEV__) console.log(`[API Req] ${config.method?.toUpperCase()} ${config.url}`);
     return config;
   },
   (error) => {
-    console.error('[API Req Error]', error);
+    if (__DEV__) console.error('[API Req Error]', error);
     return Promise.reject(error);
   },
 );
 
 apiClient.interceptors.response.use(
   (response) => {
-    console.log(`[API Res] ${response.config.method?.toUpperCase()} ${response.config.url} - ${response.status}`);
+    if (__DEV__) console.log(`[API Res] ${response.config.method?.toUpperCase()} ${response.config.url} - ${response.status}`);
     return response;
   },
   async (error) => {
     const originalRequest = error.config;
     if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
-      console.log(`[API] 401 Unauthorized for ${originalRequest?.url}. Attempting to refresh token...`);
+      if (__DEV__) console.log(`[API] 401 Unauthorized for ${originalRequest?.url}. Attempting to refresh token...`);
     } else {
-      console.error(`[API Res Error] ${originalRequest?.method?.toUpperCase()} ${originalRequest?.url} - ${error.response?.status} : ${error.message}`);
+      if (__DEV__) console.error(`[API Res Error] ${originalRequest?.method?.toUpperCase()} ${originalRequest?.url} - ${error.response?.status} : ${error.message}`);
     }
     
     if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
@@ -72,7 +72,7 @@ apiClient.interceptors.response.use(
         const store = getStore();
         const { refreshToken } = store.getState();
         if (refreshToken) {
-          console.log('[API] Attempting token refresh...');
+          if (__DEV__) console.log('[API] Attempting token refresh...');
           const res = await axios.post(`${API_URL}/auth/refresh`, { refreshToken });
           if (res.data?.success && res.data?.data) {
             const { accessToken, refreshToken: newRefreshToken } = res.data.data;
@@ -80,12 +80,12 @@ apiClient.interceptors.response.use(
             if (originalRequest.headers) {
               originalRequest.headers.Authorization = `Bearer ${accessToken}`;
             }
-            console.log('[API] Token refreshed successfully. Retrying original request.');
+            if (__DEV__) console.log('[API] Token refreshed successfully. Retrying original request.');
             return axios(originalRequest);
           }
         }
       } catch (refreshErr) {
-        console.error('[API] Token refresh failed. Signing out.', refreshErr);
+        if (__DEV__) console.error('[API] Token refresh failed. Signing out.', refreshErr);
         getStore().getState().signOut();
       }
     }

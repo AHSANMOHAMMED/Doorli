@@ -13,7 +13,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { TrendingUp, TrendingDown, Calendar, BarChart3, Users, ShoppingBag } from 'lucide-react-native';
-import { apiClient, formatPrice } from '../../lib/axios';
+import { apiClient } from '../../lib/axios';
+import { formatPrice } from '../../lib/api';
 import { printReceipt, type Receipt } from '../../lib/receipt';
 
 type SalesData = {

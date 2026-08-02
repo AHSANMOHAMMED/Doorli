@@ -22,6 +22,15 @@ interface PlatformMetrics {
   systemUptime: number;
 }
 
+interface HealthStatus {
+  apiGateway: string;
+  database: string;
+  redisCache: string;
+  s3Storage: string;
+  paymentGateway: string;
+  pushService: string;
+}
+
 export default function SuperAdminDashboard() {
   const user = useAuthStore((s) => s.user);
 
@@ -30,6 +39,15 @@ export default function SuperAdminDashboard() {
     queryFn: async () => {
       const res = await apiClient.get('/super-admin/metrics');
       return res.data?.data as PlatformMetrics;
+    },
+    enabled: !!user,
+  });
+
+  const { data: health } = useQuery({
+    queryKey: ['super-admin-health'],
+    queryFn: async () => {
+      const res = await apiClient.get('/admin/health');
+      return res.data?.data as HealthStatus;
     },
     enabled: !!user,
   });
@@ -127,35 +145,37 @@ export default function SuperAdminDashboard() {
           </View>
         </View>
 
-        <View style={styles.healthCard}>
-          <Text style={styles.sectionTitle}>System Health Matrix</Text>
-          <View style={styles.healthGrid}>
-            <View style={styles.healthItem}>
-              <View style={[styles.healthDot, { backgroundColor: '#00B241' }]} />
-              <Text style={styles.healthText}>API Gateway</Text>
-            </View>
-            <View style={styles.healthItem}>
-              <View style={[styles.healthDot, { backgroundColor: '#00B241' }]} />
-              <Text style={styles.healthText}>PostgreSQL</Text>
-            </View>
-            <View style={styles.healthItem}>
-              <View style={[styles.healthDot, { backgroundColor: '#00B241' }]} />
-              <Text style={styles.healthText}>Redis Cache</Text>
-            </View>
-            <View style={styles.healthItem}>
-              <View style={[styles.healthDot, { backgroundColor: '#00B241' }]} />
-              <Text style={styles.healthText}>S3 Storage</Text>
-            </View>
-            <View style={styles.healthItem}>
-              <View style={[styles.healthDot, { backgroundColor: '#00B241' }]} />
-              <Text style={styles.healthText}>Payment Gateway</Text>
-            </View>
-            <View style={styles.healthItem}>
-              <View style={[styles.healthDot, { backgroundColor: '#00B241' }]} />
-              <Text style={styles.healthText}>Push Service</Text>
+        {health && (
+          <View style={styles.healthCard}>
+            <Text style={styles.sectionTitle}>System Health Matrix</Text>
+            <View style={styles.healthGrid}>
+              <View style={styles.healthItem}>
+                <View style={[styles.healthDot, { backgroundColor: health.apiGateway === 'healthy' ? '#00B241' : '#ef4444' }]} />
+                <Text style={styles.healthText}>API Gateway</Text>
+              </View>
+              <View style={styles.healthItem}>
+                <View style={[styles.healthDot, { backgroundColor: health.database === 'healthy' ? '#00B241' : '#ef4444' }]} />
+                <Text style={styles.healthText}>PostgreSQL</Text>
+              </View>
+              <View style={styles.healthItem}>
+                <View style={[styles.healthDot, { backgroundColor: health.redisCache === 'healthy' ? '#00B241' : '#ef4444' }]} />
+                <Text style={styles.healthText}>Redis Cache</Text>
+              </View>
+              <View style={styles.healthItem}>
+                <View style={[styles.healthDot, { backgroundColor: health.s3Storage === 'healthy' ? '#00B241' : '#ef4444' }]} />
+                <Text style={styles.healthText}>S3 Storage</Text>
+              </View>
+              <View style={styles.healthItem}>
+                <View style={[styles.healthDot, { backgroundColor: health.paymentGateway === 'healthy' ? '#00B241' : '#ef4444' }]} />
+                <Text style={styles.healthText}>Payment Gateway</Text>
+              </View>
+              <View style={styles.healthItem}>
+                <View style={[styles.healthDot, { backgroundColor: health.pushService === 'healthy' ? '#00B241' : '#ef4444' }]} />
+                <Text style={styles.healthText}>Push Service</Text>
+              </View>
             </View>
           </View>
-        </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

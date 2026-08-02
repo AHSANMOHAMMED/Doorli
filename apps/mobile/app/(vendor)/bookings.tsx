@@ -13,7 +13,8 @@ import {
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Calendar, Clock, User, MapPin, X, CheckCircle, XCircle } from 'lucide-react-native';
-import { apiClient, formatPrice, formatStatus } from '../../lib/api';
+import { apiClient } from '../../lib/axios';
+import { formatPrice, formatStatus } from '../../lib/api';
 
 type Booking = {
   id: string;

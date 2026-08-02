@@ -10,6 +10,7 @@ import {
   ImageBackground,
   Platform,
   Image,
+  Share,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -42,7 +43,7 @@ export default function VendorDetailScreen() {
   const addItem = useCartStore((s) => s.addItem);
   const cartCount = useCartStore((s) => s.totalItems());
   const cartTotal = useCartStore((s) => s.subtotal());
-  const [activeTab, setActiveTab] = useState('Popular');
+  const [activeTab, setActiveTab] = useState('All');
 
   const { data: vendor, isLoading } = useQuery({
     queryKey: ['vendor', id],
@@ -87,7 +88,9 @@ export default function VendorDetailScreen() {
     ? { uri: vendor.logoUrl } 
     : { uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCPUcbQkpB4mSXypwdGv0_4u_xqIAcCu_og1IcYYqVdR2Bzi12yuPqdGr0c-m-vM_JfFFYuBUv4BwfPfOqEAYCMlYTpVbxD_zLCOGMqpSAnnPlYyMELDRZzgOfZOzJ0GBCeraid7Qjw8ZTZdJ6ab0wbnb84q-WbbuabCBwnjELYd8eOZZe3Gczcah-CHQSYyZFT_0KXsDRT-sJR0i8Gs3qDKbr6TGaZIOp6tkLe3j0e9hOulSievi-KthOAt--esG5IWKwxwxXMEkM' };
 
-  const tabs = ['Popular', 'Main Course', 'Organic Bowls', 'Drinks', 'Sides'];
+  const tabs = ['All', ...new Set(vendor.products?.map((p: any) => p.category).filter(Boolean) ?? [])];
+  const products = vendor.products ?? [];
+  const filteredProducts = activeTab === 'All' ? products : products.filter((p: any) => p.category === activeTab);
 
   return (
     <View style={styles.container}>
@@ -97,10 +100,17 @@ export default function VendorDetailScreen() {
           <ArrowLeft color={ON_SURFACE} size={24} />
         </TouchableOpacity>
         <View style={{ flexDirection: 'row', gap: 8 }}>
-          <TouchableOpacity style={styles.iconButton}>
+          <TouchableOpacity style={styles.iconButton} onPress={() => Alert.alert('Coming Soon', 'Wishlist coming soon')}>
             <Heart color={ON_SURFACE} size={24} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton}>
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={() => {
+              try {
+                Share.share({ message: `Check out ${vendor.businessName} on Doorli!` });
+              } catch {}
+            }}
+          >
             <Share2 color={ON_SURFACE} size={24} />
           </TouchableOpacity>
         </View>
@@ -143,7 +153,7 @@ export default function VendorDetailScreen() {
               <View style={styles.statItem}>
                 <View style={styles.statIconRow}>
                   <Clock color={ON_SURFACE} size={20} />
-                  <Text style={[styles.statValue, { color: ON_SURFACE }]}>20-35</Text>
+                  <Text style={[styles.statValue, { color: ON_SURFACE }]}>{vendor.estimatedDeliveryTime || '20-35'}</Text>
                 </View>
                 <Text style={styles.statLabel}>mins</Text>
               </View>
@@ -153,7 +163,7 @@ export default function VendorDetailScreen() {
               <View style={styles.statItem}>
                 <View style={styles.statIconRow}>
                   <Bike color="#914c00" size={20} />
-                  <Text style={[styles.statValue, { color: '#914c00' }]}>Free</Text>
+                  <Text style={[styles.statValue, { color: '#914c00' }]}>{vendor.deliveryFee ? formatPrice(vendor.deliveryFee) : 'Free'}</Text>
                 </View>
                 <Text style={styles.statLabel}>Delivery</Text>
               </View>
@@ -181,7 +191,7 @@ export default function VendorDetailScreen() {
           <View style={styles.productsSection}>
             <Text style={styles.sectionTitle}>Popular Items</Text>
             
-            {vendor.products?.length ? vendor.products.map((item: any) => (
+            {filteredProducts.length ? filteredProducts.map((item: any) => (
               <ProductCard key={item.id} product={item} onAdd={() => handleAdd(item)} />
             )) : (
               <Text style={{ textAlign: 'center', marginTop: 32, color: ON_SURFACE_VARIANT }}>

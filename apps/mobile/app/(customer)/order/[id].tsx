@@ -8,6 +8,7 @@ import {
   ScrollView,
   Image,
   Alert,
+  Linking,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -226,7 +227,10 @@ export default function OrderDetailScreen() {
                 <Text style={styles.infoValue}>{order.vendor.businessName}</Text>
               </View>
               {order.vendor.phone && (
-                <TouchableOpacity style={styles.callBtn}>
+                <TouchableOpacity
+                  style={styles.callBtn}
+                  onPress={() => order.vendor?.phone && Linking.openURL(`tel:${order.vendor.phone}`)}
+                >
                   <Phone color={PRIMARY} size={18} />
                 </TouchableOpacity>
               )}

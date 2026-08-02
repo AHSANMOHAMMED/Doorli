@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, ScrollView, Linking } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
-import { fetchOrder } from '../../../lib/api';
+import { fetchOrder, DEFAULT_LOCATION } from '../../../lib/api';
 import { getSocket, joinSocketRooms } from '../../../lib/socket';
 import { DoorliColors } from '../../../constants/colors';
 import { ArrowLeft, Navigation, Package, Truck, CheckCircle2, Phone, Star, MapPin } from 'lucide-react-native';
@@ -48,8 +48,8 @@ export default function TrackOrderScreen() {
     );
   }
 
-  const vendorLat = Number(order.vendor?.latitude ?? 6.9271);
-  const vendorLng = Number(order.vendor?.longitude ?? 79.8612);
+  const vendorLat = Number(order.vendor?.latitude ?? DEFAULT_LOCATION.lat);
+  const vendorLng = Number(order.vendor?.longitude ?? DEFAULT_LOCATION.lng);
   const dropLat = Number(order.deliveryAddress?.latitude ?? vendorLat + 0.01);
   const dropLng = Number(order.deliveryAddress?.longitude ?? vendorLng + 0.01);
 
@@ -141,20 +141,25 @@ export default function TrackOrderScreen() {
             <View style={styles.driverCard}>
               <View style={styles.driverInfoRow}>
                 <Image
-                  source={{ uri: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d?q=80&w=150&auto=format&fit=crop' }}
+                  source={{ uri: order.driver?.avatarUrl || 'https://images.unsplash.com/photo-1633332755192-727a05c4013d?q=80&w=150&auto=format&fit=crop' }}
                   style={styles.driverAvatar}
                 />
                 <View style={styles.driverDetails}>
-                  <Text style={styles.driverName}>John Doe</Text>
+                  <Text style={styles.driverName}>{order.driver?.fullName || 'Driver'}</Text>
                   <View style={styles.driverMeta}>
-                    <Text style={styles.driverVehicle}>Honda PCX · AB-1234</Text>
-                    <View style={styles.driverRating}>
-                      <Star color={DoorliColors.gold} size={12} fill={DoorliColors.gold} />
-                      <Text style={styles.driverRatingText}>4.9</Text>
-                    </View>
+                    <Text style={styles.driverVehicle}>{order.driver?.vehicle || 'Vehicle info unavailable'}</Text>
+                    {order.driver?.avgRating != null && (
+                      <View style={styles.driverRating}>
+                        <Star color={DoorliColors.gold} size={12} fill={DoorliColors.gold} />
+                        <Text style={styles.driverRatingText}>{Number(order.driver.avgRating).toFixed(1)}</Text>
+                      </View>
+                    )}
                   </View>
                 </View>
-                <TouchableOpacity style={styles.callButton}>
+                <TouchableOpacity
+                  style={styles.callButton}
+                  onPress={() => order.driver?.phone && Linking.openURL(`tel:${order.driver.phone}`)}
+                >
                   <Phone color={PRIMARY} size={20} />
                 </TouchableOpacity>
               </View>

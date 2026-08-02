@@ -14,8 +14,8 @@ import {
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Search, X, Clock, CheckCircle, ChefHat, Package, Truck, XCircle } from 'lucide-react-native';
-import { apiClient, formatPrice } from '../../lib/api';
-import { updateOrderStatus } from '../../lib/api';
+import { apiClient } from '../../lib/axios';
+import { formatPrice, updateOrderStatus } from '../../lib/api';
 
 type Order = {
   id: string;

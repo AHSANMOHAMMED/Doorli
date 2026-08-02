@@ -151,7 +151,7 @@ export default function EmergencyScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
 
-          <TouchableOpacity style={styles.actionRow} onPress={() => {}}>
+          <TouchableOpacity style={styles.actionRow} onPress={() => Alert.alert('Coming Soon', 'Incident reporting will be available soon')}>
             <View style={[styles.actionIcon, { backgroundColor: 'rgba(239, 68, 68, 0.15)' }]}>
               <AlertTriangle color="#ef4444" size={24} />
             </View>
@@ -161,7 +161,7 @@ export default function EmergencyScreen() {
             </View>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionRow} onPress={() => {}}>
+          <TouchableOpacity style={styles.actionRow} onPress={() => Alert.alert('Coming Soon', 'Emergency contacts will be available soon')}>
             <View style={[styles.actionIcon, { backgroundColor: 'rgba(59, 130, 246, 0.15)' }]}>
               <Phone color="#00B241" size={24} />
             </View>

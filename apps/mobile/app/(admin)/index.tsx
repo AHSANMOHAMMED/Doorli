@@ -103,23 +103,25 @@ export default function AdminDashboard() {
           </View>
         </View>
 
-        <View style={styles.healthCard}>
-          <Text style={styles.sectionTitle}>System Health</Text>
-          <View style={styles.healthRow}>
-            <View style={styles.healthItem}>
-              <View style={[styles.healthDot, { backgroundColor: '#00B241' }]} />
-              <Text style={styles.healthText}>API Server</Text>
-            </View>
-            <View style={styles.healthItem}>
-              <View style={[styles.healthDot, { backgroundColor: '#00B241' }]} />
-              <Text style={styles.healthText}>Database</Text>
-            </View>
-            <View style={styles.healthItem}>
-              <View style={[styles.healthDot, { backgroundColor: '#00B241' }]} />
-              <Text style={styles.healthText}>Payments</Text>
+        {stats && (
+          <View style={styles.healthCard}>
+            <Text style={styles.sectionTitle}>System Health</Text>
+            <View style={styles.healthRow}>
+              <View style={styles.healthItem}>
+                <View style={[styles.healthDot, { backgroundColor: '#00B241' }]} />
+                <Text style={styles.healthText}>API Server</Text>
+              </View>
+              <View style={styles.healthItem}>
+                <View style={[styles.healthDot, { backgroundColor: '#00B241' }]} />
+                <Text style={styles.healthText}>Database</Text>
+              </View>
+              <View style={styles.healthItem}>
+                <View style={[styles.healthDot, { backgroundColor: '#00B241' }]} />
+                <Text style={styles.healthText}>Payments</Text>
+              </View>
             </View>
           </View>
-        </View>
+        )}
 
         <Text style={styles.sectionTitle}>Recent Activity</Text>
         {activity && activity.length > 0 ? (

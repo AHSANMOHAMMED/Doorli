@@ -12,7 +12,8 @@ import {
 } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { apiClient, formatPrice } from '../../lib/api';
+import { apiClient } from '../../lib/axios';
+import { formatPrice } from '../../lib/api';
 
 interface Order {
   id: string;

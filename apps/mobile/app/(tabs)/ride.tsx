@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { apiClient } from '../../lib/axios';
+import { DEFAULT_LOCATION } from '../../lib/api';
 import { useAuthStore } from '../../store/auth';
 import * as Location from 'expo-location';
 
@@ -39,8 +40,8 @@ export default function RideTabScreen() {
     setLoading(true);
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
-      let pickupLat = 6.9271;
-      let pickupLng = 79.8612;
+      let pickupLat = DEFAULT_LOCATION.lat;
+      let pickupLng = DEFAULT_LOCATION.lng;
       if (status === 'granted') {
         const loc = await Location.getCurrentPositionAsync({});
         pickupLat = loc.coords.latitude;

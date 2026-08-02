@@ -28,7 +28,7 @@ export default function DriverHomeScreen() {
         setEarnings(earningsRes.data.data);
       }
     } catch (err) {
-      console.warn('Failed to load driver profile', err);
+      if (__DEV__) console.warn('Failed to load driver profile', err);
     }
   }, []);
 

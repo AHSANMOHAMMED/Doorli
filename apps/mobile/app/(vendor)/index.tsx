@@ -23,7 +23,7 @@ import {
   Wrench,
   ChartBar,
 } from 'lucide-react-native';
-import { apiClient } from '../../lib/api';
+import { apiClient } from '../../lib/axios';
 import { useAuthStore } from '../../store/auth';
 import { formatPrice } from '../../lib/api';
 

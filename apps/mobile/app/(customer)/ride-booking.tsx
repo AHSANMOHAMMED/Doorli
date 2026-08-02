@@ -4,6 +4,7 @@ import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { getRideSocket, disconnectRideSocket } from '../../lib/socket';
 import { apiClient } from '../../lib/axios';
+import { DEFAULT_LOCATION } from '../../lib/api';
 import { MapPin, Car } from 'lucide-react-native';
 import * as Location from 'expo-location';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,7 +17,7 @@ export default function RideBookingScreen() {
   const [rideStatus, setRideStatus] = useState('Finding a driver nearby...');
   const [rideId, setRideId] = useState<string | null>(params.rideId ?? null);
   const [driverInfo, setDriverInfo] = useState<{ name?: string; vehicle?: string } | null>(null);
-  const [pickupLocation, setPickupLocation] = useState({ lat: 6.9271, lng: 79.8612 });
+  const [pickupLocation, setPickupLocation] = useState({ lat: DEFAULT_LOCATION.lat, lng: DEFAULT_LOCATION.lng });
   const [dropoffLocation, setDropoffLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => {
@@ -89,7 +90,7 @@ export default function RideBookingScreen() {
         if (!cancelled) {
           setIsSearching(false);
           setRideStatus('Could not load ride — please try again.');
-          console.warn(err);
+          if (__DEV__) console.warn(err);
         }
       }
     })();
