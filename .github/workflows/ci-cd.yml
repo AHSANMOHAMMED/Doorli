@@ -22,7 +22,7 @@ jobs:
         run: npm ci --legacy-peer-deps --no-audit --no-fund
 
       - name: Build all packages
-        run: npx turbo run build --filter='!@doorli/erp'
+        run: npx turbo run build --filter='!@doorli/erp' --filter='!@doorli/mobile'
 
       - name: Lint
         run: npx turbo run lint
@@ -103,7 +103,7 @@ jobs:
         run: npm ci --legacy-peer-deps --no-audit --no-fund
 
       - name: Build all packages
-        run: npx turbo run build --filter='!@doorli/erp'
+        run: npx turbo run build --filter='!@doorli/erp' --filter='!@doorli/mobile'
 
       - name: Check deployment secrets
         id: check-secrets

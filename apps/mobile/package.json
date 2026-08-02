@@ -5,7 +5,7 @@
   "main": "expo-router/entry",
   "scripts": {
     "dev": "expo start",
-    "build": "if command -v eas &> /dev/null; then eas build --platform all; else echo 'EAS CLI not found - skipping mobile build (install with: npm install -g eas-cli)'; fi",
+    "build": "if command -v eas > /dev/null 2>&1; then eas build --platform all; else echo 'EAS CLI not found - skipping mobile build'; exit 0; fi",
     "start": "expo start",
     "lint": "echo \"Expo lint configured in Week 7+\"",
     "test": "echo \"No tests yet\""
