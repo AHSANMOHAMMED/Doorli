@@ -1,16 +1,35 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import multer from 'multer';
 import { S3Client, PutObjectCommand, DeleteObjectCommand, ListObjectsV2Command, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { v4 as uuidv4 } from 'uuid';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import jwt from 'jsonwebtoken';
 
 dotenv.config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// JWT Auth Middleware
+function requireAuth(req: Request, res: Response, next: NextFunction): void {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    res.status(401).json({ error: 'Missing or invalid authorization header' });
+    return;
+  }
+
+  const token = authHeader.split(' ')[1];
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'doorli-dev-access-secret-change-in-prod') as any;
+    (req as any).userId = decoded.sub || decoded.userId;
+    next();
+  } catch {
+    res.status(401).json({ error: 'Invalid or expired token' });
+  }
+}
 
 const PORT = process.env.STORAGE_PORT || 4005;
 
@@ -31,7 +50,7 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'healthy', service: 'doorli-storage' });
 });
 
-app.post('/api/storage/upload', upload.single('file') as any, async (req: Request, res: Response): Promise<void> => {
+app.post('/api/storage/upload', requireAuth, upload.single('file') as any, async (req: Request, res: Response): Promise<void> => {
   try {
     if (!req.file) {
       res.status(400).json({ error: 'No file provided' });
@@ -65,7 +84,7 @@ app.post('/api/storage/upload', upload.single('file') as any, async (req: Reques
   }
 });
 
-app.delete('/api/storage/:key', async (req: Request, res: Response): Promise<void> => {
+app.delete('/api/storage/:key', requireAuth, async (req: Request, res: Response): Promise<void> => {
   try {
     const { key } = req.params;
     const bucket = 'doorli-media';
@@ -109,7 +128,7 @@ app.get('/api/storage/list', async (req: Request, res: Response): Promise<void> 
   }
 });
 
-app.get('/api/storage/presign/:key', async (req: Request, res: Response): Promise<void> => {
+app.get('/api/storage/presign/:key', requireAuth, async (req: Request, res: Response): Promise<void> => {
   try {
     const { key } = req.params;
     const bucket = 'doorli-media';

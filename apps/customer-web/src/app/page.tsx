@@ -182,6 +182,8 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("all");
   const [mobilePreview, setMobilePreview] = useState<boolean>(false);
+  const [vendorCount, setVendorCount] = useState(0);
+  const [avgRating, setAvgRating] = useState("4.9");
 
   useEffect(() => {
     let cancelled = false;
@@ -199,6 +201,23 @@ export default function Home() {
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const stats = await apiFetch<{ totalVendors?: number; total?: number; avgRating?: number | string; rating?: number | string }>("/vendors/stats");
+        if (!cancelled) {
+          setVendorCount(stats?.totalVendors || stats?.total || 0);
+          const r = stats?.avgRating ?? stats?.rating ?? "4.9";
+          setAvgRating(String(r));
+        }
+      } catch {
+        // Keep defaults on failure
+      }
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   const filteredFeatures = activeTab === "all" 
@@ -360,7 +379,7 @@ export default function Home() {
             <div className="animate-slide-up mt-10 grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl mx-auto pt-6 border-t border-white/10 text-xs text-[#9bb4d0]" style={{ animationDelay: '0.7s' }}>
               <div className="flex items-center justify-center gap-1.5 group hover:scale-105 transition-transform">
                 <CheckCircle2 className="w-4 h-4 text-[#5dcaa5] group-hover:animate-bounce" />
-                <span>100+ Verified Vendors</span>
+                <span>{vendorCount > 0 ? `${vendorCount}+ Verified Vendors` : "Verified Vendors"}</span>
               </div>
               <div className="flex items-center justify-center gap-1.5 group hover:scale-105 transition-transform">
                 <Clock className="w-4 h-4 text-[#fac775] group-hover:animate-bounce" />
@@ -372,7 +391,7 @@ export default function Home() {
               </div>
               <div className="flex items-center justify-center gap-1.5 group hover:scale-105 transition-transform">
                 <Star className="w-4 h-4 text-[#fac775] group-hover:animate-bounce" />
-                <span>4.9/5 Rating</span>
+                <span>{avgRating}/5 Rating</span>
               </div>
             </div>
           </div>
