@@ -1,78 +1,8 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { Bed, Star, MapPin, Calendar, Search, Filter, Wifi, Car, Coffee, Waves } from 'lucide-react';
-
-const hotels = [
-  {
-    id: 'hotel-001',
-    businessName: 'Grand Hotel Colombo',
-    description: 'Luxury 5-star hotel with spa and pool',
-    city: 'Colombo',
-    pricePerNight: 8500,
-    rating: 4.7,
-    totalRooms: 120,
-    availableRooms: 15,
-    amenities: ['Free WiFi', 'Parking', 'Breakfast', 'Pool', 'Spa', 'Air Conditioning', 'Gym'],
-    isFeatured: true,
-    address: '123 Galle Road, Colombo',
-  },
-  {
-    id: 'hotel-002',
-    businessName: 'Beach Resort Negombo',
-    description: 'Beachfront resort perfect for families',
-    city: 'Negombo',
-    pricePerNight: 4500,
-    rating: 4.3,
-    totalRooms: 85,
-    availableRooms: 8,
-    amenities: ['Free WiFi', 'Parking', 'Beach Access', 'Pool', 'Restaurant'],
-    isFeatured: false,
-    address: 'Beach Road, Negombo',
-  },
-  {
-    id: 'hotel-003',
-    businessName: 'Heritage Boutique Kandy',
-    description: 'Historic boutique hotel in Kandy',
-    city: 'Kandy',
-    pricePerNight: 3500,
-    rating: 4.9,
-    totalRooms: 30,
-    availableRooms: 3,
-    amenities: ['Free WiFi', 'Heritage Decor', 'Restaurant', 'Garden'],
-    isFeatured: true,
-    address: '123 Main Street, Kandy',
-  },
-  {
-    id: 'hotel-004',
-    businessName: 'Sigiriya Safari Lodge',
-    description: 'Nature lodge near Sigiriya Rock Fortress',
-    city: 'Sigiriya',
-    pricePerNight: 6000,
-    rating: 4.6,
-    totalRooms: 20,
-    availableRooms: 5,
-    amenities: ['Free WiFi', 'Safari Tours', 'Pool', 'Restaurant', 'Nature Tours'],
-    isFeatured: true,
-    address: 'Sigiriya Road, Sigiriya',
-  },
-  {
-    id: 'hotel-005',
-    businessName: 'Colombo City Hotel',
-    description: 'Budget-friendly hotel in heart of Colombo',
-    city: 'Colombo',
-    pricePerNight: 2500,
-    rating: 4.2,
-    totalRooms: 50,
-    availableRooms: 12,
-    amenities: ['Free WiFi', 'Air Conditioning', 'Restaurant', 'Room Service'],
-    isFeatured: false,
-    address: '45 Main Street, Colombo 11',
-  },
-];
-
-const cities = ['Colombo', 'Negombo', 'Kandy', 'Sigiriya', 'Galle', 'Ella'];
+import { Bed, Star, MapPin, Calendar, Search, Filter, Wifi, Car, Coffee, Waves, Loader2 } from 'lucide-react';
 
 const getAmenityIcon = (amenity: string) => {
   if (amenity.includes('WiFi')) return <Wifi className="w-4 h-4" />;
@@ -83,11 +13,35 @@ const getAmenityIcon = (amenity: string) => {
 };
 
 export default function HotelHomePage() {
+  const [hotels, setHotels] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCity, setSelectedCity] = useState('all');
   const [priceRange, setPriceRange] = useState({ min: 0, max: 20000 });
   const [checkIn, setCheckIn] = useState('');
   const [checkOut, setCheckOut] = useState('');
+
+  useEffect(() => {
+    const fetchHotels = async () => {
+      try {
+        const res = await fetch('/api/v1/vendors?category=hotel');
+        if (!res.ok) throw new Error('Failed to fetch hotels');
+        const data = await res.json();
+        setHotels(data.data || data);
+      } catch (err: any) {
+        setError(err.message || 'Something went wrong');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchHotels();
+  }, []);
+
+  const cities = useMemo(() => {
+    const citySet = new Set(hotels.map((h: any) => h.city).filter(Boolean));
+    return Array.from(citySet).sort();
+  }, [hotels]);
 
   const filteredHotels = hotels.filter(hotel => {
     const matchesSearch = hotel.businessName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -204,6 +158,20 @@ export default function HotelHomePage() {
 
       {/* Hotels Grid */}
       <section className="max-w-screen-xl mx-auto px-4 md:px-8 py-12">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-16">
+            <Loader2 className="w-10 h-10 text-[#5dcaa5] animate-spin mb-4" />
+            <p className="text-[#7b8ba3]">Loading hotels...</p>
+          </div>
+        ) : error ? (
+          <div className="text-center py-16">
+            <div className="text-red-400 mb-2">{error}</div>
+            <button onClick={() => window.location.reload()} className="text-sm text-[#5dcaa5] hover:underline">
+              Try again
+            </button>
+          </div>
+        ) : (
+          <>
         <div className="flex items-center justify-between mb-8">
           <h2 className="text-2xl font-bold">Available Hotels</h2>
           <span className="text-[#7b8ba3]">{filteredHotels.length} hotels found</span>
@@ -263,7 +231,7 @@ export default function HotelHomePage() {
 
                 {/* Amenities */}
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {hotel.amenities.slice(0, 4).map((amenity, i) => (
+                  {(hotel.amenities as string[]).slice(0, 4).map((amenity: string, i: number) => (
                     <span key={i} className="flex items-center gap-1 text-xs bg-[#0a0f2e] px-2 py-1 rounded text-[#7b8ba3]">
                       {getAmenityIcon(amenity)}
                       {amenity}
@@ -302,6 +270,8 @@ export default function HotelHomePage() {
             <div className="text-[#7b8ba3] mb-2">No hotels found matching your criteria</div>
             <div className="text-sm text-[#5a6a80]">Try adjusting your search or filters</div>
           </div>
+        )}
+        </>
         )}
       </section>
     </div>
