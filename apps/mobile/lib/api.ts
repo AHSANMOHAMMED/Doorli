@@ -737,3 +737,54 @@ export async function deleteAddress(id: string) {
   if (!res.data?.success) throw new Error(res.data?.error || 'Failed to delete address');
   return res.data.data;
 }
+
+/* ─── Payment Methods APIs ─── */
+
+export interface SavedPaymentCard {
+  id: string;
+  brand: string;
+  last4: string;
+  expMonth: number;
+  expYear: number;
+  cardholderName?: string;
+  isDefault: boolean;
+  fingerprint?: string;
+}
+
+export async function fetchPaymentMethods() {
+  const res = await apiClient.get('/payments/methods');
+  return (res.data?.data ?? []) as SavedPaymentCard[];
+}
+
+export async function addPaymentMethod(params: {
+  token: string;
+  cardholderName: string;
+  setAsDefault?: boolean;
+}) {
+  const res = await apiClient.post('/payments/methods', params);
+  if (!res.data?.success) throw new Error(res.data?.error || 'Failed to add payment method');
+  return res.data.data;
+}
+
+export async function deletePaymentMethod(id: string) {
+  const res = await apiClient.delete(`/payments/methods/${id}`);
+  if (!res.data?.success) throw new Error(res.data?.error || 'Failed to remove payment method');
+  return res.data.data;
+}
+
+export async function setDefaultPaymentMethod(id: string) {
+  const res = await apiClient.patch(`/payments/methods/${id}/default`);
+  if (!res.data?.success) throw new Error(res.data?.error || 'Failed to set default');
+  return res.data.data;
+}
+
+export async function createSetupIntent() {
+  const res = await apiClient.post('/payments/setup-intent');
+  if (!res.data?.success) throw new Error(res.data?.error || 'Failed to initialize setup');
+  return res.data.data as { clientSecret: string };
+}
+
+export async function getStripeConfig() {
+  const res = await apiClient.get('/payments/config');
+  return res.data?.data as { stripePublishableKey?: string } | null;
+}

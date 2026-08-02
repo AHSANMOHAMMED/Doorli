@@ -88,7 +88,10 @@ export default function CustomerLayout() {
       <Tabs.Screen name="subscriptions" options={{ href: null, title: 'Subscriptions' }} />
       <Tabs.Screen name="bookings" options={{ href: null, title: 'Bookings' }} />
       <Tabs.Screen name="addresses" options={{ href: null, title: 'Addresses' }} />
+      <Tabs.Screen name="wishlist" options={{ href: null, title: 'Wishlist' }} />
+      <Tabs.Screen name="group-order" options={{ href: null, title: 'Group Order' }} />
       <Tabs.Screen name="checkout/payment" options={{ href: null, title: 'Secure Payment' }} />
+      <Tabs.Screen name="payment-methods" options={{ href: null, title: 'Payment Methods' }} />
       <Tabs.Screen name="gov/index" options={{ href: null, title: 'Gov' }} />
       <Tabs.Screen name="emergency/index" options={{ href: null, title: 'Emergency' }} />
     </Tabs>

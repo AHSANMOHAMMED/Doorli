@@ -24,6 +24,11 @@ import flashSalesRouter from '../modules/flash-sales/flash-sales.routes.js';
 import ridesRouter from '../modules/rides/rides.routes.js';
 import posRouter from '../modules/pos/pos.routes.js';
 import erpWebhooksRouter from '../modules/erp-webhooks/erp-webhooks.routes.js';
+import supportRouter from '../modules/support/support.routes.js';
+import reportsRouter from '../modules/reports/reports.routes.js';
+import wishlistRouter from '../modules/wishlist/wishlist.routes.js';
+import groupOrdersRouter from '../modules/group-orders/group-orders.routes.js';
+import corporateRouter from '../modules/corporate/corporate.routes.js';
 
 const router = Router();
 
@@ -95,6 +100,11 @@ router.use('/api/v1/flash-sales', flashSalesRouter);
 router.use('/api/v1/rides', ridesRouter);
 router.use('/api/v1/pos', posRouter);
 router.use('/api/v1/erp-webhooks', erpWebhooksRouter);
+router.use('/api/v1/support', supportRouter);
+router.use('/api/v1/reports', reportsRouter);
+router.use('/api/v1/wishlist', wishlistRouter);
+router.use('/api/v1/group-orders', groupOrdersRouter);
+router.use('/api/v1/corporate', corporateRouter);
 
 // ==========================================
 // STANDALONE SERVICE PROXY ROUTES
