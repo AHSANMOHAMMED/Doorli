@@ -178,6 +178,204 @@ router.post('/order-status', requireErpSecret, async (req: Request, res: Respons
 });
 
 /**
+ * POST /erp-webhooks/product-sync — receive product catalog from ERP.
+ * Creates or updates marketplace products keyed by (vendorId + sku/barcode).
+ */
+router.post('/product-sync', requireErpSecret, async (req: Request, res: Response) => {
+  const { products } = req.body;
+
+  if (!Array.isArray(products) || products.length === 0) {
+    return res.status(400).json({ error: 'Invalid payload: products array is required' });
+  }
+
+  try {
+    let synced = 0;
+    let failed = 0;
+    const errors: string[] = [];
+
+    for (const product of products) {
+      try {
+        const {
+          erp_tenant_id,
+          erp_item_id,
+          sku,
+          barcode,
+          name,
+          description,
+          price,
+          cost_price: _cost_price,
+          unit,
+          image_url,
+          category,
+          stock_quantity,
+          is_active,
+        } = product;
+
+        if (!erp_tenant_id || !name) {
+          failed++;
+          errors.push(`Product ${erp_item_id || 'unknown'}: missing erp_tenant_id or name`);
+          continue;
+        }
+
+        // Find the vendor by erpTenantId
+        const vendor = await prisma.vendor.findFirst({
+          where: { erpTenantId: erp_tenant_id },
+          select: { id: true, userId: true },
+        });
+
+        if (!vendor) {
+          failed++;
+          errors.push(`Product ${erp_item_id || name}: no vendor found for erp_tenant_id ${erp_tenant_id}`);
+          continue;
+        }
+
+        // Match product by (vendorId + sku) or (vendorId + barcode)
+        let existingProduct = null;
+        if (sku) {
+          existingProduct = await prisma.product.findFirst({
+            where: { vendorId: vendor.id, sku },
+          });
+        }
+        if (!existingProduct && barcode) {
+          existingProduct = await prisma.product.findFirst({
+            where: { vendorId: vendor.id, barcode },
+          });
+        }
+
+        const productData = {
+          vendorId: vendor.id,
+          name: String(name).slice(0, 200),
+          description: description ? String(description).slice(0, 2000) : null,
+          category: category ? String(category).slice(0, 100) : null,
+          barcode: barcode ? String(barcode).slice(0, 64) : null,
+          sku: sku ? String(sku).slice(0, 64) : null,
+          price: typeof price === 'number' ? price : 0,
+          unit: unit ? String(unit).slice(0, 50) : null,
+          stockQuantity: typeof stock_quantity === 'number' ? stock_quantity : 0,
+          imageUrl: image_url || null,
+          isAvailable: is_active !== false,
+        };
+
+        if (existingProduct) {
+          await prisma.product.update({
+            where: { id: existingProduct.id },
+            data: productData,
+          });
+        } else {
+          await prisma.product.create({ data: productData });
+        }
+
+        synced++;
+      } catch (prodErr) {
+        failed++;
+        errors.push(`Product ${product?.erp_item_id || 'unknown'}: ${prodErr instanceof Error ? prodErr.message : 'error'}`);
+      }
+    }
+
+    console.log(`[ERP Webhook] product-sync: synced ${synced}/${products.length} products`);
+    return res.json({
+      success: true,
+      synced,
+      failed,
+      errors: errors.length > 0 ? errors : undefined,
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    console.error('[ERP Webhook] Product sync error:', message);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * POST /erp-webhooks/customer-sync — receive customer data from ERP.
+ * Creates or updates marketplace users and links ERP customer ID.
+ */
+router.post('/customer-sync', requireErpSecret, async (req: Request, res: Response) => {
+  const { erp_tenant_id, customers } = req.body;
+
+  if (!erp_tenant_id || !Array.isArray(customers) || customers.length === 0) {
+    return res.status(400).json({ error: 'Invalid payload: erp_tenant_id and customers array required' });
+  }
+
+  try {
+    // Find vendor by erpTenantId
+    const vendor = await prisma.vendor.findFirst({
+      where: { erpTenantId: erp_tenant_id },
+      select: { id: true },
+    });
+
+    if (!vendor) {
+      return res.status(404).json({ error: 'No vendor found for this erp_tenant_id' });
+    }
+
+    let synced = 0;
+    let failed = 0;
+    const errors: string[] = [];
+
+    for (const customer of customers) {
+      try {
+        const {
+          erp_customer_id,
+          name,
+          phone,
+          email,
+        } = customer;
+
+        if (!erp_customer_id) {
+          failed++;
+          errors.push('Missing erp_customer_id');
+          continue;
+        }
+
+        // Try to find existing user by phone or email
+        let user = null;
+        if (phone) {
+          user = await prisma.user.findUnique({ where: { phone: String(phone).slice(0, 20) } });
+        }
+        if (!user && email) {
+          user = await prisma.user.findUnique({ where: { email: String(email).slice(0, 150) } });
+        }
+
+        if (user) {
+          // Update existing user with ERP customer ID if not already set
+          // Note: we store erp_customer_id as a custom field — for now we just ensure the user exists
+          // The linking can be done via a separate field or a join table in the future
+          console.log(`[ERP Webhook] customer-sync: user ${user.id} matched for ERP customer ${erp_customer_id}`);
+        } else {
+          // Create new user
+          user = await prisma.user.create({
+            data: {
+              fullName: String(name || 'ERP Customer').slice(0, 100),
+              phone: phone ? String(phone).slice(0, 20) : undefined,
+              email: email ? String(email).slice(0, 150) : undefined,
+              role: 'customer',
+            },
+          });
+          console.log(`[ERP Webhook] customer-sync: created user ${user.id} for ERP customer ${erp_customer_id}`);
+        }
+
+        synced++;
+      } catch (custErr) {
+        failed++;
+        errors.push(`Customer ${customer?.erp_customer_id || 'unknown'}: ${custErr instanceof Error ? custErr.message : 'error'}`);
+      }
+    }
+
+    console.log(`[ERP Webhook] customer-sync: synced ${synced}/${customers.length} customers`);
+    return res.json({
+      success: true,
+      synced,
+      failed,
+      errors: errors.length > 0 ? errors : undefined,
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    console.error('[ERP Webhook] Customer sync error:', message);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
  * POST /erp-webhooks/dispatch-delivery — standalone ERP mode (Req 11.4/11.5).
  * The vendor's ERP sold an order (POS/phone) and requests a Doorli delivery:
  * verify the ERP secret, check the `doorli_delivery` feature flag, create a

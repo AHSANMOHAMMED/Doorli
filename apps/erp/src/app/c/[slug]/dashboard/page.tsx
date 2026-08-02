@@ -9,6 +9,7 @@ import { ErrorBoundary } from '@/components/ui/error-boundary'
 import { useRealtimeData, useDateFormat } from '@/hooks'
 import { AlertTriangle, Clock } from 'lucide-react'
 import { AIInsightsWidget } from '@/components/dashboard/AIInsightsWidget'
+import { MarketplaceWidget } from '@/components/dashboard/MarketplaceWidget'
 
 interface ExpiringItem {
   id: string
@@ -164,6 +165,7 @@ export default function DashboardPage() {
         <WorkspaceRenderer workspaceKey="dashboard" />
       </ErrorBoundary>
       <AIInsightsWidget />
+      <MarketplaceWidget />
       {businessType === 'supermarket' && <ExpiringItemsWidget />}
     </div>
   )

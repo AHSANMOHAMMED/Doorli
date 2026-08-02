@@ -10,6 +10,7 @@ import { logError } from '@/lib/ai/error-logger'
 import { requireQuota } from '@/lib/db/storage-quota'
 import { validateBody, validateSearchParams } from '@/lib/validation/helpers'
 import { stockTransfersListSchema, createStockTransferSchema } from '@/lib/validation/schemas/stock'
+import { pushStockForItems } from '@/lib/erp-sync/stock-sync'
 
 // GET all stock transfers (with pagination)
 export async function GET(request: NextRequest) {

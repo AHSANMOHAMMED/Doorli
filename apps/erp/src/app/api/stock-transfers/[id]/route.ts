@@ -13,6 +13,7 @@ import { requireAccountingConfig } from '@/lib/accounting/validate-config'
 import { validateBody, validateParams } from '@/lib/validation/helpers'
 import { updateStockTransferSchema } from '@/lib/validation/schemas/stock'
 import { idParamSchema } from '@/lib/validation/schemas/common'
+import { pushStockForItems } from '@/lib/erp-sync/stock-sync'
 
 // GET single stock transfer
 export async function GET(
@@ -555,6 +556,8 @@ async function handleShip(db: any, session: any, transfer: any, userId: string) 
   for (const item of transfer.items) {
     logAndBroadcast(session.user.tenantId, 'item', 'updated', item.itemId)
   }
+  // Push stock to marketplace after ship (post-commit, best-effort)
+  pushStockForItems(session.user.tenantId, transfer.items.map((i: { itemId: string }) => i.itemId))
 
   return NextResponse.json(result)
 }
@@ -697,6 +700,8 @@ async function handleReceive(db: any, session: any, transfer: any, receivedItems
   for (const transferItem of transfer.items) {
     logAndBroadcast(session.user.tenantId, 'item', 'updated', transferItem.itemId)
   }
+  // Push stock to marketplace after receive (post-commit, best-effort)
+  pushStockForItems(session.user.tenantId, transfer.items.map((i: { itemId: string }) => i.itemId))
 
   return NextResponse.json(result)
 }
@@ -876,6 +881,8 @@ async function handleCancel(db: any, session: any, transfer: any, reason: string
     for (const item of transfer.items) {
       logAndBroadcast(session.user.tenantId, 'item', 'updated', item.itemId)
     }
+    // Push stock to marketplace after cancel with stock restoration (post-commit, best-effort)
+    pushStockForItems(session.user.tenantId, transfer.items.map((i: { itemId: string }) => i.itemId))
   }
 
   return NextResponse.json(updated)

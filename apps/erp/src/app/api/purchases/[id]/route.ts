@@ -12,6 +12,7 @@ import { parseSerialNumberInput, checkDuplicateSerials } from '@/lib/inventory/s
 import { validateBody, validateParams } from '@/lib/validation/helpers'
 import { updatePurchaseSchema } from '@/lib/validation/schemas/purchases'
 import { idParamSchema } from '@/lib/validation/schemas/common'
+import { pushStockForItems } from '@/lib/erp-sync/stock-sync'
 
 // GET single purchase with items
 export async function GET(
@@ -210,6 +211,12 @@ export async function PUT(
         })
       }
 
+      // Get purchase items (needed for stock reversal and stock push)
+      const purchaseItemsList = await tx
+        .select()
+        .from(purchaseItems)
+        .where(eq(purchaseItems.purchaseId, id))
+
       // Check if stock movements exist for this purchase
       const existingMovements = await tx
         .select({ id: stockMovements.id })
@@ -223,10 +230,6 @@ export async function PUT(
 
       // Reverse stock if there were incoming stock movements
       if (existingMovements.length > 0) {
-        const purchaseItemsList = await tx
-          .select()
-          .from(purchaseItems)
-          .where(eq(purchaseItems.purchaseId, id))
 
         for (const item of purchaseItemsList) {
           if (item.itemId && currentPurchase.warehouseId) {
@@ -409,7 +412,9 @@ export async function PUT(
         .where(eq(purchases.id, id))
         .returning()
 
-      return { data: updated, tenantId: session.user.tenantId, userId: session.user.id, supplierId: currentPurchase.supplierId, purchaseOrderId }
+      // Collect affected item IDs for stock push (outside conditional)
+      const cancelledItemIds = purchaseItemsList.filter((i: { itemId: string | null }) => i.itemId).map((i: { itemId: string }) => i.itemId)
+      return { data: updated, tenantId: session.user.tenantId, userId: session.user.id, supplierId: currentPurchase.supplierId, purchaseOrderId, cancelledItemIds }
     })
 
     if (!result) {
@@ -432,6 +437,8 @@ export async function PUT(
       logAndBroadcast(result.tenantId, 'purchase-order', 'updated', result.purchaseOrderId, { userId: result.userId })
     }
     logAndBroadcast(result.tenantId, 'warehouse-stock', 'updated', 'bulk', { userId: result.userId })
+    // Push stock to marketplace after purchase cancellation (post-commit, best-effort)
+    pushStockForItems(result.tenantId, result.cancelledItemIds)
 
     return NextResponse.json(result.data)
   }
@@ -738,7 +745,8 @@ export async function PUT(
         costCenterId: currentPurchase.costCenterId || null,
       })
 
-      return { data: updated, tenantId: session.user.tenantId, userId: session.user.id, supplierId: currentPurchase.supplierId }
+      const affectedItemIds = purchaseItemsList.filter((i: { itemId: string | null }) => i.itemId).map((i: { itemId: string }) => i.itemId)
+      return { data: updated, tenantId: session.user.tenantId, userId: session.user.id, supplierId: currentPurchase.supplierId, affectedItemIds }
     })
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err)
@@ -765,6 +773,8 @@ export async function PUT(
       logAndBroadcast(result.tenantId, 'supplier', 'updated', result.supplierId, { userId: result.userId })
     }
     logAndBroadcast(result.tenantId, 'warehouse-stock', 'updated', 'bulk', { userId: result.userId })
+    // Push stock to marketplace after purchase receipt (post-commit, best-effort)
+    pushStockForItems(result.tenantId, result.affectedItemIds)
 
     return NextResponse.json(result.data)
   }
@@ -926,6 +936,12 @@ export async function DELETE(
       })
     }
 
+    // Get purchase items (needed for stock reversal and stock push)
+    const purchaseItemsList = await tx
+      .select()
+      .from(purchaseItems)
+      .where(eq(purchaseItems.purchaseId, id))
+
     // Reverse stock if items were added to inventory
     const existingMovements = await tx
       .select({ id: stockMovements.id })
@@ -938,10 +954,6 @@ export async function DELETE(
       .limit(1)
 
     if (existingMovements.length > 0 && currentPurchase.warehouseId) {
-      const purchaseItemsList = await tx
-        .select()
-        .from(purchaseItems)
-        .where(eq(purchaseItems.purchaseId, id))
 
       for (const item of purchaseItemsList) {
         if (item.itemId) {
@@ -1008,7 +1020,8 @@ export async function DELETE(
     await tx.delete(purchases)
       .where(eq(purchases.id, id))
 
-    return { data: { success: true }, tenantId: session.user.tenantId, supplierId: currentPurchase.supplierId }
+    const affectedItemIds = purchaseItemsList.filter((i: { itemId: string | null }) => i.itemId).map((i: { itemId: string }) => i.itemId)
+    return { data: { success: true }, tenantId: session.user.tenantId, supplierId: currentPurchase.supplierId, affectedItemIds }
   })
 
   if (!result) {
@@ -1023,6 +1036,8 @@ export async function DELETE(
     logAndBroadcast(result.tenantId, 'supplier', 'updated', result.supplierId)
   }
   logAndBroadcast(result.tenantId, 'warehouse-stock', 'updated', 'bulk')
+  // Push stock to marketplace after purchase deletion (post-commit, best-effort)
+  pushStockForItems(result.tenantId, result.affectedItemIds)
 
   return NextResponse.json(result.data)
 }

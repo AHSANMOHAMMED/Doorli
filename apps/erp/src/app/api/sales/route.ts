@@ -21,6 +21,7 @@ import { recalculateDocumentTax } from '@/lib/utils/tax-recalculate'
 import { type TaxBreakdownItem } from '@/lib/utils/tax-template'
 import { validateBody, validateSearchParams } from '@/lib/validation'
 import { salesListSchema, createSaleSchema } from '@/lib/validation/schemas/sales'
+import { pushStockForItems } from '@/lib/erp-sync/stock-sync'
 
 // GET all sales for the tenant (with pagination)
 export async function GET(request: NextRequest) {
@@ -1304,6 +1305,8 @@ export async function POST(request: NextRequest) {
       if (warehouseId) {
         logAndBroadcast(session.user.tenantId, 'warehouse-stock', 'updated', warehouseId)
       }
+      // Push stock to marketplace after sale (post-commit, best-effort)
+      pushStockForItems(session.user.tenantId, affectedItemIds)
       // Broadcast gift card update (payment with gift card)
       if (giftCardId && paymentMethod === 'gift_card') {
         logAndBroadcast(session.user.tenantId, 'gift-card', 'updated', giftCardId)

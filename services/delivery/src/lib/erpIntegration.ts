@@ -256,15 +256,15 @@ export class ErpIntegrationService {
   }
 
   /**
-   * Inventory lookup — not yet implemented.
-   * TODO: When ERP stock APIs are available, call:
-   *   GET ${embeddedBaseUrl()}/inventory/${erpTenantId}/${productId}  (embedded)
-   *   POST ${enterpriseCreateOrderUrl()} with method "get_stock"      (enterprise)
-   * Requires ERP_API_URL and ERP_API_KEY env vars to be set.
+   * Inventory lookup — calls the appropriate ERP stock API.
+   *
+   * Simple (embedded): GET ${embeddedBaseUrl()}/inventory?tenantId=${tenantId}&productId=${productId}
+   * Enterprise (Frappe): GET ${erpUrl}/api/resource/Stock%20Ledger%20Entry with Bearer token auth.
    */
   static async getInventoryFromErp(
-    _erpTenantId: string,
-    _productId: string,
+    erpTenantId: string,
+    productId: string,
+    warehouseId?: string,
   ): Promise<{
     quantity?: number;
     stock?: number;
@@ -272,8 +272,99 @@ export class ErpIntegrationService {
     data?: { quantity?: number };
     items?: Array<{ barcode?: string; sku?: string; quantity?: number }>;
   }> {
-    throw new Error('ERP inventory lookup not yet implemented - configure ERP_API_URL and ERP_API_KEY');
+    const enterpriseUrl = enterpriseCreateOrderUrl();
+
+    if (enterpriseUrl) {
+      return getInventoryFromEnterprise(erpTenantId, productId, warehouseId);
+    }
+    return getInventoryFromEmbedded(erpTenantId, productId);
   }
+}
+
+async function getInventoryFromEmbedded(
+  tenantId: string,
+  productId: string,
+): Promise<{
+  quantity?: number;
+  stock?: number;
+  onHand?: number;
+  data?: { quantity?: number };
+  items?: Array<{ barcode?: string; sku?: string; quantity?: number }>;
+}> {
+  const url = `${embeddedBaseUrl()}/inventory?tenantId=${encodeURIComponent(tenantId)}&productId=${encodeURIComponent(productId)}`;
+
+  const response = await axios.get(url, {
+    headers: {
+      'Content-Type': 'application/json',
+      'x-internal-secret': erpSecret(),
+    },
+    timeout: REQUEST_TIMEOUT_MS,
+    validateStatus: () => true,
+  });
+
+  if (response.status >= 400 || response.data?.success === false) {
+    console.error('[ERP] embedded inventory lookup failed:', response.status, response.data);
+    throw new Error(response.data?.error || `Embedded ERP inventory lookup failed (${response.status})`);
+  }
+
+  const stock = Number(response.data?.stock ?? 0);
+  return { quantity: stock, stock, onHand: stock };
+}
+
+async function getInventoryFromEnterprise(
+  _erpTenantId: string,
+  productId: string,
+  warehouseId?: string,
+): Promise<{
+  quantity?: number;
+  stock?: number;
+  onHand?: number;
+  data?: { quantity?: number };
+  items?: Array<{ barcode?: string; sku?: string; quantity?: number }>;
+}> {
+  const enterpriseUrl = enterpriseCreateOrderUrl();
+  if (!enterpriseUrl) {
+    throw new Error('ERP_ENTERPRISE_URL is not configured');
+  }
+
+  const erpUrl = enterpriseUrl.replace(/\/api\/method\/create_order$/, '');
+
+  const filters: Array<[string, string, string]> = [
+    ['item_code', '=', productId],
+  ];
+  if (warehouseId) {
+    filters.push(['warehouse', '=', warehouseId]);
+  }
+
+  const params = new URLSearchParams({
+    filters: JSON.stringify(filters),
+    fields: JSON.stringify(['actual_qty', 'warehouse']),
+  });
+
+  const response = await axios.get(
+    `${erpUrl}/api/resource/Stock%20Ledger%20Entry?${params.toString()}`,
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${erpSecret()}`,
+      },
+      timeout: REQUEST_TIMEOUT_MS,
+      validateStatus: () => true,
+    },
+  );
+
+  if (response.status >= 400) {
+    console.error('[ERP] enterprise inventory lookup failed:', response.status, response.data);
+    throw new Error(`Enterprise ERP inventory lookup failed (${response.status})`);
+  }
+
+  const entries = response.data?.data || [];
+  const totalQty = entries.reduce(
+    (sum: number, entry: { actual_qty?: number }) => sum + Number(entry.actual_qty || 0),
+    0,
+  );
+
+  return { quantity: totalQty, stock: totalQty, onHand: totalQty };
 }
 
 async function syncToEmbeddedErp(input: SyncOrderInput): Promise<SyncOrderResult> {

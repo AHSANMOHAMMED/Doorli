@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
-import { Search, ChevronDown, ChevronUp, Plus, CreditCard, Banknote, Building2, Ban, Download } from 'lucide-react'
+import { Search, ChevronDown, ChevronUp, Plus, CreditCard, Banknote, Building2, Ban, Download, ShoppingBag } from 'lucide-react'
 import { usePaginatedData, useTerminology } from '@/hooks'
 import { formatItemLabel } from '@/lib/utils/item-display'
 import { ExportDialog } from '@/components/import-export/ExportDialog'
@@ -104,18 +104,28 @@ export default function SalesPage() {
   const [customerCredit, setCustomerCredit] = useState<number>(0)
   const [processing, setProcessing] = useState(false)
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'completed'>('all')
+  const [marketplaceFilter, setMarketplaceFilter] = useState<boolean>(false)
   const [alertModal, setAlertModal] = useState<{ open: boolean; title: string; message: string; variant: 'error' | 'success' | 'warning' | 'info' }>({ open: false, title: '', message: '', variant: 'error' })
   // Issue #101: Void sale with reason
   const [showVoidModal, setShowVoidModal] = useState(false)
   const [voidingSaleId, setVoidingSaleId] = useState<string | null>(null)
   const [voidingSaleNo, setVoidingSaleNo] = useState<string>('')
 
+  // Helper function to check if a sale is from the marketplace
+  function isMarketplaceOrder(sale: Sale): boolean {
+    return (
+      sale.notes === 'Marketplace Order' ||
+      sale.invoiceNo.startsWith('MKP-ORDER-')
+    )
+  }
+
   // Memoize additionalParams to prevent infinite re-renders
   const additionalParams = useMemo(() => {
     const params: Record<string, string> = {}
     if (statusFilter !== 'all') params.status = statusFilter
+    if (marketplaceFilter) params.marketplace = 'true'
     return params
-  }, [statusFilter])
+  }, [statusFilter, marketplaceFilter])
 
   // Paginated sales with server-side search and status filter
   const {
@@ -333,6 +343,16 @@ export default function SalesPage() {
           >
             Completed
           </button>
+          <div className="w-px bg-gray-300 mx-1" />
+          <button
+            onClick={() => setMarketplaceFilter(!marketplaceFilter)}
+            className={`px-3 py-1 rounded text-sm font-medium transition flex items-center gap-1.5 ${
+              marketplaceFilter ? 'bg-purple-500 text-white shadow' : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <ShoppingBag size={14} />
+            Marketplace
+          </button>
         </div>
       </div>
 
@@ -353,6 +373,13 @@ export default function SalesPage() {
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className={`font-medium ${sale.isReturn ? 'text-red-600' : 'text-blue-600'}`}>{sale.invoiceNo}</span>
+                        {/* Marketplace order indicator */}
+                        {isMarketplaceOrder(sale) && (
+                          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700 flex items-center gap-1">
+                            <ShoppingBag size={10} />
+                            Marketplace
+                          </span>
+                        )}
                         {/* Return indicator for return invoices */}
                         {sale.isReturn && (
                           <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">

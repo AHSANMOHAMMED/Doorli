@@ -12,6 +12,7 @@ import { logError } from '@/lib/ai/error-logger'
 import { validateBody, validateParams } from '@/lib/validation/helpers'
 import { voidSaleSchema } from '@/lib/validation/schemas/sales'
 import { idParamSchema } from '@/lib/validation/schemas/common'
+import { pushStockForItems } from '@/lib/erp-sync/stock-sync'
 
 // GET single sale
 export async function GET(
@@ -475,6 +476,8 @@ export async function PUT(
       if (result.warehouseId) {
         logAndBroadcast(session.user.tenantId, 'warehouse-stock', 'updated', result.warehouseId)
       }
+      // Push stock to marketplace after void (post-commit, best-effort)
+      pushStockForItems(session.user.tenantId, result.affectedItemIds)
       // Broadcast SO update if we restored its state
       if (result.restoredSalesOrderId) {
         logAndBroadcast(session.user.tenantId, 'sales-order', 'updated', result.restoredSalesOrderId)

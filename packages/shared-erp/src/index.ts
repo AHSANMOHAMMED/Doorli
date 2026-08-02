@@ -312,7 +312,7 @@ async function getInventoryFromEmbedded(
 }
 
 async function getInventoryFromEnterprise(
-  _erpTenantId: string,
+  erpTenantId: string,
   productId: string,
   warehouseId?: string,
 ): Promise<{
