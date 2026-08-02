@@ -203,7 +203,6 @@ router.post('/product-sync', requireErpSecret, async (req: Request, res: Respons
           name,
           description,
           price,
-          cost_price: _cost_price,
           unit,
           image_url,
           category,

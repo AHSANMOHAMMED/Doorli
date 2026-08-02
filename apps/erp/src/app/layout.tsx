@@ -1,8 +1,7 @@
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import Script from "next/script"
-import { ThemeProvider } from "@/components/providers/ThemeProvider"
-import { ErrorCaptureProvider } from "@/components/providers/ErrorCaptureProvider"
+import { ClientProviders } from "@/components/providers/ClientProviders"
 import "./globals.css"
 
 const inter = Inter({
@@ -57,6 +56,8 @@ export const metadata: Metadata = {
   },
 }
 
+export const dynamic = 'force-dynamic'
+
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
@@ -102,11 +103,9 @@ export default function RootLayout({
             `}</Script>
           </>
         ) : null}
-        <ThemeProvider>
-          <ErrorCaptureProvider>
-            {children}
-          </ErrorCaptureProvider>
-        </ThemeProvider>
+        <ClientProviders>
+          {children}
+        </ClientProviders>
       </body>
     </html>
   )
