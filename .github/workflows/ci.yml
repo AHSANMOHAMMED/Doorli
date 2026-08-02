@@ -55,13 +55,13 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps --no-audit --no-fund
 
-      - name: Disable corepack
-        run: corepack disable || true
-
       # Embedded Retail Smart ERP has a latent Next 15 monorepo dual-React prerender
       # failure (/404 useContext). Marketplace packages still build; ERP tracked separately.
       - name: Build
         run: npx turbo run build --filter='!@doorli/erp' --filter='!@doorli/mobile'
+        env:
+          COREPACK_ENABLE_STRICT: 0
+          COREPACK_ENABLE_AUTO_PIN: 0
         
       - name: Lint
         run: npm run lint --if-present
