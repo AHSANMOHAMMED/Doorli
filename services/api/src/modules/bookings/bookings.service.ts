@@ -224,12 +224,7 @@ export async function createBooking(userId: string, input: CreateBookingInput) {
         paymentIntentId: paymentIntent.id,
       };
     } else {
-      // Mock payment when Stripe is not configured
-      console.warn('Stripe not configured - using mock payment for deposit');
-      payment = {
-        clientSecret: 'mock_secret',
-        warning: 'Stripe not configured. This is a mock payment.',
-      };
+      throw new Error('Stripe not configured. Set STRIPE_SECRET_KEY to process deposit payments.');
     }
   }
 

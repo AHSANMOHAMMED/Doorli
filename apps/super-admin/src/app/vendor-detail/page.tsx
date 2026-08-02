@@ -8,6 +8,11 @@ export default function VendorDetailPage() {
   const searchParams = useSearchParams();
   const id = searchParams.get('id');
   const [vendor, setVendor] = useState<any>(null);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [ordersTotal, setOrdersTotal] = useState(0);
+  const [ordersPage, setOrdersPage] = useState(1);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const ORDERS_PER_PAGE = 10;
 
   useEffect(() => {
     if (id) {
@@ -16,6 +21,21 @@ export default function VendorDetailPage() {
       }).catch(console.error);
     }
   }, [id]);
+
+  useEffect(() => {
+    if (!id) return;
+    setOrdersLoading(true);
+    const offset = (ordersPage - 1) * ORDERS_PER_PAGE;
+    superAdminFetch(`/admin/orders?vendorId=${id}&limit=${ORDERS_PER_PAGE}&offset=${offset}`)
+      .then((res) => {
+        if (res.success) {
+          setOrders(res.data?.orders ?? res.data ?? []);
+          setOrdersTotal(res.data?.total ?? (res.data?.orders ?? res.data ?? []).length);
+        }
+      })
+      .catch(console.error)
+      .finally(() => setOrdersLoading(false));
+  }, [id, ordersPage]);
 
   const toggleVerify = async () => {
     if (!vendor) return;
@@ -245,74 +265,62 @@ export default function VendorDetailPage() {
 </tr>
 </thead>
 <tbody className="divide-y divide-outline-variant/30">
-<tr className="hover:bg-surface-container transition-colors">
-<td className="px-md py-md font-mono text-primary text-xs">ORD-4402</td>
-<td className="px-md py-md">Wayne Enterprises</td>
-<td className="px-md py-md"><span className="active-pill px-2 py-0.5 rounded-full text-[10px]">Dispatched</span></td>
-<td className="px-md py-md">$12,450.00</td>
-<td className="px-md py-md"><button className="text-secondary hover:underline">View</button></td>
-</tr>
-<tr className="hover:bg-surface-container transition-colors">
-<td className="px-md py-md font-mono text-primary text-xs">ORD-4403</td>
-<td className="px-md py-md">LexCorp</td>
-<td className="px-md py-md"><span className="bg-surface-container-highest text-on-surface-variant px-2 py-0.5 rounded-full text-[10px]">Pending</span></td>
-<td className="px-md py-md">$8,210.50</td>
-<td className="px-md py-md"><button className="text-secondary hover:underline">View</button></td>
-</tr>
-<tr className="hover:bg-surface-container transition-colors">
-<td className="px-md py-md font-mono text-primary text-xs">ORD-4404</td>
-<td className="px-md py-md">Pym Technologies</td>
-<td className="px-md py-md"><span className="active-pill px-2 py-0.5 rounded-full text-[10px]">Dispatched</span></td>
-<td className="px-md py-md">$45,000.00</td>
-<td className="px-md py-md"><button className="text-secondary hover:underline">View</button></td>
-</tr>
-<tr className="hover:bg-surface-container transition-colors">
-<td className="px-md py-md font-mono text-primary text-xs">ORD-4405</td>
-<td className="px-md py-md">Oscorp Inc.</td>
-<td className="px-md py-md"><span className="danger-pill px-2 py-0.5 rounded-full text-[10px]">On Hold</span></td>
-<td className="px-md py-md">$3,100.20</td>
-<td className="px-md py-md"><button className="text-secondary hover:underline">View</button></td>
-</tr>
+{ordersLoading ? (
+  <tr><td colSpan={5} className="px-md py-lg text-center text-on-surface-variant">Loading orders...</td></tr>
+) : orders.length === 0 ? (
+  <tr><td colSpan={5} className="px-md py-lg text-center text-on-surface-variant">No orders yet</td></tr>
+) : orders.map((order: any) => {
+  const status = order.status?.toLowerCase() ?? '';
+  const pillClass = status === 'dispatched' || status === 'delivered' ? 'active-pill'
+    : status === 'pending' || status === 'processing' ? 'bg-surface-container-highest text-on-surface-variant'
+    : 'danger-pill';
+  return (
+    <tr key={order.id} className="hover:bg-surface-container transition-colors">
+      <td className="px-md py-md font-mono text-primary text-xs">{order.orderNumber ?? order.id}</td>
+      <td className="px-md py-md">{order.clientName ?? order.customerName ?? '—'}</td>
+      <td className="px-md py-md"><span className={`${pillClass} px-2 py-0.5 rounded-full text-[10px]`}>{order.status ?? 'Unknown'}</span></td>
+      <td className="px-md py-md">{order.totalAmount != null ? `$${Number(order.totalAmount).toLocaleString()}` : '—'}</td>
+      <td className="px-md py-md"><button className="text-secondary hover:underline">View</button></td>
+    </tr>
+  );
+})}
 </tbody>
 </table>
 </div>
 <div className="p-sm bg-surface-container-low border-t border-outline-variant flex items-center justify-between font-caption text-caption">
-<span className="text-on-surface-variant">Showing 4 of 124 orders</span>
+<span className="text-on-surface-variant">Showing {orders.length} of {ordersTotal} orders</span>
 <div className="flex items-center space-x-md">
-<button className="hover:text-primary transition-colors">Previous</button>
-<span className="text-on-surface">Page 1 of 31</span>
-<button className="hover:text-primary transition-colors">Next</button>
+<button disabled={ordersPage <= 1} onClick={() => setOrdersPage((p) => p - 1)} className="hover:text-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed">Previous</button>
+<span className="text-on-surface">Page {ordersPage} of {Math.max(1, Math.ceil(ordersTotal / ORDERS_PER_PAGE))}</span>
+<button disabled={ordersPage >= Math.ceil(ordersTotal / ORDERS_PER_PAGE)} onClick={() => setOrdersPage((p) => p + 1)} className="hover:text-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed">Next</button>
 </div>
 </div>
 </section>
 {/*  Section: High Density KPI Widgets  */}
 <section className="lg:col-span-12 grid grid-cols-2 md:grid-cols-4 gap-md pb-20 md:pb-0">
 <div className="glass-panel p-md rounded-xl">
-<p className="font-label-medium text-label-medium text-on-surface-variant mb-base">MTD Revenue</p>
+<p className="font-label-medium text-label-medium text-on-surface-variant mb-base">Total Orders</p>
 <div className="flex items-baseline space-x-sm">
-<span className="font-kpi-number text-kpi-number text-on-surface">$1.2M</span>
-<span className="text-tertiary font-caption text-caption">+12%</span>
+<span className="font-kpi-number text-kpi-number text-on-surface">{ordersTotal}</span>
+<span className="text-tertiary font-caption text-caption">All time</span>
 </div>
 </div>
 <div className="glass-panel p-md rounded-xl">
-<p className="font-label-medium text-label-medium text-on-surface-variant mb-base">Order Accuracy</p>
+<p className="font-label-medium text-label-medium text-on-surface-variant mb-base">Category</p>
 <div className="flex items-baseline space-x-sm">
-<span className="font-kpi-number text-kpi-number text-on-surface">99.2%</span>
-<span className="text-tertiary font-caption text-caption">Stable</span>
+<span className="font-kpi-number text-kpi-number text-on-surface capitalize">{vendor.category ?? '—'}</span>
 </div>
 </div>
 <div className="glass-panel p-md rounded-xl">
-<p className="font-label-medium text-label-medium text-on-surface-variant mb-base">Avg. Sync Lag</p>
+<p className="font-label-medium text-label-medium text-on-surface-variant mb-base">Location</p>
 <div className="flex items-baseline space-x-sm">
-<span className="font-kpi-number text-kpi-number text-on-surface">1.4s</span>
-<span className="text-tertiary font-caption text-caption">-0.3s</span>
+<span className="font-kpi-number text-kpi-number text-on-surface">{vendor.city ?? '—'}</span>
 </div>
 </div>
 <div className="glass-panel p-md rounded-xl">
-<p className="font-label-medium text-label-medium text-on-surface-variant mb-base">Active Drivers</p>
+<p className="font-label-medium text-label-medium text-on-surface-variant mb-base">Status</p>
 <div className="flex items-baseline space-x-sm">
-<span className="font-kpi-number text-kpi-number text-on-surface">142</span>
-<span className="text-secondary font-caption text-caption">8 Peak</span>
+<span className={`font-kpi-number text-kpi-number ${vendor.isVerified ? 'text-tertiary' : 'text-on-surface'}`}>{vendor.isVerified ? 'Verified' : 'Unverified'}</span>
 </div>
 </div>
 </section>

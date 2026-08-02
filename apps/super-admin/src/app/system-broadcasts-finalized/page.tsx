@@ -14,7 +14,7 @@ export default function SystemBroadcastsFinalizedPage() {
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [apiSuccessRate, setApiSuccessRate] = useState('99.98');
+  const [apiSuccessRate, setApiSuccessRate] = useState('--');
   const [activeInstances, setActiveInstances] = useState(0);
   const [erpLatency, setErpLatency] = useState(0);
   const [diagnostics, setDiagnostics] = useState<DiagnosticCheck[]>([]);
