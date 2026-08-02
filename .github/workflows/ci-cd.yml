@@ -24,13 +24,13 @@ jobs:
         run: npm ci --legacy-peer-deps --no-audit --no-fund
 
       - name: Build all packages
-        run: npx turbo run build --filter='!@doorli/erp' --filter='!@doorli/mobile'
+        run: ./node_modules/.bin/turbo run build --filter='!@doorli/erp' --filter='!@doorli/mobile'
 
       - name: Lint
-        run: npx turbo run lint
+        run: ./node_modules/.bin/turbo run lint
 
       - name: Test
-        run: npx turbo run test
+        run: ./node_modules/.bin/turbo run test
 
   build-mobile:
     runs-on: ubuntu-latest
@@ -105,7 +105,7 @@ jobs:
         run: npm ci --legacy-peer-deps --no-audit --no-fund
 
       - name: Build all packages
-        run: npx turbo run build --filter='!@doorli/erp' --filter='!@doorli/mobile'
+        run: ./node_modules/.bin/turbo run build --filter='!@doorli/erp' --filter='!@doorli/mobile'
 
       - name: Check deployment secrets
         id: check-secrets
