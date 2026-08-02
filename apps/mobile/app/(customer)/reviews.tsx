@@ -4,9 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, Stack } from 'expo-router';
 import { ArrowLeft, Star, MessageSquare } from 'lucide-react-native';
 import { fetchMyReviews } from '../../lib/api';
+import { DoorliColors } from '../../constants/colors';
 
-const PRIMARY = '#00B241';
-const ON_SURFACE = '#002b5b';
+const PRIMARY = DoorliColors.primary;
 
 interface Review {
   id: string;
@@ -34,7 +34,6 @@ export default function ReviewsScreen() {
       const data = await fetchMyReviews();
       setReviews(data);
     } catch (err: any) {
-      console.error('Failed to fetch reviews:', err);
       setError(err?.response?.data?.error || 'Failed to load reviews');
     } finally {
       setLoading(false);
@@ -61,11 +60,11 @@ export default function ReviewsScreen() {
       <Stack.Screen options={{ headerShown: false }} />
 
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.iconButton}>
-          <ArrowLeft color={ON_SURFACE} size={24} />
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <ArrowLeft color={DoorliColors.text} size={24} />
         </TouchableOpacity>
         <Text style={styles.title}>My Reviews</Text>
-        <View style={{ width: 40 }} />
+        <View style={{ width: 44 }} />
       </View>
 
       {loading ? (
@@ -74,7 +73,7 @@ export default function ReviewsScreen() {
         </View>
       ) : error ? (
         <View style={styles.centered}>
-          <MessageSquare color="#9ca3af" size={48} />
+          <MessageSquare color={DoorliColors.textDim} size={48} />
           <Text style={styles.emptyTitle}>Something went wrong</Text>
           <Text style={styles.emptySubtitle}>{error}</Text>
           <TouchableOpacity onPress={fetchReviews} style={styles.retryButton}>
@@ -85,12 +84,15 @@ export default function ReviewsScreen() {
         <ScrollView
           contentContainerStyle={styles.content}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[PRIMARY]} />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={PRIMARY} />
           }
+          showsVerticalScrollIndicator={false}
         >
           {reviews.length === 0 ? (
             <View style={styles.emptyState}>
-              <MessageSquare color="#9ca3af" size={48} />
+              <View style={styles.emptyIconWrap}>
+                <MessageSquare color={DoorliColors.textDim} size={40} />
+              </View>
               <Text style={styles.emptyTitle}>No reviews yet</Text>
               <Text style={styles.emptySubtitle}>You haven't left any reviews for your past orders.</Text>
             </View>
@@ -112,7 +114,7 @@ export default function ReviewsScreen() {
                     <Text style={styles.dateText}>{formatDate(review.createdAt)}</Text>
                   </View>
                   <View style={styles.ratingBadge}>
-                    <Star color="#914c00" size={14} fill="#914c00" />
+                    <Star color={DoorliColors.gold} size={14} fill={DoorliColors.gold} />
                     <Text style={styles.ratingText}>{review.rating}.0</Text>
                   </View>
                 </View>
@@ -129,33 +131,28 @@ export default function ReviewsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f9fafb',
-  },
+  container: { flex: 1, backgroundColor: DoorliColors.navy },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#ffffff',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
+    borderBottomColor: 'rgba(255,255,255,0.06)',
   },
-  iconButton: {
-    padding: 8,
-    borderRadius: 20,
-    backgroundColor: '#f3f4f6',
+  backBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  title: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: ON_SURFACE,
-  },
-  content: {
-    padding: 16,
-  },
+  title: { fontSize: 18, fontWeight: '700', color: DoorliColors.text },
+  content: { padding: 16, paddingBottom: 100 },
   centered: {
     flex: 1,
     alignItems: 'center',
@@ -167,42 +164,41 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 64,
   },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: ON_SURFACE,
-    marginTop: 16,
+  emptyIconWrap: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
   },
+  emptyTitle: { fontSize: 20, fontWeight: '700', color: DoorliColors.text, marginTop: 12 },
   emptySubtitle: {
     fontSize: 14,
-    color: '#6b7280',
+    color: DoorliColors.textMuted,
     textAlign: 'center',
     marginTop: 8,
     paddingHorizontal: 32,
+    lineHeight: 20,
   },
   retryButton: {
     marginTop: 16,
     backgroundColor: PRIMARY,
     paddingHorizontal: 24,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 10,
   },
-  retryText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
+  retryText: { color: '#fff', fontWeight: '600' },
   reviewCard: {
-    backgroundColor: '#ffffff',
+    backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: 16,
     padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
+    marginBottom: 14,
     borderWidth: 1,
-    borderColor: '#f3f4f6',
+    borderColor: 'rgba(255,255,255,0.08)',
   },
   cardHeader: {
     flexDirection: 'row',
@@ -210,10 +206,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   vendorImage: {
-    width: 48,
-    height: 48,
+    width: 44,
+    height: 44,
     borderRadius: 12,
-    backgroundColor: '#f3f4f6',
+    backgroundColor: 'rgba(255,255,255,0.06)',
   },
   vendorPlaceholder: {
     alignItems: 'center',
@@ -222,40 +218,25 @@ const styles = StyleSheet.create({
   },
   vendorPlaceholderText: {
     color: '#fff',
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '700',
   },
-  headerInfo: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  vendorName: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: ON_SURFACE,
-  },
-  dateText: {
-    fontSize: 12,
-    color: '#6b7280',
-    marginTop: 2,
-  },
+  headerInfo: { flex: 1, marginLeft: 12 },
+  vendorName: { fontSize: 15, fontWeight: '700', color: DoorliColors.text },
+  dateText: { fontSize: 12, color: DoorliColors.textDim, marginTop: 2 },
   ratingBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 220, 196, 0.5)',
+    backgroundColor: 'rgba(250,199,117,0.15)',
     paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingVertical: 5,
+    borderRadius: 10,
+    gap: 4,
   },
-  ratingText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#914c00',
-    marginLeft: 4,
-  },
+  ratingText: { fontSize: 13, fontWeight: '700', color: DoorliColors.gold },
   commentText: {
     fontSize: 14,
-    color: '#4b5563',
+    color: DoorliColors.textMuted,
     lineHeight: 20,
   },
 });

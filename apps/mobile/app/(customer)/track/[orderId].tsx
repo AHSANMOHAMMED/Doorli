@@ -1,14 +1,26 @@
 import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, ScrollView } from 'react-native';
-const MapView = ({ children, style, initialRegion }: any) => <View style={[style, { backgroundColor: '#e5e7eb', alignItems: 'center', justifyContent: 'center' }]}><Text style={{color: '#6b7280', marginBottom: 10}}>Interactive Map</Text><Text style={{color: '#9ca3af', fontSize: 10}}>{initialRegion?.latitude.toFixed(4)}, {initialRegion?.longitude.toFixed(4)}</Text><View style={{flexDirection:'row', gap: 20}}>{children}</View></View>;
+const MapView = ({ children, style, initialRegion }: any) => (
+  <View style={[style, { backgroundColor: 'rgba(255,255,255,0.03)', alignItems: 'center', justifyContent: 'center', borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' }]}>
+    <Text style={{ color: DoorliColors.textDim, marginBottom: 10, fontSize: 16, fontWeight: '600' }}>🗺 Interactive Map</Text>
+    <Text style={{ color: DoorliColors.textDim, fontSize: 12 }}>
+      {initialRegion?.latitude.toFixed(4)}, {initialRegion?.longitude.toFixed(4)}
+    </Text>
+    <View style={{ flexDirection: 'row', gap: 20, marginTop: 12 }}>{children}</View>
+  </View>
+);
 const Marker = ({ children }: any) => <View>{children}</View>;
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { fetchOrder } from '../../../lib/api';
 import { getSocket, joinSocketRooms } from '../../../lib/socket';
-import { ArrowLeft, Navigation, Package, Truck, CheckCircle2, Phone, Star } from 'lucide-react-native';
+import { DoorliColors } from '../../../constants/colors';
+import { ArrowLeft, Navigation, Package, Truck, CheckCircle2, Phone, Star, MapPin } from 'lucide-react-native';
 import { Image } from 'react-native';
+import React from 'react';
+
+const PRIMARY = DoorliColors.primary;
 
 export default function TrackOrderScreen() {
   const { orderId } = useLocalSearchParams<{ orderId: string }>();
@@ -39,8 +51,8 @@ export default function TrackOrderScreen() {
 
   if (isLoading || !order) {
     return (
-      <SafeAreaView style={styles.container}>
-        <ActivityIndicator color="#00B241" style={{ marginTop: 48 }} />
+      <SafeAreaView style={styles.center}>
+        <ActivityIndicator color={PRIMARY} size="large" />
       </SafeAreaView>
     );
   }
@@ -55,10 +67,10 @@ export default function TrackOrderScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <ArrowLeft color="#002b5b" size={24} />
+          <ArrowLeft color={DoorliColors.text} size={24} />
         </TouchableOpacity>
         <Text style={styles.title}>Track Order</Text>
-        <View style={{ width: 40 }} />
+        <View style={{ width: 44 }} />
       </View>
 
       <MapView
@@ -70,8 +82,8 @@ export default function TrackOrderScreen() {
           longitudeDelta: 0.05,
         }}
       >
-        <Marker coordinate={{ latitude: vendorLat, longitude: vendorLng }} title="Shop" pinColor="#00B241" />
-        <Marker coordinate={{ latitude: dropLat, longitude: dropLng }} title="Delivery" pinColor="#dc2626" />
+        <Marker coordinate={{ latitude: vendorLat, longitude: vendorLng }} title="Shop" pinColor={PRIMARY} />
+        <Marker coordinate={{ latitude: dropLat, longitude: dropLng }} title="Delivery" pinColor={DoorliColors.danger} />
         {driverLoc && (
           <Marker coordinate={{ latitude: driverLoc.lat, longitude: driverLoc.lng }} title="Driver">
             <View style={styles.driverDot}>
@@ -88,73 +100,74 @@ export default function TrackOrderScreen() {
             <View>
               <Text style={styles.sheetTitle}>Order #{order.orderNumber}</Text>
               <Text style={styles.sheetSub}>
-                {order.vendor?.businessName || 'Store'} • {order.items?.length || 0} items
+                {order.vendor?.businessName || 'Store'} · {order.items?.length || 0} items
               </Text>
             </View>
             <View style={styles.statusBadge}>
               <Text style={styles.statusText}>{order.status.replace(/_/g, ' ')}</Text>
             </View>
           </View>
-          
+
           <View style={styles.timeline}>
-            <View style={styles.timelineItem}>
-              <View style={[styles.timelineIcon, { backgroundColor: '#00B241' }]}>
-                <Package color="#fff" size={20} />
+            {[
+              { label: 'Order Placed', desc: 'Your order has been placed.', done: true },
+              { label: 'Preparing', desc: 'The shop is getting your order ready.', done: ['preparing', 'ready', 'picked_up', 'delivered'].includes(order.status) },
+              { label: 'Out for Delivery', desc: driverLoc ? 'Driver is on the way.' : 'Waiting for driver to pick up.', done: ['picked_up', 'delivered'].includes(order.status) },
+              { label: 'Delivered', desc: 'Enjoy your order!', done: order.status === 'delivered' },
+            ].map((step, idx) => (
+              <View key={idx} style={styles.timelineItem}>
+                <View style={[styles.timelineIcon, { backgroundColor: step.done ? PRIMARY : 'rgba(255,255,255,0.08)' }]}>
+                  {idx === 0 && <Package color="#fff" size={16} />}
+                  {idx === 1 && <Package color={step.done ? '#fff' : DoorliColors.textDim} size={16} />}
+                  {idx === 2 && <Truck color={step.done ? '#fff' : DoorliColors.textDim} size={16} />}
+                  {idx === 3 && <CheckCircle2 color={step.done ? '#fff' : DoorliColors.textDim} size={16} />}
+                </View>
+                <View style={styles.timelineContent}>
+                  <Text style={[styles.timelineTitle, step.done && styles.timelineTitleActive]}>
+                    {step.label}
+                  </Text>
+                  <Text style={styles.timelineDesc}>{step.desc}</Text>
+                </View>
+                {idx < 3 && <View style={[styles.timelineLine, step.done && styles.timelineLineActive]} />}
               </View>
-              <View style={styles.timelineContent}>
-                <Text style={styles.timelineTitle}>Preparing Order</Text>
-                <Text style={styles.timelineDesc}>The shop is getting your order ready.</Text>
-              </View>
-            </View>
-            <View style={styles.timelineLine} />
-            <View style={styles.timelineItem}>
-              <View style={[styles.timelineIcon, { backgroundColor: order.status === 'OUT_FOR_DELIVERY' || order.status === 'DELIVERED' ? '#00B241' : '#e5e7eb' }]}>
-                <Truck color={order.status === 'OUT_FOR_DELIVERY' || order.status === 'DELIVERED' ? '#fff' : '#9ca3af'} size={20} />
-              </View>
-              <View style={styles.timelineContent}>
-                <Text style={styles.timelineTitle}>Out for Delivery</Text>
-                <Text style={styles.timelineDesc}>
-                  {driverLoc ? 'Driver is on the way with your order.' : 'Waiting for driver to pick up.'}
-                </Text>
-              </View>
-            </View>
-            <View style={styles.timelineLine} />
-            <View style={styles.timelineItem}>
-              <View style={[styles.timelineIcon, { backgroundColor: order.status === 'DELIVERED' ? '#00B241' : '#e5e7eb' }]}>
-                <CheckCircle2 color={order.status === 'DELIVERED' ? '#fff' : '#9ca3af'} size={20} />
-              </View>
-              <View style={styles.timelineContent}>
-                <Text style={styles.timelineTitle}>Delivered</Text>
-                <Text style={styles.timelineDesc}>Enjoy your order!</Text>
-              </View>
-            </View>
+            ))}
           </View>
 
-          {/* Driver Profile Placeholder */}
-          {(order.status === 'OUT_FOR_DELIVERY' || driverLoc) && (
+          {/* Driver Profile */}
+          {(order.status === 'picked_up' || driverLoc) && (
             <View style={styles.driverCard}>
               <View style={styles.driverInfoRow}>
-                <Image 
-                  source={{ uri: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d?q=80&w=150&auto=format&fit=crop' }} 
-                  style={styles.driverAvatar} 
+                <Image
+                  source={{ uri: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d?q=80&w=150&auto=format&fit=crop' }}
+                  style={styles.driverAvatar}
                 />
                 <View style={styles.driverDetails}>
                   <Text style={styles.driverName}>John Doe</Text>
                   <View style={styles.driverMeta}>
-                    <Text style={styles.driverVehicle}>Honda PCX • AB-1234</Text>
+                    <Text style={styles.driverVehicle}>Honda PCX · AB-1234</Text>
                     <View style={styles.driverRating}>
-                      <Star color="#914c00" size={12} fill="#914c00" />
+                      <Star color={DoorliColors.gold} size={12} fill={DoorliColors.gold} />
                       <Text style={styles.driverRatingText}>4.9</Text>
                     </View>
                   </View>
                 </View>
                 <TouchableOpacity style={styles.callButton}>
-                  <Phone color="#00B241" size={20} />
+                  <Phone color={PRIMARY} size={20} />
                 </TouchableOpacity>
               </View>
             </View>
           )}
 
+          {/* Delivery Address */}
+          {order.deliveryAddress && (
+            <View style={styles.addressCard}>
+              <MapPin color={DoorliColors.teal} size={18} />
+              <View style={{ flex: 1, marginLeft: 10 }}>
+                <Text style={styles.addressLabel}>Delivering to</Text>
+                <Text style={styles.addressText}>{order.deliveryAddress.addressLine}</Text>
+              </View>
+            </View>
+          )}
         </ScrollView>
       </View>
     </SafeAreaView>
@@ -162,42 +175,44 @@ export default function TrackOrderScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9fafb' },
-  header: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
+  container: { flex: 1, backgroundColor: DoorliColors.navy },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: DoorliColors.navy },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16, 
+    paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#ffffff',
     borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6'
+    borderBottomColor: 'rgba(255,255,255,0.06)',
   },
-  backBtn: { 
-    width: 40, height: 40, 
-    borderRadius: 20, 
-    backgroundColor: '#f3f4f6', 
-    alignItems: 'center', 
-    justifyContent: 'center' 
+  backBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  title: { color: '#002b5b', fontSize: 18, fontWeight: '700' },
-  map: { flex: 1 },
-  driverDot: { backgroundColor: '#00B241', padding: 8, borderRadius: 20 },
-  sheet: { 
+  title: { color: DoorliColors.text, fontSize: 18, fontWeight: '700' },
+  map: { flex: 1, margin: 16, borderRadius: 16 },
+  driverDot: { backgroundColor: PRIMARY, padding: 8, borderRadius: 20 },
+  sheet: {
     flex: 1,
-    paddingHorizontal: 20, 
-    backgroundColor: '#fff', 
-    borderTopLeftRadius: 24, 
+    paddingHorizontal: 20,
+    backgroundColor: DoorliColors.navyMid,
+    borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    shadowColor: '#002b5b',
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 10,
+    borderWidth: 1,
+    borderBottomWidth: 0,
+    borderColor: 'rgba(255,255,255,0.06)',
   },
   sheetHandle: {
     width: 40,
     height: 4,
-    backgroundColor: '#e5e7eb',
+    backgroundColor: 'rgba(255,255,255,0.15)',
     borderRadius: 2,
     alignSelf: 'center',
     marginTop: 12,
@@ -209,118 +224,87 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 24,
   },
-  sheetTitle: { fontSize: 20, fontWeight: '800', color: '#002b5b' },
-  sheetSub: { marginTop: 4, color: '#6b7280', fontSize: 14, fontWeight: '500' },
+  sheetTitle: { fontSize: 20, fontWeight: '800', color: DoorliColors.text },
+  sheetSub: { marginTop: 4, color: DoorliColors.textDim, fontSize: 14, fontWeight: '500' },
   statusBadge: {
-    backgroundColor: 'rgba(0, 178, 65, 0.1)',
+    backgroundColor: 'rgba(24,95,165,0.2)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
   },
   statusText: {
-    color: '#00B241',
+    color: PRIMARY,
     fontWeight: '700',
-    fontSize: 12,
+    fontSize: 11,
     textTransform: 'uppercase',
   },
-  timeline: {
-    paddingLeft: 8,
-  },
-  timelineItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
+  timeline: { paddingLeft: 8 },
+  timelineItem: { flexDirection: 'row', alignItems: 'flex-start', position: 'relative' },
   timelineIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 2,
   },
   timelineLine: {
+    position: 'absolute',
+    left: 17,
+    top: 36,
     width: 2,
-    height: 32,
-    backgroundColor: '#e5e7eb',
-    marginLeft: 19,
-    marginTop: -8,
-    marginBottom: -8,
+    height: 24,
+    backgroundColor: 'rgba(255,255,255,0.08)',
     zIndex: 1,
   },
-  timelineContent: {
-    flex: 1,
-    marginLeft: 16,
-    paddingTop: 8,
-  },
-  timelineTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#002b5b',
-    marginBottom: 4,
-  },
-  timelineDesc: {
-    fontSize: 14,
-    color: '#6b7280',
-    lineHeight: 20,
-  },
+  timelineLineActive: { backgroundColor: PRIMARY },
+  timelineContent: { flex: 1, marginLeft: 14, paddingTop: 6 },
+  timelineTitle: { fontSize: 15, fontWeight: '600', color: DoorliColors.textDim, marginBottom: 2 },
+  timelineTitleActive: { color: DoorliColors.text, fontWeight: '700' },
+  timelineDesc: { fontSize: 13, color: DoorliColors.textDim, lineHeight: 18 },
   driverCard: {
-    marginTop: 24,
-    marginBottom: 20,
-    backgroundColor: '#f9fafb',
+    marginTop: 20,
+    marginBottom: 16,
+    backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#f3f4f6',
+    borderColor: 'rgba(255,255,255,0.08)',
   },
-  driverInfoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  driverAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#e5e7eb',
-  },
-  driverDetails: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  driverName: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#002b5b',
-  },
-  driverMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  driverVehicle: {
-    fontSize: 13,
-    color: '#6b7280',
-  },
+  driverInfoRow: { flexDirection: 'row', alignItems: 'center' },
+  driverAvatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.06)' },
+  driverDetails: { flex: 1, marginLeft: 12 },
+  driverName: { fontSize: 16, fontWeight: '700', color: DoorliColors.text },
+  driverMeta: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
+  driverVehicle: { fontSize: 13, color: DoorliColors.textDim },
   driverRating: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 220, 196, 0.5)',
+    backgroundColor: 'rgba(250,199,117,0.15)',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 8,
     marginLeft: 8,
   },
-  driverRatingText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#914c00',
-    marginLeft: 4,
-  },
+  driverRatingText: { fontSize: 11, fontWeight: '700', color: DoorliColors.gold, marginLeft: 4 },
   callButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(0, 178, 65, 0.1)',
+    backgroundColor: 'rgba(24,95,165,0.15)',
     alignItems: 'center',
     justifyContent: 'center',
   },
+  addressCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
+  addressLabel: { fontSize: 12, color: DoorliColors.textDim, fontWeight: '500', marginBottom: 2 },
+  addressText: { fontSize: 14, color: DoorliColors.text, fontWeight: '600' },
 });

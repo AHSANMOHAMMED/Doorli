@@ -10,7 +10,7 @@ export interface AuthUser {
   phone: string | null;
   email?: string | null;
   username?: string | null;
-  role: 'customer' | 'vendor' | 'driver' | 'admin';
+  role: 'customer' | 'vendor' | 'driver' | 'admin' | 'super_admin';
   isVerified: boolean;
   avatar?: string | null;
 }
@@ -18,7 +18,8 @@ export interface AuthUser {
 export function homeForRole(role?: string | null): string {
   if (role === 'vendor') return '/(vendor)/hub';
   if (role === 'driver') return '/(driver)/jobs';
-  if (role === 'admin') return '/(customer)';
+  if (role === 'admin') return '/(admin)';
+  if (role === 'super_admin') return '/(super-admin)';
   return '/(customer)';
 }
 
@@ -44,7 +45,7 @@ interface AuthState {
   loginWithPassword: (
     identifier: string,
     password: string,
-    expectedRole?: 'customer' | 'vendor' | 'driver',
+    expectedRole?: 'customer' | 'vendor' | 'driver' | 'admin' | 'super_admin',
     businessKey?: string,
   ) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;

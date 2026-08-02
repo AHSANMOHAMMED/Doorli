@@ -4,9 +4,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { apiClient } from '../../lib/axios';
 import { useRouter, Stack } from 'expo-router';
 import { ArrowLeft, Bell, BellRing } from 'lucide-react-native';
+import { DoorliColors } from '../../constants/colors';
+import React from 'react';
 
-const PRIMARY = '#00B241';
-const ON_SURFACE = '#002b5b';
+const PRIMARY = DoorliColors.primary;
 
 export default function NotificationsScreen() {
   const queryClient = useQueryClient();
@@ -34,13 +35,13 @@ export default function NotificationsScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <Stack.Screen options={{ headerShown: false }} />
-      
+
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <ArrowLeft color={ON_SURFACE} size={24} />
+          <ArrowLeft color={DoorliColors.text} size={24} />
         </TouchableOpacity>
         <Text style={styles.title}>Notifications</Text>
-        <View style={{ width: 40 }} />
+        <View style={{ width: 44 }} />
       </View>
 
       <View style={styles.content}>
@@ -62,7 +63,7 @@ export default function NotificationsScreen() {
             ListEmptyComponent={
               <View style={styles.empty}>
                 <View style={styles.emptyIconWrapper}>
-                  <Bell color="#9ca3af" size={32} />
+                  <Bell color={DoorliColors.textDim} size={32} />
                 </View>
                 <Text style={styles.emptyTitle}>You're all caught up</Text>
                 <Text style={styles.emptyText}>We'll let you know when there's an update.</Text>
@@ -78,13 +79,15 @@ export default function NotificationsScreen() {
                 onPress={() => markRead(item.id)}
                 activeOpacity={0.8}
               >
-                <View style={[styles.iconWrapper, !item.isRead ? { backgroundColor: PRIMARY } : { backgroundColor: '#f3f4f6' }]}>
-                  {!item.isRead ? <BellRing color="#ffffff" size={20} /> : <Bell color="#9ca3af" size={20} />}
+                <View style={[styles.iconWrapper, !item.isRead ? { backgroundColor: PRIMARY } : { backgroundColor: 'rgba(255,255,255,0.06)' }]}>
+                  {!item.isRead ? <BellRing color="#ffffff" size={20} /> : <Bell color={DoorliColors.textDim} size={20} />}
                 </View>
                 <View style={styles.cardContent}>
                   <View style={styles.cardHeaderRow}>
-                    <Text style={[styles.cardTitle, !item.isRead && styles.unreadText]}>{item.title}</Text>
-                    <Text style={styles.time}>{new Date(item.sentAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</Text>
+                    <Text style={[styles.cardTitle, !item.isRead && styles.unreadText]} numberOfLines={1}>{item.title}</Text>
+                    <Text style={styles.time}>
+                      {new Date(item.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </Text>
                   </View>
                   <Text style={styles.cardBody} numberOfLines={2}>{item.body}</Text>
                 </View>
@@ -99,40 +102,35 @@ export default function NotificationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9fafb' },
-  header: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
+  container: { flex: 1, backgroundColor: DoorliColors.navy },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16, 
-    paddingVertical: 12,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6'
-  },
-  backBtn: { 
-    width: 40, height: 40, 
-    borderRadius: 20, 
-    backgroundColor: '#f3f4f6', 
-    alignItems: 'center', 
-    justifyContent: 'center' 
-  },
-  title: { color: ON_SURFACE, fontSize: 18, fontWeight: '700' },
-  content: {
-    flex: 1,
     paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
   },
+  backBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  title: { fontSize: 18, fontWeight: '700', color: DoorliColors.text },
+  content: { flex: 1, paddingHorizontal: 16 },
   listHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 16,
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: ON_SURFACE,
-  },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: DoorliColors.text },
   markAll: { color: PRIMARY, fontWeight: '600', fontSize: 14 },
   list: { paddingBottom: 100 },
   empty: { alignItems: 'center', marginTop: 80, gap: 12 },
@@ -140,30 +138,27 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#f3f4f6',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
   },
-  emptyTitle: { color: ON_SURFACE, fontSize: 18, fontWeight: '700' },
-  emptyText: { color: '#6b7280', fontSize: 14, textAlign: 'center', paddingHorizontal: 32 },
-  card: { 
+  emptyTitle: { color: DoorliColors.text, fontSize: 18, fontWeight: '700' },
+  emptyText: { color: DoorliColors.textMuted, fontSize: 14, textAlign: 'center', paddingHorizontal: 32 },
+  card: {
     flexDirection: 'row',
-    backgroundColor: '#ffffff', 
-    padding: 16, 
-    borderRadius: 16, 
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#f3f4f6',
+    borderColor: 'rgba(255,255,255,0.06)',
   },
-  unread: { 
-    borderColor: PRIMARY,
-    backgroundColor: 'rgba(0, 178, 65, 0.02)',
+  unread: {
+    borderColor: 'rgba(24,95,165,0.3)',
+    backgroundColor: 'rgba(24,95,165,0.06)',
   },
   iconWrapper: {
     width: 44,
@@ -173,19 +168,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 12,
   },
-  cardContent: {
-    flex: 1,
-  },
+  cardContent: { flex: 1 },
   cardHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 4,
   },
-  cardTitle: { color: '#4b5563', fontWeight: '600', fontSize: 15, flex: 1, marginRight: 8 },
-  unreadText: { color: ON_SURFACE, fontWeight: '700' },
-  cardBody: { color: '#6b7280', fontSize: 14, lineHeight: 20 },
-  time: { color: '#9ca3af', fontSize: 12, fontWeight: '500' },
+  cardTitle: { color: DoorliColors.textMuted, fontWeight: '600', fontSize: 14, flex: 1, marginRight: 8 },
+  unreadText: { color: DoorliColors.text, fontWeight: '700' },
+  cardBody: { color: DoorliColors.textDim, fontSize: 13, lineHeight: 18 },
+  time: { color: DoorliColors.textDim, fontSize: 11, fontWeight: '500' },
   unreadDot: {
     width: 8,
     height: 8,

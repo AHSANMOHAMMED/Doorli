@@ -34,6 +34,8 @@ export default function RootLayout() {
             <Stack.Screen name="(customer)" options={{ headerShown: false }} />
             <Stack.Screen name="(vendor)" options={{ headerShown: false }} />
             <Stack.Screen name="(driver)" options={{ headerShown: false }} />
+            <Stack.Screen name="(admin)" options={{ headerShown: false }} />
+            <Stack.Screen name="(super-admin)" options={{ headerShown: false }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           </Stack>
         </GradientBackground>

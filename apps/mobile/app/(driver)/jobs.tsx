@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -30,11 +30,14 @@ const ACTIVE_ACTIONS: Record<string, { label: string; next: string }[]> = {
   picked_up: [{ label: 'Delivered', next: 'delivered' }],
 };
 
+type Tab = 'active' | 'available' | 'history';
+
 export default function DriverJobs() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
   const [isOnline, setIsOnline] = useState(true);
+  const [activeTab, setActiveTab] = useState<Tab>('active');
 
   useDriverLocationPublish(isOnline, user?.id);
 
@@ -52,8 +55,20 @@ export default function DriverJobs() {
     refetchInterval: 30000,
   });
 
+  const { data: historyData, isLoading: historyLoading } = useQuery({
+    queryKey: ['driver-history'],
+    queryFn: async () => {
+      const res = await apiClient.get('/drivers/me/history');
+      return (res.data?.data?.items ?? []) as Order[];
+    },
+    enabled: !!user && activeTab === 'history',
+  });
+
   const available = data?.available ?? [];
   const active = data?.active ?? [];
+  const history = historyData ?? [];
+
+  const currentList = activeTab === 'active' ? active : activeTab === 'available' ? available : history;
 
   async function toggleOnline(next: boolean) {
     try {
@@ -96,114 +111,167 @@ export default function DriverJobs() {
       queryClient.invalidateQueries({ queryKey: ['driver-jobs'] });
       queryClient.invalidateQueries({ queryKey: ['driver-earnings'] });
       if (status === 'delivered') {
-        router.push(`/(driver)/navigate/${orderId}`);
+        Alert.alert('Delivered!', 'Order marked as delivered successfully.');
       }
     } catch (err) {
       Alert.alert('Update failed', err instanceof Error ? err.message : 'Try again');
     }
   }
 
-  function renderOrder(item: Order, mode: 'available' | 'active') {
-    const actions = mode === 'active' ? ACTIVE_ACTIONS[item.status] ?? [] : [];
-    return (
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.orderNumber}>{item.orderNumber}</Text>
-          <Text style={styles.status}>{item.status.replace(/_/g, ' ')}</Text>
-        </View>
-        <Text style={styles.vendor}>{item.vendor?.businessName ?? 'Shop'}</Text>
-        {item.deliveryAddress?.addressLine && (
-          <Text style={styles.address}>📍 {item.deliveryAddress.addressLine}</Text>
-        )}
-        <Text style={styles.total}>{formatPrice(Number(item.totalAmount))}</Text>
-        <Text style={styles.fee}>Delivery fee {formatPrice(Number(item.deliveryFee))}</Text>
-        <View style={styles.actions}>
-          {mode === 'available' ? (
-            <>
-              <TouchableOpacity style={styles.actionBtn} onPress={() => onAccept(item.id)}>
-                <Text style={styles.actionText}>Accept</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.navBtn} onPress={() => onDecline(item.id)}>
-                <Text style={styles.navText}>Decline</Text>
-              </TouchableOpacity>
-            </>
-          ) : (
-            <>
-              {actions.map((action) => (
-                <TouchableOpacity
-                  key={action.next}
-                  style={styles.actionBtn}
-                  onPress={() => advanceStatus(item.id, action.next)}
-                >
-                  <Text style={styles.actionText}>{action.label}</Text>
+  const renderOrder = useCallback(
+    (item: Order, mode: 'active' | 'available' | 'history') => {
+      const actions = mode === 'active' ? ACTIVE_ACTIONS[item.status] ?? [] : [];
+      const isCompleted = mode === 'history';
+      return (
+        <View style={[styles.card, isCompleted && styles.cardCompleted]}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.orderNumber}>{item.orderNumber}</Text>
+            <View style={[styles.statusBadge, isCompleted && styles.statusBadgeCompleted]}>
+              <Text style={[styles.status, isCompleted && styles.statusCompleted]}>
+                {item.status.replace(/_/g, ' ')}
+              </Text>
+            </View>
+          </View>
+          <Text style={styles.vendor}>{item.vendor?.businessName ?? 'Shop'}</Text>
+          {item.deliveryAddress?.addressLine && (
+            <Text style={styles.address}>📍 {item.deliveryAddress.addressLine}</Text>
+          )}
+          <View style={styles.priceRow}>
+            <Text style={styles.total}>{formatPrice(Number(item.totalAmount))}</Text>
+            <Text style={styles.fee}>Fee: {formatPrice(Number(item.deliveryFee))}</Text>
+          </View>
+          {!isCompleted && item.items && (
+            <Text style={styles.itemCount}>{item.items.length} item(s)</Text>
+          )}
+          <View style={styles.actions}>
+            {mode === 'available' && (
+              <>
+                <TouchableOpacity style={styles.actionBtn} onPress={() => onAccept(item.id)}>
+                  <Text style={styles.actionText}>Accept</Text>
                 </TouchableOpacity>
-              ))}
+                <TouchableOpacity style={styles.declineBtn} onPress={() => onDecline(item.id)}>
+                  <Text style={styles.declineText}>Decline</Text>
+                </TouchableOpacity>
+              </>
+            )}
+            {mode === 'active' && (
+              <>
+                {actions.map((action) => (
+                  <TouchableOpacity
+                    key={action.next}
+                    style={styles.actionBtn}
+                    onPress={() => advanceStatus(item.id, action.next)}
+                  >
+                    <Text style={styles.actionText}>{action.label}</Text>
+                  </TouchableOpacity>
+                ))}
+                <TouchableOpacity
+                  style={styles.navigateBtn}
+                  onPress={() => router.push(`/(driver)/navigate/${item.id}`)}
+                >
+                  <Text style={styles.navigateText}>Navigate</Text>
+                </TouchableOpacity>
+              </>
+            )}
+            {mode === 'history' && (
               <TouchableOpacity
-                style={styles.navBtn}
+                style={styles.navigateBtn}
                 onPress={() => router.push(`/(driver)/navigate/${item.id}`)}
               >
-                <Text style={styles.navText}>Navigate</Text>
+                <Text style={styles.navigateText}>View</Text>
               </TouchableOpacity>
-            </>
-          )}
+            )}
+          </View>
         </View>
-      </View>
-    );
-  }
-
-  const listData = [
-    ...active.map((o) => ({ ...o, _mode: 'active' as const })),
-    ...available.map((o) => ({ ...o, _mode: 'available' as const })),
-  ];
+      );
+    },
+    [],
+  );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <View>
+        <View style={styles.headerLeft}>
           <Text style={styles.greeting}>Hi, {user?.fullName?.split(' ')[0] ?? 'Driver'}</Text>
-          <Text style={styles.subtitle}>
-            {isOnline ? 'Online · GPS sharing for live track' : 'Offline'}
-          </Text>
+          <View style={styles.statusRow}>
+            <View style={[styles.dot, isOnline ? styles.dotOnline : styles.dotOffline]} />
+            <Text style={styles.statusText}>{isOnline ? 'Online' : 'Offline'}</Text>
+          </View>
         </View>
         <TouchableOpacity
           style={[styles.onlineToggle, isOnline ? styles.onlineOn : styles.onlineOff]}
           onPress={() => toggleOnline(!isOnline)}
         >
-          <Text style={styles.onlineToggleText}>{isOnline ? 'Go Offline' : 'Go Online'}</Text>
+          <Text style={[styles.onlineToggleText, isOnline && styles.onlineToggleTextOn]}>
+            {isOnline ? 'Go Offline' : 'Go Online'}
+          </Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.earningsRow}>
+      <View style={styles.earningsSummary}>
         <View style={styles.earnBox}>
           <Text style={styles.earnLabel}>Today</Text>
           <Text style={styles.earnValue}>
-            LKR {Number(earnings?.earningsToday ?? 0).toFixed(0)}
+            LKR {Number(earnings?.earningsToday ?? 0).toLocaleString()}
           </Text>
         </View>
+        <View style={styles.earnDivider} />
         <View style={styles.earnBox}>
           <Text style={styles.earnLabel}>Deliveries</Text>
           <Text style={styles.earnValue}>{earnings?.totalDeliveries ?? 0}</Text>
         </View>
+        <View style={styles.earnDivider} />
+        <View style={styles.earnBox}>
+          <Text style={styles.earnLabel}>Available</Text>
+          <Text style={styles.earnValue}>{available.length}</Text>
+        </View>
       </View>
 
-      {isLoading ? (
+      <View style={styles.tabBar}>
+        {(['active', 'available', 'history'] as Tab[]).map((tab) => (
+          <TouchableOpacity
+            key={tab}
+            style={[styles.tab, activeTab === tab && styles.tabActive]}
+            onPress={() => setActiveTab(tab)}
+          >
+            <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
+              {tab === 'active' ? `Active (${active.length})` : tab === 'available' ? `Available (${available.length})` : 'History'}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {isLoading || (activeTab === 'history' && historyLoading) ? (
         <ActivityIndicator color="#00B241" style={{ marginTop: 48 }} />
       ) : !isOnline ? (
         <View style={styles.center}>
-          <Text style={styles.offlineTitle}>You are offline</Text>
-          <Text style={styles.offlineText}>Go online to receive delivery jobs and share GPS</Text>
+          <Text style={styles.centerTitle}>You are offline</Text>
+          <Text style={styles.centerText}>Go online to receive delivery jobs and share your location</Text>
         </View>
-      ) : listData.length === 0 ? (
+      ) : currentList.length === 0 ? (
         <View style={styles.center}>
-          <Text style={styles.emptyTitle}>No active deliveries</Text>
-          <Text style={styles.emptyText}>Waiting for delivery assignments...</Text>
+          <Text style={styles.centerTitle}>
+            {activeTab === 'active'
+              ? 'No active deliveries'
+              : activeTab === 'available'
+                ? 'No available jobs'
+                : 'No delivery history'}
+          </Text>
+          <Text style={styles.centerText}>
+            {activeTab === 'active'
+              ? 'Accept an available job to get started'
+              : activeTab === 'available'
+                ? 'New jobs will appear here'
+                : 'Your completed deliveries will show here'}
+          </Text>
         </View>
       ) : (
         <FlatList
-          data={listData}
-          keyExtractor={(d) => `${d._mode}-${d.id}`}
+          data={currentList}
+          keyExtractor={(d) => d.id}
+          contentContainerStyle={styles.list}
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
-          renderItem={({ item }) => renderOrder(item, item._mode)}
+          renderItem={({ item }) => renderOrder(item, activeTab)}
         />
       )}
     </SafeAreaView>
@@ -211,58 +279,104 @@ export default function DriverJobs() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8fafc' },
+  container: { flex: 1, backgroundColor: '#0f172a' },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    paddingVertical: 14,
+    backgroundColor: '#0f172a',
   },
-  greeting: { fontSize: 18, fontWeight: '700', color: '#0f172a' },
-  subtitle: { fontSize: 13, color: '#64748b', marginTop: 4 },
-  onlineToggle: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10 },
-  onlineOn: { backgroundColor: '#dcfce7' },
-  onlineOff: { backgroundColor: '#f1f5f9' },
-  onlineToggleText: { fontSize: 14, fontWeight: '600', color: '#334155' },
-  earningsRow: { flexDirection: 'row', gap: 10, padding: 12 },
-  earnBox: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-  },
-  earnLabel: { fontSize: 11, color: '#64748b', fontWeight: '600', textTransform: 'uppercase' },
-  earnValue: { fontSize: 18, fontWeight: '800', color: '#0f172a', marginTop: 4 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
-  offlineTitle: { fontSize: 18, fontWeight: '600', color: '#0f172a' },
-  offlineText: { fontSize: 14, color: '#64748b', marginTop: 8, textAlign: 'center' },
-  emptyTitle: { fontSize: 18, fontWeight: '600', color: '#0f172a' },
-  emptyText: { fontSize: 14, color: '#64748b', marginTop: 8 },
-  card: {
-    backgroundColor: '#fff',
-    marginHorizontal: 12,
+  headerLeft: { flex: 1 },
+  greeting: { fontSize: 20, fontWeight: '700', color: '#f8fafc' },
+  statusRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 6 },
+  dot: { width: 8, height: 8, borderRadius: 4 },
+  dotOnline: { backgroundColor: '#00B241' },
+  dotOffline: { backgroundColor: '#64748b' },
+  statusText: { fontSize: 13, color: '#94a3b8', fontWeight: '500' },
+  onlineToggle: { paddingHorizontal: 18, paddingVertical: 10, borderRadius: 12 },
+  onlineOn: { backgroundColor: '#166534' },
+  onlineOff: { backgroundColor: '#1e293b' },
+  onlineToggleText: { fontSize: 14, fontWeight: '600', color: '#94a3b8' },
+  onlineToggleTextOn: { color: '#86efac' },
+  earningsSummary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 16,
     marginTop: 8,
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
+    backgroundColor: '#1e293b',
+    borderRadius: 14,
+    padding: 14,
   },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between' },
-  orderNumber: { fontWeight: '700', color: '#0f172a' },
-  status: { color: '#00B241', fontWeight: '500', textTransform: 'capitalize' },
-  vendor: { marginTop: 6, color: '#64748b' },
-  address: { marginTop: 4, color: '#94a3b8', fontSize: 13 },
-  total: { marginTop: 4, fontWeight: '600' },
-  fee: { marginTop: 2, fontSize: 12, color: '#64748b' },
+  earnBox: { flex: 1, alignItems: 'center' },
+  earnDivider: { width: 1, height: 30, backgroundColor: '#334155' },
+  earnLabel: { fontSize: 11, color: '#94a3b8', fontWeight: '600', textTransform: 'uppercase' },
+  earnValue: { fontSize: 16, fontWeight: '800', color: '#f8fafc', marginTop: 4 },
+  tabBar: {
+    flexDirection: 'row',
+    marginHorizontal: 16,
+    marginTop: 14,
+    backgroundColor: '#1e293b',
+    borderRadius: 10,
+    padding: 3,
+  },
+  tab: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 8 },
+  tabActive: { backgroundColor: '#00B241' },
+  tabText: { fontSize: 12, fontWeight: '600', color: '#94a3b8' },
+  tabTextActive: { color: '#fff' },
+  list: { padding: 16, paddingBottom: 32 },
+  card: {
+    backgroundColor: '#1e293b',
+    marginBottom: 10,
+    padding: 16,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  cardCompleted: { opacity: 0.7 },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  orderNumber: { fontWeight: '700', color: '#f8fafc', fontSize: 15 },
+  statusBadge: {
+    backgroundColor: '#064e3b',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  statusBadgeCompleted: { backgroundColor: '#1e293b' },
+  status: { color: '#86efac', fontWeight: '600', textTransform: 'capitalize', fontSize: 12 },
+  statusCompleted: { color: '#94a3b8' },
+  vendor: { marginTop: 8, color: '#94a3b8', fontSize: 14 },
+  address: { marginTop: 4, color: '#64748b', fontSize: 13 },
+  priceRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8, alignItems: 'center' },
+  total: { fontWeight: '700', color: '#f8fafc', fontSize: 16 },
+  fee: { fontSize: 12, color: '#94a3b8' },
+  itemCount: { marginTop: 4, fontSize: 12, color: '#64748b' },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
-  actionBtn: { backgroundColor: '#00B241', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10 },
+  actionBtn: {
+    backgroundColor: '#00B241',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
   actionText: { color: '#fff', fontWeight: '600', fontSize: 13 },
-  navBtn: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: '#00B241' },
-  navText: { color: '#00B241', fontWeight: '600', fontSize: 13 },
+  declineBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#dc2626',
+  },
+  declineText: { color: '#f87171', fontWeight: '600', fontSize: 13 },
+  navigateBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#00B241',
+  },
+  navigateText: { color: '#86efac', fontWeight: '600', fontSize: 13 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
+  centerTitle: { fontSize: 18, fontWeight: '600', color: '#f8fafc' },
+  centerText: { fontSize: 14, color: '#64748b', marginTop: 8, textAlign: 'center' },
 });

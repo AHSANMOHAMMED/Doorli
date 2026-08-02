@@ -8,8 +8,14 @@ import {
   Linking,
   Platform,
   Alert,
+  ScrollView,
 } from 'react-native';
-const MapView = ({ children, style }: any) => <View style={[style, { backgroundColor: '#1e293b', alignItems: 'center', justifyContent: 'center' }]}><Text style={{color: '#94a3b8', marginBottom: 10}}>Interactive Map (Dev Client Required)</Text><View style={{flexDirection:'row', gap: 20}}>{children}</View></View>;
+const MapView = ({ children, style }: any) => (
+  <View style={[style, { backgroundColor: '#1e293b', alignItems: 'center', justifyContent: 'center' }]}>
+    <Text style={{ color: '#94a3b8', marginBottom: 10 }}>Interactive Map (Dev Client Required)</Text>
+    <View style={{ flexDirection: 'row', gap: 20 }}>{children}</View>
+  </View>
+);
 const Marker = ({ children }: any) => <View>{children}</View>;
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -26,6 +32,12 @@ function openMaps(lat: number, lng: number, label: string) {
       : `geo:${lat},${lng}?q=${lat},${lng}(${encodeURIComponent(label)})`;
   Linking.openURL(url).catch(() => {
     Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`);
+  });
+}
+
+function callNumber(phone: string) {
+  Linking.openURL(`tel:${phone}`).catch(() => {
+    Alert.alert('Error', 'Could not open phone dialer');
   });
 }
 
@@ -61,13 +73,24 @@ export default function NavigateScreen() {
   const vendorLng =
     order.vendor?.longitude != null ? Number(order.vendor.longitude) : DEFAULT_LOCATION.lng + 0.01;
 
-  async function markDelivered() {
+  const nextAction =
+    order.status === 'ready'
+      ? { label: 'Picked up', next: 'picked_up' }
+      : order.status === 'picked_up'
+        ? { label: 'Delivered', next: 'delivered' }
+        : null;
+
+  async function advanceStatus() {
+    if (!nextAction) return;
     setBusy(true);
     try {
-      await updateOrderStatus(order!.id, 'delivered');
+      await updateOrderStatus(order!.id, nextAction.next);
       queryClient.invalidateQueries({ queryKey: ['driver-jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['driver-earnings'] });
       await refetch();
-      Alert.alert('Delivered', 'Order marked delivered. Collect COD if needed.');
+      if (nextAction.next === 'delivered') {
+        Alert.alert('Delivered!', 'Order marked as delivered. Collect COD if needed.');
+      }
     } catch (e: unknown) {
       Alert.alert('Failed', e instanceof Error ? e.message : 'Try again');
     } finally {
@@ -106,63 +129,101 @@ export default function NavigateScreen() {
             coordinate={{ latitude: vendorLat, longitude: vendorLng }}
             title="Pickup"
             description={order.vendor?.businessName}
-            pinColor="#00B241"
           />
           <Marker
             coordinate={{ latitude: dropLat, longitude: dropLng }}
             title="Drop-off"
             description={dropoff?.addressLine}
-            pinColor="#059669"
           />
         </MapView>
       </View>
 
       <View style={styles.sheet}>
-        <Text style={styles.orderNumber}>{order.orderNumber}</Text>
-        <Text style={styles.status}>Status: {order.status.replace(/_/g, ' ')}</Text>
-        <Text style={styles.total}>{formatPrice(Number(order.totalAmount))}</Text>
+        <View style={styles.sheetHandle} />
+        <ScrollView contentContainerStyle={styles.sheetContent}>
+          <View style={styles.topRow}>
+            <View>
+              <Text style={styles.orderNumber}>{order.orderNumber}</Text>
+              <Text style={styles.status}>
+                {order.status.replace(/_/g, ' ')}
+              </Text>
+            </View>
+            <Text style={styles.total}>{formatPrice(Number(order.totalAmount))}</Text>
+          </View>
 
-        <View style={styles.card}>
-          <Text style={styles.label}>Pickup</Text>
-          <Text style={styles.name}>{order.vendor?.businessName}</Text>
-        </View>
+          <View style={styles.instructions}>
+            <Text style={styles.instructionLabel}>Navigation</Text>
+            <Text style={styles.instructionText}>
+              {order.status === 'ready'
+                ? 'Head to the pickup location'
+                : order.status === 'picked_up'
+                  ? 'Head to the drop-off location'
+                  : 'Delivery complete'}
+            </Text>
+          </View>
 
-        {dropoff && (
           <View style={styles.card}>
-            <Text style={styles.label}>Drop-off</Text>
-            <Text style={styles.address}>{dropoff.addressLine}</Text>
-            <TouchableOpacity
-              style={styles.mapBtn}
-              onPress={() => openMaps(dropLat, dropLng, dropoff.addressLine)}
-            >
-              <Text style={styles.mapBtnText}>Open in Maps</Text>
+            <View style={styles.cardHeader}>
+              <Text style={styles.label}>Pickup</Text>
+              <TouchableOpacity onPress={() => openMaps(vendorLat, vendorLng, order.vendor?.businessName ?? 'Pickup')}>
+                <Text style={styles.openMapText}>Open Map</Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.name}>{order.vendor?.businessName}</Text>
+            {order.vendor?.phone && (
+              <TouchableOpacity style={styles.contactBtn} onPress={() => callNumber(order.vendor!.phone!)}>
+                <Text style={styles.contactText}>📞 Call Vendor</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {dropoff && (
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <Text style={styles.label}>Drop-off</Text>
+                <TouchableOpacity onPress={() => openMaps(dropLat, dropLng, dropoff.addressLine)}>
+                  <Text style={styles.openMapText}>Open Map</Text>
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.address}>{dropoff.addressLine}</Text>
+            </View>
+          )}
+
+          {order.specialInstructions && (
+            <View style={styles.instructionsCard}>
+              <Text style={styles.label}>Special Instructions</Text>
+              <Text style={styles.instructionsText}>{order.specialInstructions}</Text>
+            </View>
+          )}
+
+          <View style={styles.actions}>
+            {nextAction && (
+              <TouchableOpacity
+                style={[styles.primaryBtn, busy && { opacity: 0.6 }]}
+                disabled={busy}
+                onPress={advanceStatus}
+              >
+                {busy ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.primaryText}>{nextAction.label}</Text>
+                )}
+              </TouchableOpacity>
+            )}
+            {(order.status === 'delivered' || order.paymentMethod === 'cod') && (
+              <TouchableOpacity
+                style={[styles.codBtn, busy && { opacity: 0.6 }]}
+                disabled={busy}
+                onPress={collectCod}
+              >
+                <Text style={styles.codText}>Collect COD</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity style={styles.secondaryBtn} onPress={() => router.back()}>
+              <Text style={styles.secondaryText}>Back to Jobs</Text>
             </TouchableOpacity>
           </View>
-        )}
-
-        <View style={styles.actions}>
-          {order.status === 'picked_up' && (
-            <TouchableOpacity
-              style={[styles.primary, busy && { opacity: 0.6 }]}
-              disabled={busy}
-              onPress={markDelivered}
-            >
-              <Text style={styles.primaryText}>Mark delivered</Text>
-            </TouchableOpacity>
-          )}
-          {(order.status === 'delivered' || order.paymentMethod === 'cod') && (
-            <TouchableOpacity
-              style={[styles.codBtn, busy && { opacity: 0.6 }]}
-              disabled={busy}
-              onPress={collectCod}
-            >
-              <Text style={styles.codText}>Collect COD</Text>
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity style={styles.secondary} onPress={() => router.back()}>
-            <Text style={styles.secondaryText}>Back to jobs</Text>
-          </TouchableOpacity>
-        </View>
+        </ScrollView>
       </View>
     </SafeAreaView>
   );
@@ -170,60 +231,90 @@ export default function NavigateScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f172a' },
-  mapWrap: { height: '42%' },
+  mapWrap: { height: '40%' },
   map: { flex: 1 },
   sheet: {
     flex: 1,
     backgroundColor: '#f8fafc',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 16,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     marginTop: -12,
   },
-  orderNumber: { fontSize: 18, fontWeight: '800', color: '#0f172a' },
+  sheetHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: '#cbd5e1',
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginTop: 10,
+  },
+  sheetContent: { padding: 16, paddingBottom: 32 },
+  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  orderNumber: { fontSize: 20, fontWeight: '800', color: '#0f172a' },
   status: { color: '#00B241', marginTop: 4, textTransform: 'capitalize', fontWeight: '600' },
-  total: { fontWeight: '700', marginTop: 4, color: '#0f172a' },
+  total: { fontSize: 18, fontWeight: '800', color: '#0f172a' },
+  instructions: {
+    backgroundColor: '#eff6ff',
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: '#3b82f6',
+  },
+  instructionLabel: { fontSize: 11, fontWeight: '700', color: '#3b82f6', textTransform: 'uppercase' },
+  instructionText: { fontSize: 14, color: '#1e40af', marginTop: 4, fontWeight: '500' },
   card: {
     backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 12,
+    borderRadius: 14,
+    padding: 14,
     marginTop: 10,
     borderWidth: 1,
     borderColor: '#e2e8f0',
   },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   label: { fontSize: 11, fontWeight: '700', color: '#64748b', textTransform: 'uppercase' },
+  openMapText: { fontSize: 12, color: '#00B241', fontWeight: '600' },
   name: { fontSize: 16, fontWeight: '700', color: '#0f172a', marginTop: 4 },
   address: { fontSize: 15, color: '#0f172a', marginTop: 4 },
-  mapBtn: {
-    marginTop: 10,
-    backgroundColor: '#00B241',
-    padding: 12,
-    borderRadius: 10,
+  contactBtn: {
+    marginTop: 8,
+    backgroundColor: '#f0fdf4',
+    padding: 10,
+    borderRadius: 8,
     alignItems: 'center',
   },
-  mapBtnText: { color: '#fff', fontWeight: '600' },
-  actions: { marginTop: 12, gap: 8 },
-  primary: {
+  contactText: { color: '#166534', fontWeight: '600', fontSize: 13 },
+  instructionsCard: {
+    backgroundColor: '#fffbeb',
+    borderRadius: 14,
+    padding: 14,
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: '#fde68a',
+  },
+  instructionsText: { fontSize: 14, color: '#92400e', marginTop: 4 },
+  actions: { marginTop: 16, gap: 8 },
+  primaryBtn: {
     backgroundColor: '#059669',
-    borderRadius: 12,
-    minHeight: 48,
+    borderRadius: 14,
+    minHeight: 50,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  primaryText: { color: '#fff', fontWeight: '800' },
+  primaryText: { color: '#fff', fontWeight: '800', fontSize: 16 },
   codBtn: {
     backgroundColor: '#FAC775',
-    borderRadius: 12,
-    minHeight: 48,
+    borderRadius: 14,
+    minHeight: 50,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  codText: { color: '#07101f', fontWeight: '800' },
-  secondary: {
+  codText: { color: '#07101f', fontWeight: '800', fontSize: 16 },
+  secondaryBtn: {
     borderWidth: 1,
     borderColor: '#cbd5e1',
-    borderRadius: 12,
-    minHeight: 44,
+    borderRadius: 14,
+    minHeight: 48,
     alignItems: 'center',
     justifyContent: 'center',
   },

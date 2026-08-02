@@ -9,13 +9,16 @@ import {
 } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { GlassCard } from '../../components/GlassCard';
 import {
   fetchMySubscriptions,
   cancelSubscription,
   formatStatus,
 } from '../../lib/api';
-import { RefreshCw } from 'lucide-react-native';
+import { DoorliColors } from '../../constants/colors';
+import { RefreshCw, ArrowLeft, XCircle, Pause } from 'lucide-react-native';
+import React from 'react';
+
+const PRIMARY = DoorliColors.primary;
 
 export default function SubscriptionsScreen() {
   const queryClient = useQueryClient();
@@ -44,11 +47,13 @@ export default function SubscriptionsScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <Text style={styles.title}>Subscriptions</Text>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Subscriptions</Text>
+      </View>
       <Text style={styles.subtitle}>Recurring grocery & essentials delivery</Text>
 
       {isLoading ? (
-        <ActivityIndicator color="#0ea5e9" style={{ marginTop: 40 }} />
+        <ActivityIndicator color={PRIMARY} style={{ marginTop: 40 }} />
       ) : (
         <FlatList
           data={data ?? []}
@@ -56,30 +61,43 @@ export default function SubscriptionsScreen() {
           refreshing={isRefetching}
           onRefresh={refetch}
           contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View style={styles.empty}>
-              <RefreshCw color="rgba(255,255,255,0.5)" size={40} />
+              <View style={styles.emptyIconWrap}>
+                <RefreshCw color={DoorliColors.textDim} size={40} />
+              </View>
+              <Text style={styles.emptyTitle}>No active subscriptions</Text>
               <Text style={styles.emptyText}>
-                No active subscriptions. Add items from a grocery shop to start one.
+                Add items from a grocery shop to start a recurring delivery.
               </Text>
             </View>
           }
           renderItem={({ item }) => (
-            <GlassCard style={styles.card}>
-              <Text style={styles.freq}>{item.frequency}</Text>
-              <Text style={styles.addr} numberOfLines={2}>
-                {item.deliveryAddress}
-              </Text>
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <View style={styles.freqBadge}>
+                  <RefreshCw color={DoorliColors.teal} size={14} />
+                  <Text style={styles.freqText}>{item.frequency}</Text>
+                </View>
+                <View style={[styles.statusDot, { backgroundColor: item.isActive ? DoorliColors.success : DoorliColors.danger }]}>
+                  <Text style={styles.statusText}>{item.isActive ? 'Active' : 'Inactive'}</Text>
+                </View>
+              </View>
+              <Text style={styles.addr} numberOfLines={2}>{item.deliveryAddress}</Text>
               <Text style={styles.meta}>
-                Next: {new Date(item.nextDeliveryAt).toLocaleDateString()} ·{' '}
-                {item.isActive ? 'Active' : formatStatus('cancelled')}
+                Next delivery: {new Date(item.nextDeliveryAt).toLocaleDateString()}
               </Text>
+              {item.items && item.items.length > 0 && (
+                <Text style={styles.itemCount}>{item.items.length} item{item.items.length !== 1 ? 's' : ''}</Text>
+              )}
               {item.isActive && (
-                <TouchableOpacity style={styles.cancel} onPress={() => handleCancel(item.id)}>
+                <TouchableOpacity style={styles.cancelBtn} onPress={() => handleCancel(item.id)}>
+                  <XCircle color={DoorliColors.danger} size={16} />
                   <Text style={styles.cancelText}>Cancel</Text>
                 </TouchableOpacity>
               )}
-            </GlassCard>
+            </View>
           )}
         />
       )}
@@ -88,23 +106,74 @@ export default function SubscriptionsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: 'transparent', paddingHorizontal: 16 },
-  title: { fontSize: 28, fontWeight: '800', color: '#fff', marginTop: 8 },
-  subtitle: { color: 'rgba(255,255,255,0.65)', marginTop: 6, marginBottom: 16 },
-  list: { paddingBottom: 100 },
-  card: { padding: 16, marginBottom: 10 },
-  freq: { color: '#5DCAA5', fontWeight: '800', textTransform: 'capitalize', fontSize: 16 },
-  addr: { color: '#fff', marginTop: 8 },
-  meta: { color: 'rgba(255,255,255,0.5)', marginTop: 6, fontSize: 13 },
-  cancel: {
-    marginTop: 12,
+  container: { flex: 1, backgroundColor: DoorliColors.navy },
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 4,
+  },
+  headerTitle: { fontSize: 28, fontWeight: '800', color: DoorliColors.text },
+  subtitle: { color: DoorliColors.textDim, paddingHorizontal: 20, marginBottom: 16 },
+  list: { paddingBottom: 100, paddingHorizontal: 16 },
+  card: {
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  freqBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(29,158,117,0.15)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 10,
+  },
+  freqText: { color: DoorliColors.teal, fontWeight: '700', textTransform: 'capitalize', fontSize: 13 },
+  statusDot: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  statusText: { color: '#fff', fontWeight: '600', fontSize: 11 },
+  addr: { color: DoorliColors.text, fontSize: 14, lineHeight: 20 },
+  meta: { color: DoorliColors.textDim, marginTop: 8, fontSize: 13 },
+  itemCount: { color: DoorliColors.textMuted, marginTop: 4, fontSize: 12, fontWeight: '500' },
+  cancelBtn: {
+    marginTop: 14,
     alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 10,
-    backgroundColor: 'rgba(239,68,68,0.15)',
+    backgroundColor: 'rgba(242,102,139,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(242,102,139,0.25)',
   },
-  cancelText: { color: '#f87171', fontWeight: '700' },
-  empty: { alignItems: 'center', paddingTop: 48, gap: 12, paddingHorizontal: 24 },
-  emptyText: { color: 'rgba(255,255,255,0.5)', textAlign: 'center', lineHeight: 20 },
+  cancelText: { color: DoorliColors.danger, fontWeight: '700', fontSize: 13 },
+  empty: { alignItems: 'center', paddingTop: 64, gap: 12, paddingHorizontal: 24 },
+  emptyIconWrap: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  emptyTitle: { fontSize: 18, fontWeight: '700', color: DoorliColors.text },
+  emptyText: { color: DoorliColors.textMuted, textAlign: 'center', lineHeight: 20 },
 });

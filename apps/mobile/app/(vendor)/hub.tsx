@@ -11,6 +11,7 @@ import {
   ChartBar,
   LogOut,
   FileUp,
+  TrendingUp,
 } from 'lucide-react-native';
 import { useAuthStore } from '../../store/auth';
 
@@ -33,10 +34,29 @@ export default function VendorHub() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.brand}>Doorli Vendor</Text>
-        <Text style={styles.hello}>Hi {user?.fullName || 'Vendor'}</Text>
-        <Text style={styles.sub}>Run your shop from this phone — scan, bill, stock & orders.</Text>
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.brand}>Doorli Vendor</Text>
+            <Text style={styles.hello}>Hi {user?.fullName || 'Vendor'}</Text>
+            <Text style={styles.sub}>Run your shop from this phone — scan, bill, stock & orders.</Text>
+          </View>
+          <TouchableOpacity style={styles.logout} onPress={signOut}>
+            <LogOut color="#b91c1c" size={18} />
+            <Text style={styles.logoutText}>Log out</Text>
+          </TouchableOpacity>
+        </View>
 
+        <View style={styles.quickAccess}>
+          <TouchableOpacity
+            style={styles.dashboardBtn}
+            onPress={() => router.push('/(vendor)/index' as any)}
+          >
+            <TrendingUp color="#fff" size={20} />
+            <Text style={styles.dashboardBtnText}>View Dashboard</Text>
+          </TouchableOpacity>
+        </View>
+
+        <Text style={styles.sectionTitle}>Quick Access</Text>
         <View style={styles.grid}>
           {TILES.map((t) => (
             <TouchableOpacity
@@ -45,8 +65,8 @@ export default function VendorHub() {
               onPress={() => router.push(t.href as any)}
               activeOpacity={0.85}
             >
-              <View style={[styles.iconWrap, { backgroundColor: `${t.color}18` }]}>
-                <t.icon color={t.color} size={26} />
+              <View style={[styles.iconWrap, { backgroundColor: `${t.color}15` }]}>
+                <t.icon color={t.color} size={24} />
               </View>
               <Text style={styles.tileLabel}>{t.label}</Text>
               <Text style={styles.tileBlurb}>{t.blurb}</Text>
@@ -54,27 +74,49 @@ export default function VendorHub() {
           ))}
         </View>
 
-        <TouchableOpacity
-          style={styles.logout}
-          onPress={async () => {
-            await signOut();
-            router.replace('/(auth)/login');
-          }}
-        >
-          <LogOut color="#b91c1c" size={18} />
-          <Text style={styles.logoutText}>Log out</Text>
-        </TouchableOpacity>
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>Doorli Vendor v1.0</Text>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#f1f5f9' },
+  safe: { flex: 1, backgroundColor: '#f8fafc' },
   container: { padding: 16, paddingBottom: 40 },
-  brand: { fontSize: 13, fontWeight: '700', color: '#00B241', letterSpacing: 0.5 },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  brand: { fontSize: 12, fontWeight: '700', color: '#00B241', letterSpacing: 0.5 },
   hello: { fontSize: 26, fontWeight: '800', color: '#0f172a', marginTop: 4 },
-  sub: { color: '#64748b', marginTop: 6, marginBottom: 18, lineHeight: 20 },
+  sub: { color: '#64748b', marginTop: 6, marginBottom: 18, lineHeight: 20, maxWidth: 280 },
+  logout: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    padding: 8,
+  },
+  logoutText: { color: '#b91c1c', fontWeight: '600', fontSize: 14 },
+  quickAccess: { marginBottom: 24 },
+  dashboardBtn: {
+    backgroundColor: '#0f172a',
+    borderRadius: 14,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  dashboardBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#475569',
+    marginBottom: 12,
+  },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   tile: {
     width: '47%',
@@ -83,25 +125,21 @@ const styles = StyleSheet.create({
     padding: 14,
     borderWidth: 1,
     borderColor: '#e2e8f0',
-    minHeight: 120,
+    minHeight: 110,
   },
   iconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 48,
+    height: 48,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 10,
   },
-  tileLabel: { fontWeight: '700', fontSize: 15, color: '#0f172a' },
+  tileLabel: { fontWeight: '700', fontSize: 14, color: '#0f172a' },
   tileBlurb: { fontSize: 12, color: '#94a3b8', marginTop: 4 },
-  logout: {
-    marginTop: 24,
-    flexDirection: 'row',
+  footer: {
+    marginTop: 32,
     alignItems: 'center',
-    gap: 8,
-    alignSelf: 'center',
-    padding: 12,
   },
-  logoutText: { color: '#b91c1c', fontWeight: '600' },
+  footerText: { color: '#94a3b8', fontSize: 12 },
 });
