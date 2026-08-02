@@ -57,10 +57,14 @@ export default function LoginScreen() {
 
   const AUTH_URL = process.env.EXPO_PUBLIC_AUTH_URL ?? 'http://localhost:4001';
 
+  function goHome(role?: string) {
+    const r = role || useAuthStore.getState().user?.role || 'customer';
+    router.replace(homeForRole(r) as any);
+  }
+
   async function handleGoogleLogin() {
     setLoading(true);
     try {
-      // Build the deep-link redirect URI so the auth service can send us back
       const redirectUri = Linking.createURL('auth/callback');
 
       const result = await WebBrowser.openAuthSessionAsync(
@@ -76,13 +80,10 @@ export default function LoginScreen() {
         const tempToken = parsed.queryParams?.tempToken as string | undefined;
 
         if (token && refresh) {
-          // Existing user — store tokens and navigate home
           useAuthStore.getState().setTokens(token, refresh);
-          // Fetch user profile from decoded token (role is in JWT)
           const payload = JSON.parse(atob(token.split('.')[1]));
           router.replace(homeForRole(payload.role) as any);
         } else if (newUser === 'true' && tempToken) {
-          // New Google user — go to role selection screen
           router.push({
             pathname: '/(auth)/select-role',
             params: { tempToken },
@@ -94,9 +95,6 @@ export default function LoginScreen() {
     } finally {
       setLoading(false);
     }
-  }
-    const r = roleHint || useAuthStore.getState().user?.role;
-    router.replace(homeForRole(r) as any);
   }
 
   async function handlePasswordLogin() {

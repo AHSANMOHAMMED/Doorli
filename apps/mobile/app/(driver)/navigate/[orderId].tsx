@@ -10,13 +10,7 @@ import {
   Alert,
   ScrollView,
 } from 'react-native';
-const MapView = ({ children, style }: any) => (
-  <View style={[style, { backgroundColor: '#1e293b', alignItems: 'center', justifyContent: 'center' }]}>
-    <Text style={{ color: '#94a3b8', marginBottom: 10 }}>Interactive Map (Dev Client Required)</Text>
-    <View style={{ flexDirection: 'row', gap: 20 }}>{children}</View>
-  </View>
-);
-const Marker = ({ children }: any) => <View>{children}</View>;
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -118,22 +112,26 @@ export default function NavigateScreen() {
       <View style={styles.mapWrap}>
         <MapView
           style={styles.map}
+          provider={PROVIDER_GOOGLE}
           initialRegion={{
             latitude: dropLat,
             longitude: dropLng,
             latitudeDelta: 0.05,
             longitudeDelta: 0.05,
           }}
+          showsUserLocation
         >
           <Marker
             coordinate={{ latitude: vendorLat, longitude: vendorLng }}
             title="Pickup"
             description={order.vendor?.businessName}
+            pinColor="#00B241"
           />
           <Marker
             coordinate={{ latitude: dropLat, longitude: dropLng }}
             title="Drop-off"
             description={dropoff?.addressLine}
+            pinColor="#ef4444"
           />
         </MapView>
       </View>

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-const MapView = ({ children, style }: any) => <View style={[style, { backgroundColor: '#f3f4f6', alignItems: 'center', justifyContent: 'center' }]}><Text style={{color: '#9ca3af', marginBottom: 10, fontWeight: '500'}}>Interactive Map (Dev Client Required)</Text><View style={{flexDirection:'row', gap: 20}}>{children}</View></View>;
-const Marker = ({ children }: any) => <View>{children}</View>;
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { getRideSocket, disconnectRideSocket } from '../../lib/socket';
 import { apiClient } from '../../lib/axios';
@@ -18,7 +17,7 @@ export default function RideBookingScreen() {
   const [rideId, setRideId] = useState<string | null>(params.rideId ?? null);
   const [driverInfo, setDriverInfo] = useState<{ name?: string; vehicle?: string } | null>(null);
   const [pickupLocation, setPickupLocation] = useState({ lat: 6.9271, lng: 79.8612 });
-  const dropoffLocation = { lat: 6.8649, lng: 79.8997 };
+  const [dropoffLocation, setDropoffLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -41,11 +40,13 @@ export default function RideBookingScreen() {
 
         // Only create a new ride if none was passed from the Ride tab
         if (!id) {
+          const dropoff = dropoffLocation ?? { lat: pickupLocation.lat + 0.01, lng: pickupLocation.lng + 0.01 };
+          setDropoffLocation(dropoff);
           const res = await apiClient.post('/rides', {
             pickupLat: pickupLocation.lat,
             pickupLng: pickupLocation.lng,
-            dropoffLat: dropoffLocation.lat,
-            dropoffLng: dropoffLocation.lng,
+            dropoffLat: dropoff.lat,
+            dropoffLng: dropoff.lng,
           });
           const ride = res.data?.data ?? res.data;
           id = ride?.id ?? ride?.rideId ?? null;
@@ -104,6 +105,7 @@ export default function RideBookingScreen() {
       <View style={styles.mapContainer}>
         <MapView
           style={styles.map}
+          provider={PROVIDER_GOOGLE}
           initialRegion={{
             latitude: pickupLocation.lat,
             longitude: pickupLocation.lng,
@@ -111,21 +113,28 @@ export default function RideBookingScreen() {
             longitudeDelta: 0.1,
           }}
         >
-          <Marker coordinate={{ latitude: pickupLocation.lat, longitude: pickupLocation.lng }}>
+          <Marker
+            coordinate={{ latitude: pickupLocation.lat, longitude: pickupLocation.lng }}
+            title="Pickup"
+          >
             <View style={styles.markerContainer}>
               <MapPin size={24} color="#000" />
             </View>
           </Marker>
-          <Marker
-            coordinate={{ latitude: dropoffLocation.lat, longitude: dropoffLocation.lng }}
-          >
-            <View style={styles.markerContainer}>
-              <MapPin size={24} color="#6b7280" />
-            </View>
-          </Marker>
+          {dropoffLocation && (
+            <Marker
+              coordinate={{ latitude: dropoffLocation.lat, longitude: dropoffLocation.lng }}
+              title="Drop-off"
+            >
+              <View style={styles.markerContainer}>
+                <MapPin size={24} color="#6b7280" />
+              </View>
+            </Marker>
+          )}
           {driverLocation && (
             <Marker
               coordinate={{ latitude: driverLocation.lat, longitude: driverLocation.lng }}
+              title="Driver"
             >
               <View style={[styles.markerContainer, { backgroundColor: '#000' }]}>
                 <Car size={24} color="#fff" />

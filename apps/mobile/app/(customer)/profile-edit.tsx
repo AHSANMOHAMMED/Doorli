@@ -2,14 +2,17 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Image, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, Stack } from 'expo-router';
-import { ArrowLeft, Camera, User, Phone, Mail, MapPin } from 'lucide-react-native';
+import { ArrowLeft, User, Phone, Mail } from 'lucide-react-native';
 import { fetchProfile, updateProfile } from '../../lib/api';
+import { useAuthStore } from '../../store/auth';
+import ImageUploader from '../../components/ImageUploader';
 
 const PRIMARY = '#00B241';
 const ON_SURFACE = '#002b5b';
 
 export default function ProfileEditScreen() {
   const router = useRouter();
+  const token = useAuthStore((s) => s.accessToken);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -77,15 +80,13 @@ export default function ProfileEditScreen() {
         ) : (
         <>
         <View style={styles.avatarSection}>
-          <View style={styles.avatarContainer}>
-            <Image 
-              source={{ uri: profilePhotoUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200' }} 
-              style={styles.avatar} 
-            />
-            <TouchableOpacity style={styles.cameraBtn}>
-              <Camera color="#fff" size={16} />
-            </TouchableOpacity>
-          </View>
+          <ImageUploader
+            token={token}
+            defaultImage={profilePhotoUrl}
+            onUploadSuccess={(url) => setProfilePhotoUrl(url)}
+            size={100}
+            rounded
+          />
         </View>
 
         <View style={styles.formGroup}>

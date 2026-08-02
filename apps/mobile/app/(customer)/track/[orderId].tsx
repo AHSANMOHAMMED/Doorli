@@ -1,15 +1,6 @@
 import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, ScrollView } from 'react-native';
-const MapView = ({ children, style, initialRegion }: any) => (
-  <View style={[style, { backgroundColor: 'rgba(255,255,255,0.03)', alignItems: 'center', justifyContent: 'center', borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' }]}>
-    <Text style={{ color: DoorliColors.textDim, marginBottom: 10, fontSize: 16, fontWeight: '600' }}>🗺 Interactive Map</Text>
-    <Text style={{ color: DoorliColors.textDim, fontSize: 12 }}>
-      {initialRegion?.latitude.toFixed(4)}, {initialRegion?.longitude.toFixed(4)}
-    </Text>
-    <View style={{ flexDirection: 'row', gap: 20, marginTop: 12 }}>{children}</View>
-  </View>
-);
-const Marker = ({ children }: any) => <View>{children}</View>;
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
@@ -73,25 +64,37 @@ export default function TrackOrderScreen() {
         <View style={{ width: 44 }} />
       </View>
 
-      <MapView
-        style={styles.map}
-        initialRegion={{
-          latitude: driverLoc?.lat ?? vendorLat,
-          longitude: driverLoc?.lng ?? vendorLng,
-          latitudeDelta: 0.05,
-          longitudeDelta: 0.05,
-        }}
-      >
-        <Marker coordinate={{ latitude: vendorLat, longitude: vendorLng }} title="Shop" pinColor={PRIMARY} />
-        <Marker coordinate={{ latitude: dropLat, longitude: dropLng }} title="Delivery" pinColor={DoorliColors.danger} />
-        {driverLoc && (
-          <Marker coordinate={{ latitude: driverLoc.lat, longitude: driverLoc.lng }} title="Driver">
-            <View style={styles.driverDot}>
-              <Navigation size={16} color="#fff" />
-            </View>
-          </Marker>
-        )}
-      </MapView>
+      {vendorLat && vendorLng ? (
+        <MapView
+          style={styles.map}
+          provider={PROVIDER_GOOGLE}
+          initialRegion={{
+            latitude: driverLoc?.lat ?? vendorLat,
+            longitude: driverLoc?.lng ?? vendorLng,
+            latitudeDelta: 0.05,
+            longitudeDelta: 0.05,
+          }}
+          showsUserLocation={false}
+        >
+          <Marker coordinate={{ latitude: vendorLat, longitude: vendorLng }} title="Shop" pinColor={PRIMARY} />
+          <Marker coordinate={{ latitude: dropLat, longitude: dropLng }} title="Delivery" pinColor={DoorliColors.danger} />
+          {driverLoc && (
+            <Marker coordinate={{ latitude: driverLoc.lat, longitude: driverLoc.lng }} title="Driver">
+              <View style={styles.driverDot}>
+                <Navigation size={16} color="#fff" />
+              </View>
+            </Marker>
+          )}
+        </MapView>
+      ) : (
+        <View style={[styles.map, { backgroundColor: 'rgba(255,255,255,0.03)', alignItems: 'center', justifyContent: 'center', borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' }]}>
+          <MapPin color={DoorliColors.textDim} size={32} />
+          <Text style={{ color: DoorliColors.textDim, marginTop: 10, fontSize: 14, fontWeight: '600' }}>Map unavailable</Text>
+          {order.deliveryAddress && (
+            <Text style={{ color: DoorliColors.textDim, fontSize: 12, marginTop: 4 }}>{order.deliveryAddress.addressLine}</Text>
+          )}
+        </View>
+      )}
 
       <View style={styles.sheet}>
         <View style={styles.sheetHandle} />

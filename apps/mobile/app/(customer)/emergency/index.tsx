@@ -1,12 +1,71 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { useState, useEffect, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  ScrollView,
+  ActivityIndicator,
+  RefreshControl,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { AlertTriangle, Phone, ShieldAlert, ChevronLeft } from 'lucide-react-native';
+import { AlertTriangle, Phone, ShieldAlert, ChevronLeft, Clock } from 'lucide-react-native';
+import { apiClient } from '../../../lib/axios';
+
+interface Incident {
+  id: string;
+  type: string;
+  status: string;
+  description?: string | null;
+  address?: string | null;
+  createdAt: string;
+  resolvedAt?: string | null;
+}
+
+function formatTimeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d ago`;
+}
 
 export default function EmergencyScreen() {
   const router = useRouter();
   const [sosActive, setSosActive] = useState(false);
+  const [sosLoading, setSosLoading] = useState(false);
+  const [incidents, setIncidents] = useState<Incident[]>([]);
+  const [loadingIncidents, setLoadingIncidents] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchIncidents = useCallback(async () => {
+    try {
+      setError(null);
+      const res = await apiClient.get('/incidents');
+      const items = (res.data?.data?.items ?? res.data?.data ?? []) as Incident[];
+      setIncidents(items);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed to load incidents');
+    } finally {
+      setLoadingIncidents(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchIncidents();
+  }, [fetchIncidents]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchIncidents();
+  };
 
   const triggerSOS = () => {
     Alert.alert(
@@ -14,28 +73,42 @@ export default function EmergencyScreen() {
       'This will alert nearby responders, community leaders, and emergency contacts.',
       [
         { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'ACTIVATE', 
+        {
+          text: 'ACTIVATE',
           style: 'destructive',
-          onPress: () => setSosActive(true) 
-        }
-      ]
+          onPress: async () => {
+            setSosLoading(true);
+            try {
+              await apiClient.post('/sos');
+              setSosActive(true);
+              Alert.alert('SOS Activated', 'Emergency responders have been notified.');
+            } catch (e: unknown) {
+              Alert.alert('SOS Failed', e instanceof Error ? e.message : 'Could not trigger SOS. Please try again.');
+            } finally {
+              setSosLoading(false);
+            }
+          },
+        },
+      ],
     );
   };
 
   const cancelSOS = () => {
-    Alert.alert(
-      'Cancel SOS?',
-      'Are you safe now?',
-      [
-        { text: 'No', style: 'cancel' },
-        { 
-          text: 'Yes, cancel', 
-          style: 'default',
-          onPress: () => setSosActive(false) 
-        }
-      ]
-    );
+    Alert.alert('Cancel SOS?', 'Are you safe now?', [
+      { text: 'No', style: 'cancel' },
+      {
+        text: 'Yes, cancel',
+        style: 'default',
+        onPress: async () => {
+          try {
+            await apiClient.post('/sos/cancel');
+          } catch {
+            // best-effort cancel
+          }
+          setSosActive(false);
+        },
+      },
+    ]);
   };
 
   return (
@@ -48,19 +121,27 @@ export default function EmergencyScreen() {
         <View style={{ width: 44 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#ef4444" />}
+      >
         <View style={styles.sosCard}>
           <Text style={styles.sosTitle}>Emergency SOS</Text>
           <Text style={styles.sosDesc}>
             Press to immediately share your location with nearby responders and trusted contacts.
           </Text>
-          
-          <TouchableOpacity 
-            style={[styles.sosButton, sosActive && styles.sosButtonActive]} 
+
+          <TouchableOpacity
+            style={[styles.sosButton, sosActive && styles.sosButtonActive]}
             onLongPress={sosActive ? cancelSOS : triggerSOS}
             delayLongPress={800}
+            disabled={sosLoading}
           >
-            <ShieldAlert color="#fff" size={48} />
+            {sosLoading ? (
+              <ActivityIndicator color="#fff" size="large" />
+            ) : (
+              <ShieldAlert color="#fff" size={48} />
+            )}
             <Text style={styles.sosButtonText}>
               {sosActive ? 'SOS ACTIVE\nLong press to cancel' : 'HOLD FOR SOS'}
             </Text>
@@ -69,7 +150,7 @@ export default function EmergencyScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
-          
+
           <TouchableOpacity style={styles.actionRow} onPress={() => {}}>
             <View style={[styles.actionIcon, { backgroundColor: 'rgba(239, 68, 68, 0.15)' }]}>
               <AlertTriangle color="#ef4444" size={24} />
@@ -92,18 +173,49 @@ export default function EmergencyScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Community Alerts</Text>
-          
-          <View style={styles.alertCard}>
-            <View style={styles.alertHeader}>
-              <AlertTriangle color="#f59e0b" size={16} />
-              <Text style={styles.alertType}>Road Closure</Text>
-              <Text style={styles.alertTime}>10m ago</Text>
+          <Text style={styles.sectionTitle}>Incidents</Text>
+
+          {loadingIncidents ? (
+            <ActivityIndicator size="large" color="#ef4444" style={{ marginTop: 20 }} />
+          ) : error ? (
+            <View style={styles.errorCard}>
+              <Text style={styles.errorText}>{error}</Text>
+              <TouchableOpacity style={styles.retryBtn} onPress={fetchIncidents}>
+                <Text style={styles.retryBtnText}>Retry</Text>
+              </TouchableOpacity>
             </View>
-            <Text style={styles.alertBody}>
-              Main Street is currently blocked due to a water main break. Please use alternate routes.
-            </Text>
-          </View>
+          ) : incidents.length === 0 ? (
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyText}>No active incidents. Stay safe!</Text>
+            </View>
+          ) : (
+            incidents.map((incident) => (
+              <View key={incident.id} style={styles.alertCard}>
+                <View style={styles.alertHeader}>
+                  <AlertTriangle
+                    color={incident.status === 'resolved' ? '#10b981' : '#f59e0b'}
+                    size={16}
+                  />
+                  <Text style={styles.alertType}>
+                    {incident.type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+                  </Text>
+                  <View style={styles.alertMeta}>
+                    <Clock color="rgba(255,255,255,0.5)" size={12} />
+                    <Text style={styles.alertTime}>{formatTimeAgo(incident.createdAt)}</Text>
+                  </View>
+                </View>
+                {incident.description ? (
+                  <Text style={styles.alertBody}>{incident.description}</Text>
+                ) : null}
+                {incident.address ? (
+                  <Text style={styles.alertAddress}>{incident.address}</Text>
+                ) : null}
+                <View style={[styles.statusBadge, incident.status === 'resolved' && styles.statusBadgeResolved]}>
+                  <Text style={styles.statusBadgeText}>{incident.status}</Text>
+                </View>
+              </View>
+            ))
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -190,9 +302,57 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(245, 158, 11, 0.3)',
     borderRadius: 16,
     padding: 16,
+    gap: 8,
   },
-  alertHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  alertHeader: { flexDirection: 'row', alignItems: 'center' },
   alertType: { color: '#f59e0b', fontWeight: '700', marginLeft: 8, flex: 1 },
+  alertMeta: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   alertTime: { color: 'rgba(255,255,255,0.5)', fontSize: 12 },
   alertBody: { color: 'rgba(255,255,255,0.8)', lineHeight: 20 },
+  alertAddress: { color: 'rgba(255,255,255,0.5)', fontSize: 12 },
+  statusBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(245, 158, 11, 0.2)',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginTop: 4,
+  },
+  statusBadgeResolved: {
+    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+  },
+  statusBadgeText: {
+    color: '#f59e0b',
+    fontSize: 11,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+  },
+  errorCard: {
+    alignItems: 'center',
+    gap: 12,
+    padding: 24,
+  },
+  errorText: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  retryBtn: {
+    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+  },
+  retryBtnText: {
+    color: '#ef4444',
+    fontWeight: '600',
+  },
+  emptyCard: {
+    alignItems: 'center',
+    padding: 24,
+  },
+  emptyText: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 14,
+  },
 });

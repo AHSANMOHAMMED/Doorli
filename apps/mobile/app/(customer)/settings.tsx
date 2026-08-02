@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Switch, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Switch, ScrollView, Alert, TextInput, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, Stack } from 'expo-router';
 import { ArrowLeft, Bell, Moon, Globe, Shield, Trash2, ChevronRight, LogOut, Info } from 'lucide-react-native';
 import { DoorliColors } from '../../constants/colors';
 import { useAuthStore } from '../../store/auth';
 import { useI18nStore } from '../../lib/i18n';
+import { apiClient } from '../../lib/axios';
 import React from 'react';
 
 const PRIMARY = DoorliColors.primary;
@@ -16,6 +17,9 @@ export default function SettingsScreen() {
   const user = useAuthStore((s) => s.user);
   const { language, setLanguage } = useI18nStore();
   const [pushEnabled, setPushEnabled] = useState(true);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleting, setDeleting] = useState(false);
 
   function handleLanguageChange() {
     Alert.alert('Language', 'Choose your preferred language', [
@@ -41,14 +45,27 @@ export default function SettingsScreen() {
   }
 
   function handleDeleteAccount() {
-    Alert.alert(
-      'Delete account?',
-      'This action is permanent and cannot be undone. All your data will be lost.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => {} },
-      ],
-    );
+    setDeletePassword('');
+    setDeleteModalVisible(true);
+  }
+
+  async function confirmDeleteAccount() {
+    if (!deletePassword.trim()) {
+      Alert.alert('Password required', 'Please enter your password to confirm deletion.');
+      return;
+    }
+    setDeleting(true);
+    try {
+      await apiClient.delete('/users/me', { data: { password: deletePassword.trim() } });
+      setDeleteModalVisible(false);
+      await signOut();
+      router.replace('/(auth)');
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Failed to delete account';
+      Alert.alert('Error', msg);
+    } finally {
+      setDeleting(false);
+    }
   }
 
   const languageLabel = language === 'en' ? 'English' : language === 'si' ? 'Sinhala' : 'Tamil';
@@ -156,6 +173,42 @@ export default function SettingsScreen() {
 
         <Text style={styles.versionText}>Doorli v1.0.0 · Built with ❤️</Text>
       </ScrollView>
+
+      <Modal visible={deleteModalVisible} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Delete Account?</Text>
+            <Text style={styles.modalDesc}>
+              This action is permanent and cannot be undone. Enter your password to confirm.
+            </Text>
+            <TextInput
+              style={styles.modalInput}
+              value={deletePassword}
+              onChangeText={setDeletePassword}
+              placeholder="Enter your password"
+              placeholderTextColor={DoorliColors.textDim}
+              secureTextEntry
+              autoFocus
+            />
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={() => setDeleteModalVisible(false)}
+                disabled={deleting}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalDeleteBtn, deleting && { opacity: 0.6 }]}
+                onPress={confirmDeleteAccount}
+                disabled={deleting}
+              >
+                <Text style={styles.modalDeleteText}>{deleting ? 'Deleting...' : 'Delete'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -265,5 +318,70 @@ const styles = StyleSheet.create({
     color: DoorliColors.textDim,
     marginTop: 24,
     marginBottom: 16,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    backgroundColor: DoorliColors.navyMid,
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: DoorliColors.text,
+    marginBottom: 8,
+  },
+  modalDesc: {
+    fontSize: 14,
+    color: DoorliColors.textDim,
+    lineHeight: 20,
+    marginBottom: 16,
+  },
+  modalInput: {
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 12,
+    padding: 14,
+    color: DoorliColors.text,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    marginBottom: 20,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalCancelBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    alignItems: 'center',
+  },
+  modalCancelText: {
+    color: DoorliColors.text,
+    fontWeight: '600',
+    fontSize: 15,
+  },
+  modalDeleteBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: DoorliColors.danger,
+    alignItems: 'center',
+  },
+  modalDeleteText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 15,
   },
 });

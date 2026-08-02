@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,22 +13,34 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Lock, CreditCard, Info, Shield, Landmark, BadgeCheck } from 'lucide-react-native';
+import { ArrowLeft, Lock, CreditCard, Info, Shield, Landmark, BadgeCheck, Banknote } from 'lucide-react-native';
 import { DoorliColors } from '../../../constants/colors';
-import { confirmPaymentDev } from '../../../lib/api';
+import { confirmPaymentDev, collectCodPayment, initiatePayment } from '../../../lib/api';
+import { apiClient } from '../../../lib/axios';
 
 export default function SecurePaymentScreen() {
   const router = useRouter();
-  const { amount = '0', orderId, paymentId } = useLocalSearchParams<{ amount: string, orderId: string, paymentId?: string }>();
+  const { amount = '0', orderId, paymentId } = useLocalSearchParams<{ amount: string; orderId: string; paymentId?: string }>();
 
+  const [stripeConfigured, setStripeConfigured] = useState<boolean | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'cod'>('card');
   const [cardName, setCardName] = useState('');
   const [cardNumber, setCardNumber] = useState('');
   const [expiry, setExpiry] = useState('');
   const [cvv, setCvv] = useState('');
-  const [saveCard, setSaveCard] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [paymentDone, setPaymentDone] = useState(false);
 
-  // Formatters
+  useEffect(() => {
+    apiClient
+      .get('/payments/config')
+      .then((res) => {
+        const cfg = res.data?.data;
+        setStripeConfigured(!!cfg?.stripePublishableKey);
+      })
+      .catch(() => setStripeConfigured(false));
+  }, []);
+
   const formatCardNumber = (text: string) => {
     let value = text.replace(/\D/g, '');
     let formatted = '';
@@ -47,31 +59,72 @@ export default function SecurePaymentScreen() {
     setExpiry(value);
   };
 
-  // Preview logic
   const displayNumber = cardNumber || '•••• •••• •••• ••••';
   const displayName = cardName || 'Full Name';
   const displayExpiry = expiry || 'MM/YY';
 
   async function handlePay() {
-    if (!cardName.trim() || !cardNumber.trim() || !expiry.trim() || !cvv.trim()) {
-      Alert.alert('Missing fields', 'Please fill in all card details.');
-      return;
-    }
     if (!paymentId) {
       Alert.alert('Error', 'No payment reference found. Please go back and try again.');
       return;
     }
+
     setProcessing(true);
     try {
-      await confirmPaymentDev(paymentId);
-      Alert.alert('Payment successful', 'Your order has been placed.', [
-        { text: 'OK', onPress: () => router.replace(`/(customer)/order/${orderId}`) },
-      ]);
+      if (paymentMethod === 'cod') {
+        await collectCodPayment(paymentId);
+      } else {
+        if (!cardName.trim() || !cardNumber.trim() || !expiry.trim() || !cvv.trim()) {
+          Alert.alert('Missing fields', 'Please fill in all card details.');
+          setProcessing(false);
+          return;
+        }
+        if (stripeConfigured) {
+          await initiatePayment({
+            referenceId: orderId!,
+            referenceType: 'order',
+            amount: Number(amount),
+            method: 'card',
+            gateway: 'stripe',
+          });
+        } else {
+          await confirmPaymentDev(paymentId);
+        }
+      }
+      setPaymentDone(true);
     } catch (e: unknown) {
       Alert.alert('Payment failed', e instanceof Error ? e.message : 'Please try again.');
     } finally {
       setProcessing(false);
     }
+  }
+
+  if (paymentDone) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+        <View style={styles.successContainer}>
+          <View style={styles.successIcon}>
+            <BadgeCheck color="#10b981" size={64} />
+          </View>
+          <Text style={styles.successTitle}>Payment Successful</Text>
+          <Text style={styles.successSubtitle}>
+            {paymentMethod === 'cod'
+              ? 'Your order will be delivered. Please have cash ready.'
+              : 'Your payment has been processed successfully.'}
+          </Text>
+          <Text style={styles.successAmount}>${amount}</Text>
+          <TouchableOpacity
+            style={styles.primaryBtn}
+            onPress={() => router.replace(`/(customer)/order/${orderId}`)}
+          >
+            <Text style={styles.primaryBtnText}>View Order</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.ghostBtn} onPress={() => router.replace('/(customer)')}>
+            <Text style={styles.ghostBtnText}>Back to Home</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
   }
 
   return (
@@ -80,7 +133,6 @@ export default function SecurePaymentScreen() {
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
             <ArrowLeft color={DoorliColors.text} size={24} />
@@ -90,7 +142,6 @@ export default function SecurePaymentScreen() {
         </View>
 
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Trust & Security Header */}
           <View style={styles.trustHeader}>
             <View style={styles.lockIconContainer}>
               <Lock color="#ffffff" size={32} strokeWidth={2.5} />
@@ -101,156 +152,173 @@ export default function SecurePaymentScreen() {
             </Text>
           </View>
 
-          {/* Payment Form Container */}
-          <View style={styles.formContainer}>
-            {/* Dynamic Card Preview */}
-            <View style={styles.cardPreview}>
-              {/* Blur accent - emulated with absolute view */}
-              <View style={styles.cardBlur} />
-              
-              <View style={styles.cardTopRow}>
-                <CreditCard color="#ffffff" size={28} />
-                <Text style={styles.cardBrand}>VISA</Text>
+          {stripeConfigured === null ? (
+            <ActivityIndicator size="large" color={DoorliColors.primary} style={{ marginVertical: 40 }} />
+          ) : (
+            <>
+              <View style={styles.methodSelector}>
+                <TouchableOpacity
+                  style={[styles.methodCard, paymentMethod === 'card' && styles.methodCardActive]}
+                  onPress={() => setPaymentMethod('card')}
+                >
+                  <CreditCard color={paymentMethod === 'card' ? '#fff' : '#3d4a3c'} size={24} />
+                  <Text style={[styles.methodText, paymentMethod === 'card' && styles.methodTextActive]}>
+                    Card
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.methodCard, paymentMethod === 'cod' && styles.methodCardActive]}
+                  onPress={() => setPaymentMethod('cod')}
+                >
+                  <Banknote color={paymentMethod === 'cod' ? '#fff' : '#3d4a3c'} size={24} />
+                  <Text style={[styles.methodText, paymentMethod === 'cod' && styles.methodTextActive]}>
+                    Cash on Delivery
+                  </Text>
+                </TouchableOpacity>
               </View>
 
-              <View>
-                <Text style={styles.previewNumber}>{displayNumber}</Text>
-                
-                <View style={styles.cardBottomRow}>
-                  <View>
-                    <Text style={styles.previewLabel}>CARD HOLDER</Text>
-                    <Text style={styles.previewValue}>{displayName.toUpperCase()}</Text>
+              {paymentMethod === 'card' ? (
+                <>
+                  <View style={styles.formContainer}>
+                    <View style={styles.cardPreview}>
+                      <View style={styles.cardBlur} />
+                      <View style={styles.cardTopRow}>
+                        <CreditCard color="#ffffff" size={28} />
+                        <Text style={styles.cardBrand}>VISA</Text>
+                      </View>
+                      <View>
+                        <Text style={styles.previewNumber}>{displayNumber}</Text>
+                        <View style={styles.cardBottomRow}>
+                          <View>
+                            <Text style={styles.previewLabel}>CARD HOLDER</Text>
+                            <Text style={styles.previewValue}>{displayName.toUpperCase()}</Text>
+                          </View>
+                          <View>
+                            <Text style={styles.previewLabel}>EXPIRES</Text>
+                            <Text style={styles.previewValue}>{displayExpiry}</Text>
+                          </View>
+                        </View>
+                      </View>
+                    </View>
+
+                    <View style={styles.inputCard}>
+                      <View style={styles.inputGroup}>
+                        <Text style={styles.inputLabel}>Cardholder Name</Text>
+                        <TextInput
+                          style={styles.input}
+                          placeholder="John Doe"
+                          placeholderTextColor="#6b7280"
+                          value={cardName}
+                          onChangeText={setCardName}
+                        />
+                      </View>
+
+                      <View style={styles.inputGroup}>
+                        <Text style={styles.inputLabel}>Card Number</Text>
+                        <View style={styles.iconInputWrapper}>
+                          <CreditCard color="#6d7b6a" size={20} style={styles.inputIcon} />
+                          <TextInput
+                            style={[styles.input, { paddingLeft: 48 }]}
+                            placeholder="0000 0000 0000 0000"
+                            placeholderTextColor="#6b7280"
+                            value={cardNumber}
+                            onChangeText={formatCardNumber}
+                            keyboardType="numeric"
+                            maxLength={19}
+                          />
+                        </View>
+                      </View>
+
+                      <View style={styles.row}>
+                        <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                          <Text style={styles.inputLabel}>Expiry Date</Text>
+                          <TextInput
+                            style={styles.input}
+                            placeholder="MM/YY"
+                            placeholderTextColor="#6b7280"
+                            value={expiry}
+                            onChangeText={formatExpiry}
+                            keyboardType="numeric"
+                            maxLength={5}
+                          />
+                        </View>
+                        <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
+                          <Text style={styles.inputLabel}>CVV</Text>
+                          <View style={styles.iconInputWrapper}>
+                            <TextInput
+                              style={[styles.input, { paddingRight: 40 }]}
+                              placeholder="•••"
+                              placeholderTextColor="#6b7280"
+                              value={cvv}
+                              onChangeText={setCvv}
+                              keyboardType="numeric"
+                              secureTextEntry
+                              maxLength={3}
+                            />
+                            <Info color="#6d7b6a" size={18} style={styles.inputIconRight} />
+                          </View>
+                        </View>
+                      </View>
+                    </View>
                   </View>
-                  <View>
-                    <Text style={styles.previewLabel}>EXPIRES</Text>
-                    <Text style={styles.previewValue}>{displayExpiry}</Text>
-                  </View>
+                </>
+              ) : (
+                <View style={styles.codCard}>
+                  <Banknote color={DoorliColors.primary} size={48} />
+                  <Text style={styles.codTitle}>Pay with Cash</Text>
+                  <Text style={styles.codDesc}>
+                    You will pay ${amount} in cash when your order is delivered. Make sure you have
+                    the exact amount ready.
+                  </Text>
                 </View>
-              </View>
-            </View>
+              )}
 
-            {/* Input Fields Card */}
-            <View style={styles.inputCard}>
-              {/* Cardholder Name */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Cardholder Name</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="John Doe"
-                  placeholderTextColor="#6b7280"
-                  value={cardName}
-                  onChangeText={setCardName}
-                />
-              </View>
-
-              {/* Card Number */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Card Number</Text>
-                <View style={styles.iconInputWrapper}>
-                  <CreditCard color="#6d7b6a" size={20} style={styles.inputIcon} />
-                  <TextInput
-                    style={[styles.input, { paddingLeft: 48 }]}
-                    placeholder="0000 0000 0000 0000"
-                    placeholderTextColor="#6b7280"
-                    value={cardNumber}
-                    onChangeText={formatCardNumber}
-                    keyboardType="numeric"
-                    maxLength={19}
-                  />
+              <View style={styles.summaryCard}>
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryLabel}>Total Amount</Text>
+                  <Text style={styles.summaryValue}>${amount}</Text>
                 </View>
-              </View>
 
-              {/* Expiry & CVV */}
-              <View style={styles.row}>
-                <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
-                  <Text style={styles.inputLabel}>Expiry Date</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="MM/YY"
-                    placeholderTextColor="#6b7280"
-                    value={expiry}
-                    onChangeText={formatExpiry}
-                    keyboardType="numeric"
-                    maxLength={5}
-                  />
-                </View>
-                <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
-                  <Text style={styles.inputLabel}>CVV</Text>
-                  <View style={styles.iconInputWrapper}>
-                    <TextInput
-                      style={[styles.input, { paddingRight: 40 }]}
-                      placeholder="•••"
-                      placeholderTextColor="#6b7280"
-                      value={cvv}
-                      onChangeText={setCvv}
-                      keyboardType="numeric"
-                      secureTextEntry
-                      maxLength={3}
-                    />
-                    <Info color="#6d7b6a" size={18} style={styles.inputIconRight} />
-                  </View>
+                <TouchableOpacity
+                  style={[styles.payButton, processing && { opacity: 0.6 }]}
+                  activeOpacity={0.8}
+                  onPress={handlePay}
+                  disabled={processing}
+                >
+                  {processing ? (
+                    <ActivityIndicator color="#ffffff" />
+                  ) : (
+                    <>
+                      <Lock color="#ffffff" size={20} />
+                      <Text style={styles.payButtonText}>
+                        {paymentMethod === 'cod' ? `Place Order — $${amount}` : `Pay $${amount} Now`}
+                      </Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+
+                <View style={styles.encryptionRow}>
+                  <Lock color="#6d7b6a" size={14} />
+                  <Text style={styles.encryptionText}>Encrypted with 256-bit SSL</Text>
                 </View>
               </View>
 
-              {/* Save Card */}
-              <TouchableOpacity
-                style={styles.saveCardRow}
-                activeOpacity={0.7}
-                onPress={() => setSaveCard(!saveCard)}
-              >
-                <View style={[styles.checkbox, saveCard && styles.checkboxActive]}>
-                  {saveCard && <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>✓</Text>}
+              <View style={styles.trustBadges}>
+                <View style={styles.trustBadge}>
+                  <Shield color="#191c1d" size={32} strokeWidth={1.5} />
+                  <Text style={styles.trustBadgeText}>PCI COMPLIANT</Text>
                 </View>
-                <Text style={styles.saveCardText}>Save card details for faster checkout</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Order Summary & Pay Button */}
-            <View style={styles.summaryCard}>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Total Amount</Text>
-                <Text style={styles.summaryValue}>${amount}</Text>
+                <View style={styles.trustBadge}>
+                  <Landmark color="#191c1d" size={32} strokeWidth={1.5} />
+                  <Text style={styles.trustBadgeText}>BANK SECURED</Text>
+                </View>
+                <View style={styles.trustBadge}>
+                  <BadgeCheck color="#191c1d" size={32} strokeWidth={1.5} />
+                  <Text style={styles.trustBadgeText}>VERIFIED MERCHANT</Text>
+                </View>
               </View>
-
-              <TouchableOpacity 
-                style={[styles.payButton, processing && { opacity: 0.6 }]} 
-                activeOpacity={0.8} 
-                onPress={handlePay}
-                disabled={processing}
-              >
-                {processing ? (
-                  <ActivityIndicator color="#ffffff" />
-                ) : (
-                  <>
-                    <Lock color="#ffffff" size={20} />
-                    <Text style={styles.payButtonText}>Pay ${amount} Now</Text>
-                  </>
-                )}
-              </TouchableOpacity>
-
-              <View style={styles.encryptionRow}>
-                <Lock color="#6d7b6a" size={14} />
-                <Text style={styles.encryptionText}>Encrypted with 256-bit SSL</Text>
-              </View>
-            </View>
-
-            {/* Trust Badges */}
-            <View style={styles.trustBadges}>
-              <View style={styles.trustBadge}>
-                <Shield color="#191c1d" size={32} strokeWidth={1.5} />
-                <Text style={styles.trustBadgeText}>PCI COMPLIANT</Text>
-              </View>
-              <View style={styles.trustBadge}>
-                <Landmark color="#191c1d" size={32} strokeWidth={1.5} />
-                <Text style={styles.trustBadgeText}>BANK SECURED</Text>
-              </View>
-              <View style={styles.trustBadge}>
-                <BadgeCheck color="#191c1d" size={32} strokeWidth={1.5} />
-                <Text style={styles.trustBadgeText}>VERIFIED MERCHANT</Text>
-              </View>
-            </View>
-
-          </View>
+            </>
+          )}
         </ScrollView>
         <View style={styles.footer}>
           <Text style={styles.footerText}>© 2026 Doorli. Powered by Stripe.</Text>
@@ -295,7 +363,7 @@ const styles = StyleSheet.create({
   },
   trustHeader: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: 24,
     marginTop: 24,
   },
   lockIconContainer: {
@@ -324,8 +392,38 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: 16,
   },
+  methodSelector: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 24,
+  },
+  methodCard: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 16,
+    borderRadius: 12,
+    backgroundColor: '#ffffff',
+    borderWidth: 2,
+    borderColor: '#e1e3e4',
+  },
+  methodCardActive: {
+    backgroundColor: DoorliColors.primary,
+    borderColor: DoorliColors.primary,
+  },
+  methodText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#3d4a3c',
+  },
+  methodTextActive: {
+    color: '#ffffff',
+  },
   formContainer: {
     gap: 24,
+    marginBottom: 24,
   },
   cardPreview: {
     height: 208,
@@ -429,28 +527,29 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
   },
-  saveCardRow: {
-    flexDirection: 'row',
+  codCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 32,
     alignItems: 'center',
-    gap: 8,
-    marginTop: 8,
+    gap: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+    marginBottom: 24,
   },
-  checkbox: {
-    width: 16,
-    height: 16,
-    borderWidth: 1,
-    borderColor: '#bccbb7',
-    borderRadius: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
+  codTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#191c1d',
   },
-  checkboxActive: {
-    backgroundColor: DoorliColors.primary,
-    borderColor: DoorliColors.primary,
-  },
-  saveCardText: {
+  codDesc: {
     fontSize: 14,
     color: '#3d4a3c',
+    textAlign: 'center',
+    lineHeight: 20,
   },
   summaryCard: {
     backgroundColor: '#ffffff',
@@ -530,5 +629,57 @@ const styles = StyleSheet.create({
   footerText: {
     fontSize: 12,
     color: '#3d4a3c',
-  }
+  },
+  successContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 32,
+  },
+  successIcon: {
+    marginBottom: 24,
+  },
+  successTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#191c1d',
+    marginBottom: 8,
+  },
+  successSubtitle: {
+    fontSize: 14,
+    color: '#3d4a3c',
+    textAlign: 'center',
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  successAmount: {
+    fontSize: 36,
+    fontWeight: '800',
+    color: DoorliColors.primary,
+    marginBottom: 32,
+  },
+  primaryBtn: {
+    width: '100%',
+    backgroundColor: DoorliColors.sky,
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  primaryBtnText: {
+    color: '#003b10',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  ghostBtn: {
+    width: '100%',
+    padding: 16,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  ghostBtnText: {
+    color: '#3d4a3c',
+    fontSize: 15,
+    fontWeight: '600',
+  },
 });

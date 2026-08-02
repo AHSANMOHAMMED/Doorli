@@ -1,10 +1,17 @@
 import { Platform } from 'react-native';
 import { apiClient } from './axios';
 
-type NotificationsModule = typeof import('expo-notifications');
+let Notifications: typeof import('expo-notifications') | null = null;
 
-function loadNotifications(): NotificationsModule | null {
-  return null;
+function loadNotifications() {
+  if (Notifications) return Notifications;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    Notifications = require('expo-notifications');
+    return Notifications;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -15,10 +22,10 @@ export async function registerForPush(): Promise<string | null> {
   if (Platform.OS === 'web') return null;
 
   try {
-    const Notifications = loadNotifications();
-    if (!Notifications) return null;
+    const NotifLib = loadNotifications();
+    if (!NotifLib) return null;
 
-    Notifications.setNotificationHandler?.({
+    NotifLib.setNotificationHandler({
       handleNotification: async () => ({
         shouldShowAlert: true,
         shouldPlaySound: false,
@@ -26,21 +33,21 @@ export async function registerForPush(): Promise<string | null> {
       }),
     });
 
-    const { status: existing } = await Notifications.getPermissionsAsync();
-    let final = existing;
+    const { status: existing } = await NotifLib.getPermissionsAsync();
+    let finalStatus = existing;
     if (existing !== 'granted') {
-      const req = await Notifications.requestPermissionsAsync();
-      final = req.status;
+      const req = await NotifLib.requestPermissionsAsync();
+      finalStatus = req.status;
     }
-    if (final !== 'granted') return null;
+    if (finalStatus !== 'granted') return null;
 
     let token: string | null = null;
     try {
-      const tokenResult = await Notifications.getExpoPushTokenAsync();
+      const tokenResult = await NotifLib.getExpoPushTokenAsync();
       token = tokenResult.data;
     } catch {
       try {
-        const device = await Notifications.getDevicePushTokenAsync();
+        const device = await NotifLib.getDevicePushTokenAsync();
         token = typeof device.data === 'string' ? device.data : null;
       } catch {
         token = null;
@@ -62,9 +69,9 @@ export async function registerForPush(): Promise<string | null> {
 
 export async function scheduleLocalNotice(title: string, body: string) {
   try {
-    const Notifications = loadNotifications();
-    if (!Notifications) return;
-    await Notifications.scheduleNotificationAsync({
+    const NotifLib = loadNotifications();
+    if (!NotifLib) return;
+    await NotifLib.scheduleNotificationAsync({
       content: { title, body },
       trigger: null,
     });
