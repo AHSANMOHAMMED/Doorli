@@ -37,6 +37,8 @@ export interface Product {
 
 export interface VendorDetail extends Vendor {
   products: Product[];
+  estimatedDeliveryTime?: string | number | null;
+  deliveryFee?: number | null;
 }
 
 export interface Order {
@@ -61,6 +63,13 @@ export interface Order {
     latitude?: number | null;
     longitude?: number | null;
   };
+  driver?: {
+    fullName: string;
+    phone?: string | null;
+    avatarUrl?: string | null;
+    vehicle?: string | null;
+    avgRating?: number | null;
+  } | null;
   items?: Array<{
     id: string;
     product: {
@@ -114,6 +123,8 @@ export interface Profile {
   email?: string | null;
   role: string;
   profilePhotoUrl?: string | null;
+  reviewsCount?: number;
+  savedPlacesCount?: number;
   isVerified: boolean;
 }
 
@@ -570,6 +581,7 @@ export interface LoyaltyPoints {
   points: number;
   earned: number;
   redeemed: number;
+  tier?: string;
 }
 
 export interface EventPackage {

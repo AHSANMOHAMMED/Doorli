@@ -52,6 +52,56 @@ export async function getDriverProfile(userId: string) {
   return getOrCreateDriver(userId);
 }
 
+export async function getDriverVehicle(userId: string) {
+  const driver = await getOrCreateDriver(userId);
+  return {
+    vehicleType: driver.vehicleType,
+    vehicleNumber: driver.vehicleNumber,
+    licenseNumber: driver.licenseNumber,
+  };
+}
+
+export async function getDriverStats(userId: string) {
+  const driver = await getOrCreateDriver(userId);
+  return {
+    totalDeliveries: driver.totalDeliveries,
+    avgRating: Number(driver.avgRating),
+    acceptanceRate: null,
+    onTimeRate: null,
+  };
+}
+
+export async function getDriverDocuments(userId: string) {
+  const driver = await getOrCreateDriver(userId);
+  const documents = await prisma.driverDocument.findMany({
+    where: { driverId: driver.id },
+    orderBy: { updatedAt: 'desc' },
+  });
+  return Object.fromEntries(documents.map((document) => [document.type, document]));
+}
+
+export async function saveDriverDocument(userId: string, type: string, url: string) {
+  const driver = await getOrCreateDriver(userId);
+  return prisma.driverDocument.upsert({
+    where: { driverId_type: { driverId: driver.id, type } },
+    create: { driverId: driver.id, type, url },
+    update: { url, status: 'pending' },
+  });
+}
+
+export async function getDriverTrips(userId: string, since?: Date) {
+  return prisma.order.findMany({
+    where: {
+      driverId: userId,
+      status: 'delivered',
+      ...(since ? { updatedAt: { gte: since } } : {}),
+    },
+    orderBy: { updatedAt: 'desc' },
+    take: 100,
+    include: jobInclude,
+  });
+}
+
 export async function setOnlineStatus(userId: string, isOnline: boolean) {
   const driver = await getOrCreateDriver(userId);
   return prisma.driver.update({

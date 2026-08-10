@@ -5,6 +5,7 @@ import { checkDatabaseConnection } from '../lib/db.js';
 import { checkRedisConnection } from '../lib/redis.js';
 import { prisma } from '@doorli/db';
 import { authenticateToken } from '../middleware/authenticateToken.js';
+import { env } from '../config/env.js';
 
 // Monolith routers
 import { usersRouter } from '../modules/users/index.js';
@@ -64,14 +65,14 @@ router.get('/api/v1', (_req: Request, res: Response) => {
 
 // Auth Microservice Proxy (Port 4001)
 router.use('/api/v1/auth', createProxyMiddleware({
-  target: 'http://localhost:4001',
+  target: env.AUTH_SERVICE_URL,
   changeOrigin: true,
   pathRewrite: { '^/api/v1/auth': '/auth' },
 }));
 
-// Delivery Microservice Proxy (Port 4002)
+// Delivery Microservice Proxy
 const deliveryProxy = createProxyMiddleware({
-  target: 'http://localhost:4002',
+  target: env.DELIVERY_SERVICE_URL,
   changeOrigin: true,
   pathRewrite: (path) => path.replace(/^\/api\/v1\/(orders|drivers|payments)/, '/$1'),
 });
@@ -112,35 +113,35 @@ router.use('/api/v1/corporate', corporateRouter);
 
 // GovTech Microservice Proxy (Port 8089)
 router.use('/api/v1/gov', createProxyMiddleware({
-  target: 'http://localhost:8089',
+  target: env.GOV_SERVICE_URL,
   changeOrigin: true,
   pathRewrite: { '^/api/v1/gov': '/api/v1/gov' },
 }));
 
 // Forum Microservice Proxy (Port 8087)
 router.use('/api/v1/forums', createProxyMiddleware({
-  target: 'http://localhost:8087',
+  target: env.FORUM_SERVICE_URL,
   changeOrigin: true,
   pathRewrite: { '^/api/v1/forums': '/' },
 }));
 
 // Emergency Microservice Proxy (Port 8088)
 router.use('/api/v1/emergency', createProxyMiddleware({
-  target: 'http://localhost:8088',
+  target: env.EMERGENCY_SERVICE_URL,
   changeOrigin: true,
   pathRewrite: { '^/api/v1/emergency': '/' },
 }));
 
 // Notifications Microservice Proxy (Port 4007)
 router.use('/api/v1/notifications', createProxyMiddleware({
-  target: 'http://localhost:4007',
+  target: env.NOTIFICATIONS_SERVICE_URL,
   changeOrigin: true,
   pathRewrite: { '^/api/v1/notifications': '' },
 }));
 
 // Search Service Proxy (Port 4004)
 router.use('/api/search', createProxyMiddleware({
-  target: 'http://localhost:4004',
+  target: env.SEARCH_SERVICE_URL,
   changeOrigin: true,
   pathRewrite: { '^/api/search': '/api/search' },
 }));

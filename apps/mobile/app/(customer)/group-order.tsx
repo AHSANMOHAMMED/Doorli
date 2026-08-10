@@ -31,6 +31,7 @@ interface GroupOrderItem {
 
 interface GroupOrder {
   id: string;
+  createdBy?: string;
   title: string;
   status: string;
   inviteCode: string;

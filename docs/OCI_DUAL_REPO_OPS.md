@@ -44,5 +44,6 @@ On marketplace: SSH local forward `18000 → enterprise 127.0.0.1:8000` using th
 Backend publishes `127.0.0.1:8000:8000` for that tunnel only.
 
 ## CI note
-- Marketplace turbo build excludes `@doorli/erp` until Next 15 monorepo dual-React `/404` prerender is fixed.
+- Marketplace web workspaces pin React 18 at the monorepo root while React 19 apps remain workspace-local, preventing the prior Next `/404` dual-React prerender failure.
 - Deployed OCI ERP continues to run from the existing VM build.
+- OCI deployments use the repository `docker-compose.yml`; migrations run from `packages/db` inside the API container. Production seeding is disabled unless `SEED_ON_DEPLOY=true` is explicitly set.

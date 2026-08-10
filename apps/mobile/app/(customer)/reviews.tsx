@@ -3,23 +3,10 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, RefreshCon
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, Stack } from 'expo-router';
 import { ArrowLeft, Star, MessageSquare } from 'lucide-react-native';
-import { fetchMyReviews } from '../../lib/api';
+import { fetchMyReviews, type Review } from '../../lib/api';
 import { DoorliColors } from '../../constants/colors';
 
 const PRIMARY = DoorliColors.primary;
-
-interface Review {
-  id: string;
-  rating: number;
-  comment: string | null;
-  photos: string[] | null;
-  createdAt: string;
-  vendor: {
-    id: string;
-    businessName: string;
-    logoUrl: string | null;
-  };
-}
 
 export default function ReviewsScreen() {
   const router = useRouter();
@@ -100,17 +87,17 @@ export default function ReviewsScreen() {
             reviews.map((review) => (
               <View key={review.id} style={styles.reviewCard}>
                 <View style={styles.cardHeader}>
-                  {review.vendor.logoUrl ? (
+                  {review.vendor?.logoUrl ? (
                     <Image source={{ uri: review.vendor.logoUrl }} style={styles.vendorImage} />
                   ) : (
                     <View style={[styles.vendorImage, styles.vendorPlaceholder]}>
                       <Text style={styles.vendorPlaceholderText}>
-                        {review.vendor.businessName.charAt(0)}
+                        {(review.vendor?.businessName || 'Vendor').charAt(0)}
                       </Text>
                     </View>
                   )}
                   <View style={styles.headerInfo}>
-                    <Text style={styles.vendorName}>{review.vendor.businessName}</Text>
+                    <Text style={styles.vendorName}>{review.vendor?.businessName || 'Vendor'}</Text>
                     <Text style={styles.dateText}>{formatDate(review.createdAt)}</Text>
                   </View>
                   <View style={styles.ratingBadge}>

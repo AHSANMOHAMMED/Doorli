@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import { OAuth2Client } from 'google-auth-library';
 import { PrismaClient, UserRole } from '@doorli/db';
 import { createFeatureAccess } from './featureAccess';
+import { sendSms } from './sms';
 
 dotenv.config();
 
@@ -13,10 +14,12 @@ const app = express();
 app.use(express.json());
 
 const prisma = new PrismaClient();
-const redis = new Redis({
-  host: process.env.REDIS_HOST || 'localhost',
-  port: parseInt(process.env.REDIS_PORT || '6379'),
-});
+const redis = process.env.REDIS_URL
+  ? new Redis(process.env.REDIS_URL)
+  : new Redis({
+      host: process.env.REDIS_HOST || 'localhost',
+      port: parseInt(process.env.REDIS_PORT || '6379'),
+    });
 
 if (!process.env.JWT_SECRET) {
   console.error('[FATAL] JWT_SECRET environment variable is required');
@@ -33,43 +36,6 @@ export const { requireFeature, hasFeature, invalidateFeatureCache } = featureAcc
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
 const isValidPhone = (phone: string) => /^\+[1-9]\d{1,14}$/.test(phone);
-
-/** Send SMS — uses MSG91 if configured, otherwise logs in dev mode */
-const sendSms = async (to: string, body: string) => {
-  const msg91ApiKey = process.env.MSG91_API_KEY;
-  const msg91FlowId = process.env.MSG91_FLOW_ID;
-  const twilioSid = process.env.TWILIO_ACCOUNT_SID;
-
-  if (msg91ApiKey && msg91FlowId) {
-    const phone = to.replace('+', '');
-    const response = await fetch('https://api.msg91.com/api/v5/flow', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'authkey': msg91ApiKey,
-      },
-      body: JSON.stringify({
-        flow_id: msg91FlowId,
-        mobiles: phone,
-        var1: body,
-      }),
-    });
-    if (!response.ok) {
-      const text = await response.text();
-      console.error(`[SMS] MSG91 request failed (${response.status}):`, text);
-      throw new Error(`SMS provider returned ${response.status}`);
-    }
-    return;
-  }
-
-  if (twilioSid) {
-    // TODO: Implement Twilio integration when TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN are set
-    console.warn('[SMS] Twilio env vars detected but integration not yet implemented.');
-  }
-
-  // Dev mode fallback — log explicitly so it's never silently swallowed
-  console.warn(`[SMS][DEV MODE] No MSG91_API_KEY/MSG91_FLOW_ID configured. Message to ${to}: ${body}`);
-};
 
 /** Issue an access + refresh token pair and persist the refresh token in Redis */
 async function issueTokenPair(payload: {

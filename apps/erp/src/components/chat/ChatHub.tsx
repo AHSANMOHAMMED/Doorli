@@ -137,6 +137,10 @@ interface AiMessage {
   timestamp: Date
 }
 
+function updateMessageContent(messages: AiMessage[], id: string, content: string): AiMessage[] {
+  return messages.map((message) => (message.id === id ? { ...message, content } : message))
+}
+
 // ─── ChatHub Component ──────────────────────────────────────────────
 
 export function ChatHub() {
@@ -307,8 +311,16 @@ export function ChatHub() {
     setAiInput('')
     setAiLoading(true)
 
+    const assistantMessageId = crypto.randomUUID()
+    setAiMessages(prev => [...prev, {
+      id: assistantMessageId,
+      role: 'assistant',
+      content: '',
+      timestamp: new Date(),
+    }])
+
     try {
-      const res = await fetch('/api/ai/chat', {
+      const res = await fetch('/api/ai/agent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -318,21 +330,26 @@ export function ChatHub() {
       })
 
       if (!res.ok) throw new Error('AI request failed')
-      const data = await res.json()
 
-      setAiMessages(prev => [...prev, {
-        id: crypto.randomUUID(),
-        role: 'assistant',
-        content: data.response || 'Sorry, I couldn\'t process that.',
-        timestamp: new Date(),
-      }])
+      const reader = res.body?.getReader()
+      if (!reader) {
+        throw new Error('Missing response stream')
+      }
+
+      const decoder = new TextDecoder()
+      let assistantContent = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        assistantContent += decoder.decode(value, { stream: true })
+        setAiMessages(prev => updateMessageContent(prev, assistantMessageId, assistantContent))
+      }
+
+      assistantContent += decoder.decode()
+      setAiMessages(prev => updateMessageContent(prev, assistantMessageId, assistantContent.trim() || 'Sorry, I couldn\'t process that.'))
     } catch {
-      setAiMessages(prev => [...prev, {
-        id: crypto.randomUUID(),
-        role: 'assistant',
-        content: 'An error occurred. Please try again.',
-        timestamp: new Date(),
-      }])
+      setAiMessages(prev => updateMessageContent(prev, assistantMessageId, 'An error occurred. Please try again.'))
     } finally {
       setAiLoading(false)
     }

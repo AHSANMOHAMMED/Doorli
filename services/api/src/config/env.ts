@@ -30,6 +30,13 @@ const envSchema = z.object({
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
   MSG91_API_KEY: z.string().optional(),
   OTP_TTL_SECONDS: z.coerce.number().default(300),
+  AUTH_SERVICE_URL: z.string().url().default('http://localhost:4001'),
+  DELIVERY_SERVICE_URL: z.string().url().default('http://localhost:8086'),
+  NOTIFICATIONS_SERVICE_URL: z.string().url().default('http://localhost:4007'),
+  SEARCH_SERVICE_URL: z.string().url().default('http://localhost:4004'),
+  FORUM_SERVICE_URL: z.string().url().default('http://localhost:8087'),
+  EMERGENCY_SERVICE_URL: z.string().url().default('http://localhost:8088'),
+  GOV_SERVICE_URL: z.string().url().default('http://localhost:8089'),
   ERP_INTERNAL_SECRET: z.string().default('doorli_internal_sync_secret'),
   ERP_SERVICE_URL: z.string().default('http://localhost:3010'),
   // Embedded Retail Smart ERP internal base (simple vendors). Falls back to ERP_SERVICE_URL.

@@ -24,6 +24,12 @@ import {
 } from 'lucide-react-native';
 import { DoorliColors } from '../../constants/colors';
 import { apiClient } from '../../lib/axios';
+import {
+  CardField,
+  CardFieldInput,
+  confirmSetupIntent,
+  initStripe,
+} from '@stripe/stripe-react-native';
 
 interface PaymentCard {
   id: string;
@@ -34,52 +40,6 @@ interface PaymentCard {
   cardholderName?: string;
   isDefault: boolean;
   fingerprint?: string;
-}
-
-function detectCardBrand(number: string): string {
-  const cleaned = number.replace(/\s/g, '');
-  if (/^4/.test(cleaned)) return 'visa';
-  if (/^5[1-5]/.test(cleaned) || /^2[2-7]/.test(cleaned)) return 'mastercard';
-  if (/^3[47]/.test(cleaned)) return 'amex';
-  if (/^6(?:011|5)/.test(cleaned)) return 'discover';
-  return 'unknown';
-}
-
-function formatCardNumber(value: string): string {
-  const cleaned = value.replace(/\D/g, '');
-  const groups = cleaned.match(/.{1,4}/g);
-  return groups ? groups.join(' ') : '';
-}
-
-function formatExpiry(value: string): string {
-  const cleaned = value.replace(/\D/g, '');
-  if (cleaned.length >= 2) {
-    return cleaned.slice(0, 2) + '/' + cleaned.slice(2, 4);
-  }
-  return cleaned;
-}
-
-function validateCard(number: string, expiry: string, cvc: string, name: string): string | null {
-  const cleaned = number.replace(/\s/g, '');
-  if (!name.trim()) return 'Cardholder name is required';
-  if (cleaned.length < 13) return 'Card number must be at least 13 digits';
-  if (cleaned.length > 19) return 'Card number is too long';
-
-  const [mm, yy] = expiry.split('/');
-  if (!mm || !yy || mm.length !== 2 || yy.length !== 2) return 'Expiry must be in MM/YY format';
-  const month = parseInt(mm, 10);
-  if (month < 1 || month > 12) return 'Invalid expiry month';
-  const year = parseInt('20' + yy, 10);
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth() + 1;
-  if (year < currentYear || (year === currentYear && month < currentMonth)) {
-    return 'Card has expired';
-  }
-
-  if (cvc.length < 3 || cvc.length > 4) return 'CVC must be 3 or 4 digits';
-
-  return null;
 }
 
 function getCardBrandColor(brand: string): string {
@@ -109,11 +69,8 @@ export default function PaymentMethodsScreen() {
   const [showForm, setShowForm] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  const [cardNumber, setCardNumber] = useState('');
-  const [expiry, setExpiry] = useState('');
-  const [cvc, setCvc] = useState('');
   const [cardholderName, setCardholderName] = useState('');
-  const [cardBrand, setCardBrand] = useState('unknown');
+  const [cardDetails, setCardDetails] = useState<CardFieldInput.Details | null>(null);
 
   const fetchCards = useCallback(async () => {
     try {
@@ -136,20 +93,9 @@ export default function PaymentMethodsScreen() {
     setRefreshing(false);
   }, [fetchCards]);
 
-  function handleCardNumberChange(text: string) {
-    const formatted = formatCardNumber(text);
-    setCardNumber(formatted);
-    setCardBrand(detectCardBrand(formatted));
-  }
-
-  function handleExpiryChange(text: string) {
-    setExpiry(formatExpiry(text));
-  }
-
   async function handleAddCard() {
-    const error = validateCard(cardNumber, expiry, cvc, cardholderName);
-    if (error) {
-      Alert.alert('Invalid card', error);
+    if (!cardholderName.trim() || !cardDetails?.complete) {
+      Alert.alert('Invalid card', 'Enter the cardholder name and complete card details.');
       return;
     }
 
@@ -167,40 +113,23 @@ export default function PaymentMethodsScreen() {
         throw new Error('Stripe is not configured');
       }
 
-      const cleaned = cardNumber.replace(/\s/g, '');
-      const [mm, yy] = expiry.split('/');
-      const tokenRes = await fetch('https://api.stripe.com/v1/tokens', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Authorization': `Bearer ${publishableKey}`,
-        },
-        body: new URLSearchParams({
-          'card[number]': cleaned,
-          'card[exp_month]': mm!,
-          'card[exp_year]': '20' + yy!,
-          'card[cvc]': cvc,
-          'card[name]': cardholderName,
-        }).toString(),
+      await initStripe({ publishableKey });
+      const { setupIntent, error: stripeError } = await confirmSetupIntent(clientSecret, {
+        paymentMethodType: 'Card',
+        paymentMethodData: { billingDetails: { name: cardholderName.trim() } },
       });
-
-      const tokenData = await tokenRes.json();
-      if (tokenData.error) {
-        throw new Error(tokenData.error.message || 'Card tokenization failed');
-      }
+      if (stripeError) throw new Error(stripeError.message);
+      if (!setupIntent?.paymentMethodId) throw new Error('Stripe did not return a payment method');
 
       await apiClient.post('/payments/methods', {
-        token: tokenData.id,
+        paymentMethodId: setupIntent.paymentMethodId,
         cardholderName,
         setAsDefault: cards.length === 0,
       });
 
       Alert.alert('Card added', 'Your card has been saved successfully.');
-      setCardNumber('');
-      setExpiry('');
-      setCvc('');
       setCardholderName('');
-      setCardBrand('unknown');
+      setCardDetails(null);
       setShowForm(false);
       await fetchCards();
     } catch (e: unknown) {
@@ -242,9 +171,11 @@ export default function PaymentMethodsScreen() {
     }
   }
 
-  const maskedNumber = cardNumber || '•••• •••• •••• ••••';
+  const maskedNumber = cardDetails?.last4 ? `•••• •••• •••• ${cardDetails.last4}` : '•••• •••• •••• ••••';
   const displayName = cardholderName || 'CARDHOLDER NAME';
-  const displayExpiry = expiry || 'MM/YY';
+  const displayExpiry = cardDetails?.expiryMonth && cardDetails?.expiryYear
+    ? `${String(cardDetails.expiryMonth).padStart(2, '0')}/${String(cardDetails.expiryYear).slice(-2)}`
+    : 'MM/YY';
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -281,7 +212,7 @@ export default function PaymentMethodsScreen() {
                 <View style={styles.cardTopRow}>
                   <CreditCard color="#ffffff" size={28} />
                   <Text style={styles.cardBrand}>
-                    {getCardBrandLabel(cardBrand)}
+                    {getCardBrandLabel(cardDetails?.brand?.toLowerCase() || 'unknown')}
                   </Text>
                 </View>
                 <View>
@@ -313,47 +244,21 @@ export default function PaymentMethodsScreen() {
                 </View>
 
                 <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Card Number</Text>
-                  <View style={styles.iconInputWrapper}>
-                    <CreditCard color="#6d7b6a" size={20} style={styles.inputIcon} />
-                    <TextInput
-                      style={[styles.input, { paddingLeft: 48 }]}
-                      placeholder="0000 0000 0000 0000"
-                      placeholderTextColor="#6b7280"
-                      value={cardNumber}
-                      onChangeText={handleCardNumberChange}
-                      keyboardType="numeric"
-                      maxLength={19}
-                    />
-                  </View>
-                </View>
-
-                <View style={styles.row}>
-                  <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
-                    <Text style={styles.inputLabel}>Expiry Date</Text>
-                    <TextInput
-                      style={styles.input}
-                      placeholder="MM/YY"
-                      placeholderTextColor="#6b7280"
-                      value={expiry}
-                      onChangeText={handleExpiryChange}
-                      keyboardType="numeric"
-                      maxLength={5}
-                    />
-                  </View>
-                  <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
-                    <Text style={styles.inputLabel}>CVC</Text>
-                    <TextInput
-                      style={styles.input}
-                      placeholder="•••"
-                      placeholderTextColor="#6b7280"
-                      value={cvc}
-                      onChangeText={setCvc}
-                      keyboardType="numeric"
-                      secureTextEntry
-                      maxLength={4}
-                    />
-                  </View>
+                  <Text style={styles.inputLabel}>Card Details</Text>
+                  <CardField
+                    postalCodeEnabled={false}
+                    placeholders={{ number: '4242 4242 4242 4242' }}
+                    cardStyle={{
+                      backgroundColor: '#182839',
+                      borderColor: '#334155',
+                      borderRadius: 12,
+                      borderWidth: 1,
+                      textColor: '#ffffff',
+                      placeholderColor: '#6b7280',
+                    }}
+                    style={styles.stripeCardContainer}
+                    onCardChange={setCardDetails}
+                  />
                 </View>
 
                 <View style={styles.formActions}>
@@ -361,11 +266,8 @@ export default function PaymentMethodsScreen() {
                     style={styles.cancelBtn}
                     onPress={() => {
                       setShowForm(false);
-                      setCardNumber('');
-                      setExpiry('');
-                      setCvc('');
                       setCardholderName('');
-                      setCardBrand('unknown');
+                      setCardDetails(null);
                     }}
                   >
                     <Text style={styles.cancelBtnText}>Cancel</Text>
@@ -602,6 +504,10 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     fontSize: 15,
     color: '#ffffff',
+  },
+  stripeCardContainer: {
+    width: '100%',
+    height: 52,
   },
   iconInputWrapper: {
     position: 'relative',

@@ -69,6 +69,20 @@ export const useAuthStore = create<AuthState>()(
         set({ user });
       },
 
+      loginWithGoogle: async (accessToken, refreshToken) => {
+        set({ accessToken, refreshToken });
+        try {
+          const res = await apiClient.get('/users/me');
+          if (!res.data.success || !res.data.data) return { error: 'Unable to load Google profile' };
+          set({ user: res.data.data, accessToken, refreshToken, isAuthenticated: true });
+          void registerForPush().catch(() => undefined);
+          return { error: null };
+        } catch (err: any) {
+          set({ accessToken: null, refreshToken: null, isAuthenticated: false });
+          return { error: err.response?.data?.message || err.message };
+        }
+      },
+
       sendOtp: async (phone: string) => {
         try {
           const res = await apiClient.post('/auth/send-otp', { phone });

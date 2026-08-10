@@ -7,14 +7,16 @@
     "dev": "expo start",
     "build": "if command -v eas > /dev/null 2>&1; then eas build --platform all; else echo 'EAS CLI not found - skipping mobile build'; exit 0; fi",
     "start": "expo start",
-    "lint": "echo \"Expo lint configured in Week 7+\"",
-    "test": "echo \"No tests yet\""
+    "lint": "tsc --noEmit",
+    "test": "tsc --noEmit",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@doorli/types": "*",
     "@expo/metro-runtime": "~6.1.2",
     "@opentelemetry/api": "^1.9.1",
     "@react-native-async-storage/async-storage": "2.2.0",
+    "@stripe/stripe-react-native": "^0.73.0",
     "@tanstack/react-query": "^5.62.8",
     "ajv": "^8.20.0",
     "axios": "^1.18.1",
@@ -38,6 +40,7 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-native": "0.81.5",
+    "react-native-gesture-handler": "^3.1.0",
     "react-native-maps": "1.20.1",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",

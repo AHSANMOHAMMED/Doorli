@@ -7,7 +7,6 @@ import { DoorliColors } from '../../constants/colors';
 import { useAuthStore } from '../../store/auth';
 import { useI18nStore } from '../../lib/i18n';
 import { apiClient } from '../../lib/axios';
-import React from 'react';
 
 const PRIMARY = DoorliColors.primary;
 
@@ -38,7 +37,7 @@ export default function SettingsScreen() {
         style: 'destructive',
         onPress: async () => {
           await signOut();
-          router.replace('/(auth)');
+          router.replace('/(auth)/login');
         },
       },
     ]);
@@ -59,7 +58,7 @@ export default function SettingsScreen() {
       await apiClient.delete('/users/me', { data: { password: deletePassword.trim() } });
       setDeleteModalVisible(false);
       await signOut();
-      router.replace('/(auth)');
+      router.replace('/(auth)/login');
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Failed to delete account';
       Alert.alert('Error', msg);

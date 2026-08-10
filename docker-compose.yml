@@ -108,10 +108,11 @@ services:
       - "3001:3001"
     environment:
       - NODE_ENV=production
-      - PORT=3001
+      - API_PORT=3001
       - DATABASE_URL=postgresql://${POSTGRES_USER:-doorli}:${POSTGRES_PASSWORD:-doorli_secret}@db:5432/${POSTGRES_DB:-doorli}?schema=public
       - REDIS_URL=redis://redis:6379
       - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - AUTH_SERVICE_URL=http://auth:4001
       - NOTIFICATIONS_SERVICE_URL=http://notifications:4007
       - DELIVERY_SERVICE_URL=http://delivery:8086
       - SEARCH_SERVICE_URL=http://search:4004
@@ -139,6 +140,11 @@ services:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-doorli}:${POSTGRES_PASSWORD:-doorli_secret}@db:5432/${POSTGRES_DB:-doorli}?schema=public
       - REDIS_URL=redis://redis:6379
       - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - MSG91_API_KEY=${MSG91_API_KEY:-}
+      - MSG91_FLOW_ID=${MSG91_FLOW_ID:-}
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID:-}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN:-}
+      - TWILIO_FROM_NUMBER=${TWILIO_FROM_NUMBER:-}
     depends_on:
       db:
         condition: service_healthy
@@ -151,13 +157,22 @@ services:
       context: .
       dockerfile: services/delivery/Dockerfile
     ports:
-      - "8086:8086"
+      - "${DELIVERY_HOST_PORT:-18086}:8086"
     environment:
       - NODE_ENV=production
       - PORT=8086
       - DATABASE_URL=postgresql://${POSTGRES_USER:-doorli}:${POSTGRES_PASSWORD:-doorli_secret}@db:5432/${POSTGRES_DB:-doorli}?schema=public
       - REDIS_URL=redis://redis:6379
       - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}
+      - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY:-}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET:-}
+      - STRIPE_CURRENCY=${STRIPE_CURRENCY:-lkr}
+      - PAYHERE_MERCHANT_ID=${PAYHERE_MERCHANT_ID:-}
+      - PAYHERE_MERCHANT_SECRET=${PAYHERE_MERCHANT_SECRET:-}
+      - PAYHERE_RETURN_URL=${PAYHERE_RETURN_URL:-doorli://payment/success}
+      - PAYHERE_CANCEL_URL=${PAYHERE_CANCEL_URL:-doorli://payment/cancel}
+      - PAYHERE_NOTIFY_URL=${PAYHERE_NOTIFY_URL:-}
     depends_on:
       db:
         condition: service_healthy
@@ -180,6 +195,8 @@ services:
       - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID:-}
       - FIREBASE_PRIVATE_KEY=${FIREBASE_PRIVATE_KEY:-}
       - FIREBASE_CLIENT_EMAIL=${FIREBASE_CLIENT_EMAIL:-}
+      - MSG91_API_KEY=${MSG91_API_KEY:-}
+      - MSG91_TEMPLATE_ID=${MSG91_TEMPLATE_ID:-}
     depends_on:
       db:
         condition: service_healthy

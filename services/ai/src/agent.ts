@@ -1,3 +1,9 @@
+import { anthropic } from '@ai-sdk/anthropic';
+import { openai } from '@ai-sdk/openai';
+import { google } from '@ai-sdk/google';
+import { Composio } from '@composio/core';
+import { VercelProvider } from '@composio/vercel';
+import { stepCountIs, streamText } from 'ai';
 import { prisma } from '@doorli/db';
 
 export type AiReply = {
@@ -6,6 +12,12 @@ export type AiReply = {
   confidence: number;
   vendors?: Array<{ id: string; businessName: string; category: string }>;
 };
+
+export type ComposioAgentStreamOptions = {
+  userId?: string;
+};
+
+const composio = new Composio({ provider: new VercelProvider() });
 
 /**
  * Recommendation + intent assistant.
@@ -83,6 +95,39 @@ export class DoorliAiAssistant {
       vendors,
     };
   }
+}
+
+export async function createComposioAgentStream(
+  prompt: string,
+  options: ComposioAgentStreamOptions = {},
+) {
+  const userId = options.userId || process.env.COMPOSIO_USER_ID || 'user_q4b8yo';
+  const session = await composio.create(userId);
+  const tools = await session.tools();
+  const model = resolveAgentModel();
+
+  return streamText({
+    model,
+    prompt,
+    stopWhen: stepCountIs(10),
+    tools,
+  });
+}
+
+function resolveAgentModel() {
+  if (process.env.OPENAI_API_KEY) {
+    return openai(process.env.OPENAI_MODEL || 'gpt-4o-mini');
+  }
+
+  if (process.env.ANTHROPIC_API_KEY) {
+    return anthropic(process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6');
+  }
+
+  if (process.env.GEMINI_API_KEY) {
+    return google(process.env.GEMINI_MODEL || 'gemini-2.5-flash');
+  }
+
+  throw new Error('No agent model configured. Set OPENAI_API_KEY, ANTHROPIC_API_KEY, or GEMINI_API_KEY.');
 }
 
 function mapCategory(word: string): string | undefined {

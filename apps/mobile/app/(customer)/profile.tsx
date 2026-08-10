@@ -66,7 +66,7 @@ export default function ProfileScreen() {
     );
   }
 
-  const avatarUrl = profile?.avatarUrl || user?.avatarUrl || 'https://lh3.googleusercontent.com/aida-public/AB6AXuB2B5ptg-0FrGRTQYokMN37hI94QvtVFRfxRhVy85fx2ZZ7YTygIQtZLACu4JHqrvtJSnRBXveHIxFV3d_neNmyw0Mmj8AjaDoXNaj-871MGIZDHiYoj1n6WEJdLAz_mtqMbgXpAV5NqVG67rtLpcSFU_1ExYjvMYl0Th8TP7YXI3EoiuarUJe8L4k6O8n7y40O9_HxMZhkh0ci_pcslM3SNAneAEfy4DGGLRULETkjh1QKCGOy2oEDURwDZeUow2I-gq05Ep6wqvE';
+  const avatarUrl = profile?.profilePhotoUrl || user?.avatar || 'https://lh3.googleusercontent.com/aida-public/AB6AXuB2B5ptg-0FrGRTQYokMN37hI94QvtVFRfxRhVy85fx2ZZ7YTygIQtZLACu4JHqrvtJSnRBXveHIxFV3d_neNmyw0Mmj8AjaDoXNaj-871MGIZDHiYoj1n6WEJdLAz_mtqMbgXpAV5NqVG67rtLpcSFU_1ExYjvMYl0Th8TP7YXI3EoiuarUJe8L4k6O8n7y40O9_HxMZhkh0ci_pcslM3SNAneAEfy4DGGLRULETkjh1QKCGOy2oEDURwDZeUow2I-gq05Ep6wqvE';
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -106,7 +106,7 @@ export default function ProfileScreen() {
           <View style={styles.loyaltyPill}>
             <Star color="#2f1500" size={14} fill="#2f1500" />
             <Text style={styles.loyaltyPillText}>
-              {loyalty ? `${loyalty.tier} Member` : 'Member'}
+              {loyalty?.tier ? `${loyalty.tier} Member` : 'Member'}
             </Text>
           </View>
         </View>
@@ -114,11 +114,11 @@ export default function ProfileScreen() {
         {/* Stats Bento Row */}
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
-            <Text style={[styles.statValue, { color: PRIMARY }]}>{profile?.reviewsCount || '12'}</Text>
+            <Text style={[styles.statValue, { color: PRIMARY }]}>{profile?.reviewsCount ?? 0}</Text>
             <Text style={styles.statLabel}>Reviews</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={[styles.statValue, { color: SECONDARY }]}>{profile?.savedPlacesCount || '8'}</Text>
+            <Text style={[styles.statValue, { color: SECONDARY }]}>{profile?.savedPlacesCount ?? 0}</Text>
             <Text style={styles.statLabel}>Saved Places</Text>
           </View>
         </View>

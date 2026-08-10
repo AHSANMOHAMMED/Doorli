@@ -6,7 +6,7 @@ wait_for_db() {
   local attempt=1
 
   while true; do
-    if docker compose exec -T db pg_isready -U user -d doorli >/dev/null 2>&1; then
+    if docker compose exec -T db sh -c 'pg_isready -U "${POSTGRES_USER:-doorli}" -d "${POSTGRES_DB:-doorli}"' >/dev/null 2>&1; then
       return 0
     fi
 
@@ -42,5 +42,7 @@ wait_for_api() {
 docker compose up -d --build --force-recreate
 wait_for_db
 docker compose exec -T api sh -c "cd packages/db && npx prisma migrate deploy"
-docker compose exec -T api npm run seed --workspace=@doorli/db
+if [ "${SEED_ON_DEPLOY:-false}" = "true" ]; then
+  docker compose exec -T api npm run seed --workspace=@doorli/db
+fi
 wait_for_api

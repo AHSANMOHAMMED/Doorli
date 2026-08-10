@@ -40,6 +40,57 @@ paymentsRouter.post('/webhook/:gateway', async (req, res, next) => {
 
 paymentsRouter.use(authenticateToken);
 
+paymentsRouter.get('/config', (_req, res) => {
+  res.json({ success: true, data: paymentsService.getPaymentConfig() });
+});
+
+paymentsRouter.post('/setup-intent', async (req, res, next) => {
+  try {
+    res.json({ success: true, data: await paymentsService.createSetupIntent(req.user!.id) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+paymentsRouter.get('/methods', async (req, res, next) => {
+  try {
+    res.json({ success: true, data: await paymentsService.listSavedPaymentMethods(req.user!.id) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+paymentsRouter.post('/methods', async (req, res, next) => {
+  try {
+    const paymentMethodId = String(req.body?.paymentMethodId || '');
+    if (!paymentMethodId.startsWith('pm_')) throw new AppError(400, 'A valid Stripe payment method is required');
+    const method = await paymentsService.addSavedPaymentMethod(req.user!.id, {
+      paymentMethodId,
+      cardholderName: req.body?.cardholderName ? String(req.body.cardholderName) : undefined,
+      setAsDefault: req.body?.setAsDefault === true,
+    });
+    res.status(201).json({ success: true, data: method });
+  } catch (err) {
+    next(err);
+  }
+});
+
+paymentsRouter.delete('/methods/:id', async (req, res, next) => {
+  try {
+    res.json({ success: true, data: await paymentsService.deleteSavedPaymentMethod(req.user!.id, String(req.params.id)) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+paymentsRouter.patch('/methods/:id/default', async (req, res, next) => {
+  try {
+    res.json({ success: true, data: await paymentsService.setDefaultSavedPaymentMethod(req.user!.id, String(req.params.id)) });
+  } catch (err) {
+    next(err);
+  }
+});
+
 paymentsRouter.post('/initiate', validate(initiatePaymentSchema), async (req, res, next) => {
   try {
     if (!req.user) throw new AppError(401, 'Authentication required');

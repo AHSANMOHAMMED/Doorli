@@ -428,11 +428,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   detailCardTitle: { fontWeight: '700', color: '#0f172a', marginBottom: 10 },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
   detailLabel: { color: '#64748b' },
   detailValue: { fontWeight: '600', color: '#0f172a' },
   detailAmount: { fontSize: 18, color: '#059669' },

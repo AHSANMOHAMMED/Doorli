@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
-import { DoorliAiAssistant } from './agent.js';
+import { DoorliAiAssistant, createComposioAgentStream } from './agent.js';
 
 dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
@@ -30,6 +30,34 @@ app.post('/api/ai/chat', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, error: 'AI failed' });
+  }
+});
+
+app.post('/api/ai/agent', async (req, res) => {
+  try {
+    const prompt = String(req.body.prompt || req.body.message || '');
+    if (!prompt) {
+      res.status(400).json({ success: false, error: 'prompt required' });
+      return;
+    }
+
+    const stream = await createComposioAgentStream(prompt, {
+      userId: req.body.userId,
+    });
+
+    res.status(200);
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('Transfer-Encoding', 'chunked');
+
+    for await (const textPart of stream.textStream) {
+      res.write(textPart);
+    }
+
+    res.end();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: 'Agent failed' });
   }
 });
 

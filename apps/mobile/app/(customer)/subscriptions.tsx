@@ -272,7 +272,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.05)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.08)',
-    alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
   },
@@ -291,7 +290,6 @@ const styles = StyleSheet.create({
   emptyBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
   createBtn: {
     flexDirection: 'row',
-    alignItems: 'center',
     gap: 8,
     marginHorizontal: 16,
     marginBottom: 16,

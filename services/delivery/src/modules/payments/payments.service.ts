@@ -11,6 +11,107 @@ function getStripe(): Stripe | null {
   return new Stripe(key);
 }
 
+async function requireStripe(): Promise<Stripe> {
+  const stripe = getStripe();
+  if (!stripe) throw new AppError(503, 'Stripe is not configured');
+  return stripe;
+}
+
+async function getOrCreateStripeCustomer(userId: string): Promise<string> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { stripeCustomerId: true, email: true, phone: true, fullName: true },
+  });
+  if (!user) throw new AppError(404, 'User not found');
+  if (user.stripeCustomerId) return user.stripeCustomerId;
+
+  const stripe = await requireStripe();
+  const customer = await stripe.customers.create({
+    email: user.email ?? undefined,
+    phone: user.phone ?? undefined,
+    name: user.fullName,
+    metadata: { doorliUserId: userId },
+  });
+  await prisma.user.update({ where: { id: userId }, data: { stripeCustomerId: customer.id } });
+  return customer.id;
+}
+
+export function getPaymentConfig() {
+  return { stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY || null };
+}
+
+export async function createSetupIntent(userId: string) {
+  const stripe = await requireStripe();
+  const customer = await getOrCreateStripeCustomer(userId);
+  const intent = await stripe.setupIntents.create({
+    customer,
+    payment_method_types: ['card'],
+    usage: 'off_session',
+  });
+  return { clientSecret: intent.client_secret };
+}
+
+export async function listSavedPaymentMethods(userId: string) {
+  return prisma.savedPaymentMethod.findMany({ where: { userId }, orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }] });
+}
+
+export async function addSavedPaymentMethod(
+  userId: string,
+  input: { paymentMethodId: string; cardholderName?: string; setAsDefault?: boolean },
+) {
+  const stripe = await requireStripe();
+  const customer = await getOrCreateStripeCustomer(userId);
+  const stripeMethod = await stripe.paymentMethods.retrieve(input.paymentMethodId);
+  const attachedCustomer = typeof stripeMethod.customer === 'string' ? stripeMethod.customer : stripeMethod.customer?.id;
+  if (attachedCustomer !== customer) throw new AppError(400, 'Payment method is not attached to this customer');
+  if (!stripeMethod.card) throw new AppError(400, 'Stripe did not return card details');
+  const card = stripeMethod.card;
+
+  return prisma.$transaction(async (transaction) => {
+    const existingCount = await transaction.savedPaymentMethod.count({ where: { userId } });
+    const isDefault = input.setAsDefault === true || existingCount === 0;
+    if (isDefault) {
+      await transaction.savedPaymentMethod.updateMany({ where: { userId }, data: { isDefault: false } });
+    }
+    return transaction.savedPaymentMethod.create({
+      data: {
+        userId,
+        stripePaymentMethodId: stripeMethod.id,
+        stripeCustomerId: customer,
+        brand: card.brand,
+        last4: card.last4,
+        expMonth: card.exp_month,
+        expYear: card.exp_year,
+        cardholderName: input.cardholderName,
+        fingerprint: card.fingerprint ?? undefined,
+        isDefault,
+      },
+    });
+  });
+}
+
+export async function deleteSavedPaymentMethod(userId: string, id: string) {
+  const method = await prisma.savedPaymentMethod.findFirst({ where: { id, userId } });
+  if (!method) throw new AppError(404, 'Payment method not found');
+  const stripe = await requireStripe();
+  await stripe.paymentMethods.detach(method.stripePaymentMethodId);
+  await prisma.savedPaymentMethod.delete({ where: { id } });
+  if (method.isDefault) {
+    const replacement = await prisma.savedPaymentMethod.findFirst({ where: { userId }, orderBy: { createdAt: 'desc' } });
+    if (replacement) await prisma.savedPaymentMethod.update({ where: { id: replacement.id }, data: { isDefault: true } });
+  }
+  return { id };
+}
+
+export async function setDefaultSavedPaymentMethod(userId: string, id: string) {
+  const method = await prisma.savedPaymentMethod.findFirst({ where: { id, userId } });
+  if (!method) throw new AppError(404, 'Payment method not found');
+  return prisma.$transaction(async (transaction) => {
+    await transaction.savedPaymentMethod.updateMany({ where: { userId }, data: { isDefault: false } });
+    return transaction.savedPaymentMethod.update({ where: { id }, data: { isDefault: true } });
+  });
+}
+
 async function syncReferencePaymentStatus(
   referenceId: string,
   referenceType: PaymentReferenceType,

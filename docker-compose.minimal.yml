@@ -1,0 +1,145 @@
+services:
+  # ─── Infrastructure ────────────────────────────────────────────
+  db:
+    image: postgis/postgis:15-3.4-alpine
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-doorli}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-doorli_secret}
+      - POSTGRES_DB=${POSTGRES_DB:-doorli}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-doorli} -d ${POSTGRES_DB:-doorli}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api
+      - auth
+      - delivery
+      - notifications
+    restart: unless-stopped
+
+  # ─── Core Services ─────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: services/api/Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - API_PORT=3001
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-doorli}:${POSTGRES_PASSWORD:-doorli_secret}@db:5432/${POSTGRES_DB:-doorli}?schema=public
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - AUTH_SERVICE_URL=http://auth:4001
+      - NOTIFICATIONS_SERVICE_URL=http://notifications:4007
+      - DELIVERY_SERVICE_URL=http://delivery:8086
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  auth:
+    build:
+      context: .
+      dockerfile: services/auth/Dockerfile
+    ports:
+      - "4001:4001"
+    environment:
+      - NODE_ENV=production
+      - PORT=4001
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-doorli}:${POSTGRES_PASSWORD:-doorli_secret}@db:5432/${POSTGRES_DB:-doorli}?schema=public
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - MSG91_API_KEY=${MSG91_API_KEY:-}
+      - MSG91_FLOW_ID=${MSG91_FLOW_ID:-}
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID:-}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN:-}
+      - TWILIO_FROM_NUMBER=${TWILIO_FROM_NUMBER:-}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  delivery:
+    build:
+      context: .
+      dockerfile: services/delivery/Dockerfile
+    ports:
+      - "${DELIVERY_HOST_PORT:-18086}:8086"
+    environment:
+      - NODE_ENV=production
+      - PORT=8086
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-doorli}:${POSTGRES_PASSWORD:-doorli_secret}@db:5432/${POSTGRES_DB:-doorli}?schema=public
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}
+      - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY:-}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET:-}
+      - STRIPE_CURRENCY=${STRIPE_CURRENCY:-lkr}
+      - PAYHERE_MERCHANT_ID=${PAYHERE_MERCHANT_ID:-}
+      - PAYHERE_MERCHANT_SECRET=${PAYHERE_MERCHANT_SECRET:-}
+      - PAYHERE_RETURN_URL=${PAYHERE_RETURN_URL:-doorli://payment/success}
+      - PAYHERE_CANCEL_URL=${PAYHERE_CANCEL_URL:-doorli://payment/cancel}
+      - PAYHERE_NOTIFY_URL=${PAYHERE_NOTIFY_URL:-}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  notifications:
+    build:
+      context: .
+      dockerfile: services/notifications/Dockerfile
+    ports:
+      - "4007:4007"
+    environment:
+      - NODE_ENV=production
+      - NOTIFICATIONS_HEALTH_PORT=4007
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-doorli}:${POSTGRES_PASSWORD:-doorli_secret}@db:5432/${POSTGRES_DB:-doorli}?schema=public
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID:-}
+      - FIREBASE_PRIVATE_KEY=${FIREBASE_PRIVATE_KEY:-}
+      - FIREBASE_CLIENT_EMAIL=${FIREBASE_CLIENT_EMAIL:-}
+      - MSG91_API_KEY=${MSG91_API_KEY:-}
+      - MSG91_TEMPLATE_ID=${MSG91_TEMPLATE_ID:-}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:

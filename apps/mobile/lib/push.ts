@@ -28,6 +28,8 @@ export async function registerForPush(): Promise<string | null> {
     NotifLib.setNotificationHandler({
       handleNotification: async () => ({
         shouldShowAlert: true,
+        shouldShowBanner: true,
+        shouldShowList: true,
         shouldPlaySound: false,
         shouldSetBadge: false,
       }),

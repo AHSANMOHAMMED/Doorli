@@ -6,6 +6,24 @@ import { toggleOnlineSchema, updateLocationSchema } from './drivers.schema.js';
 import * as driversService from './drivers.service.js';
 
 const driversRouter = Router();
+const documentTypes = new Set([
+  'driver_license',
+  'vehicle_registration',
+  'insurance_certificate',
+  'vehicle_photo',
+]);
+
+function periodStart(period: unknown): Date | undefined {
+  const now = new Date();
+  if (period === 'today') return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if (period === 'week') {
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+    return start;
+  }
+  if (period === 'month') return new Date(now.getFullYear(), now.getMonth(), 1);
+  return undefined;
+}
 
 driversRouter.use(authenticateToken, requireRole('driver', 'admin'));
 
@@ -22,6 +40,64 @@ driversRouter.get('/me/earnings', async (req, res, next) => {
   try {
     const earnings = await driversService.getEarnings(req.user!.id);
     res.json({ success: true, data: earnings });
+  } catch (err) {
+    next(err);
+  }
+});
+
+driversRouter.get('/me/profile', async (req, res, next) => {
+  try {
+    res.json({ success: true, data: await driversService.getDriverProfile(req.user!.id) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+driversRouter.get('/me/vehicle', async (req, res, next) => {
+  try {
+    res.json({ success: true, data: await driversService.getDriverVehicle(req.user!.id) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+driversRouter.get('/me/stats', async (req, res, next) => {
+  try {
+    res.json({ success: true, data: await driversService.getDriverStats(req.user!.id) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+driversRouter.get(['/me/trips', '/me/history'], async (req, res, next) => {
+  try {
+    const items = await driversService.getDriverTrips(req.user!.id, periodStart(req.query.period));
+    res.json({ success: true, data: { items } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+driversRouter.get('/me/documents', async (req, res, next) => {
+  try {
+    res.json({ success: true, data: await driversService.getDriverDocuments(req.user!.id) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+driversRouter.post('/me/documents', async (req, res, next) => {
+  try {
+    const type = String(req.body?.type || '');
+    const url = String(req.body?.url || '');
+    if (!documentTypes.has(type)) throw new AppError(400, 'Unsupported document type');
+    try {
+      new URL(url);
+    } catch {
+      throw new AppError(400, 'A valid document URL is required');
+    }
+    const document = await driversService.saveDriverDocument(req.user!.id, type, url);
+    res.status(201).json({ success: true, data: document });
   } catch (err) {
     next(err);
   }
