@@ -7,7 +7,7 @@ WORKDIR /app
 
 COPY package.json package-lock.json* ./
 COPY apps/customer-web/package.json apps/customer-web/package-lock.json* ./apps/customer-web/
-RUN npm install
+RUN npm ci --legacy-peer-deps --no-audit --no-fund
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -16,7 +16,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 WORKDIR /app/apps/customer-web
-RUN npm install --legacy-peer-deps
+RUN npm ci --legacy-peer-deps --no-audit --no-fund
 RUN npm run build
 
 # Production image, copy all the files and run next
