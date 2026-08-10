@@ -16,6 +16,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 WORKDIR /app/apps/customer-web
+RUN npm ci --legacy-peer-deps
 RUN npm run build
 
 # Production image, copy all the files and run next
@@ -27,9 +28,10 @@ ENV NODE_ENV production
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-COPY --from=builder /app/apps/customer-web/public ./apps/customer-web/public
+WORKDIR /app/apps/customer-web
+COPY --from=builder /app/apps/customer-web/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/apps/customer-web/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/apps/customer-web/.next/static ./apps/customer-web/.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/apps/customer-web/.next/static ./.next/static
 
 USER nextjs
 
