@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Image, TouchableOpacity, ActivityIndicator, Text } from 'react-native';
+import { View, Image, TouchableOpacity, ActivityIndicator, Text, StyleSheet } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { uploadImage } from '../services/storage';
@@ -11,6 +11,40 @@ interface ImageUploaderProps {
   size?: number;
   rounded?: boolean;
 }
+
+const styles = StyleSheet.create({
+  container: {
+    alignItems: 'center',
+  },
+  button: {
+    backgroundColor: '#f3f4f6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  errorText: {
+    color: '#ef4444',
+    fontSize: 12,
+    marginTop: 8,
+  },
+  hintText: {
+    color: '#6b7280',
+    fontSize: 10,
+    marginTop: 8,
+    fontWeight: '500',
+  },
+});
 
 export default function ImageUploader({ 
   onUploadSuccess, 
@@ -24,7 +58,6 @@ export default function ImageUploader({
   const [error, setError] = useState<string | null>(null);
 
   const pickImage = async () => {
-    // Request permission first
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     
     if (status !== 'granted') {
@@ -51,49 +84,50 @@ export default function ImageUploader({
       setUploading(true);
       setError(null);
       const uploadedUrl = await uploadImage(uri, token);
-      setImage(uploadedUrl); // Switch to remote URL once uploaded
+      setImage(uploadedUrl);
       onUploadSuccess(uploadedUrl);
     } catch (err: any) {
       setError(err.message || 'Upload failed');
-      // If it fails, revert to previous state or keep local image but show error
     } finally {
       setUploading(false);
     }
   };
 
   return (
-    <View className="items-center">
+    <View style={styles.container}>
       <TouchableOpacity 
         onPress={pickImage}
         disabled={uploading}
-        className={`bg-gray-100 items-center justify-center relative overflow-hidden`}
-        style={{
-          width: size,
-          height: size,
-          borderRadius: rounded ? size / 2 : 12,
-          borderWidth: 2,
-          borderColor: '#e5e7eb',
-        }}
+        style={[
+          styles.button,
+          {
+            width: size,
+            height: size,
+            borderRadius: rounded ? size / 2 : 12,
+            borderWidth: 2,
+            borderColor: '#e5e7eb',
+          },
+        ]}
       >
         {image ? (
-          <Image source={{ uri: image }} style={{ width: '100%', height: '100%' }} />
+          <Image source={{ uri: image }} style={styles.image} />
         ) : (
           <Ionicons name="camera-outline" size={size / 3} color="#9ca3af" />
         )}
 
         {uploading && (
-          <View className="absolute inset-0 bg-black/40 items-center justify-center">
+          <View style={styles.loadingOverlay}>
             <ActivityIndicator color="#ffffff" size="large" />
           </View>
         )}
       </TouchableOpacity>
 
       {error && (
-        <Text className="text-red-500 text-sm mt-2">{error}</Text>
+        <Text style={styles.errorText}>{error}</Text>
       )}
       
       {!uploading && !error && (
-        <Text className="text-gray-500 text-xs mt-2 font-medium">Tap to change</Text>
+        <Text style={styles.hintText}>Tap to change</Text>
       )}
     </View>
   );
