@@ -20,8 +20,14 @@ jobs:
           node-version: 22
           cache: 'npm'
 
+      - name: Verify npm package manager
+        run: |
+          test "$(node -p "require('./package.json').packageManager")" = "npm@11.14.1"
+          corepack disable || true
+          npm --version
+
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps --no-audit --no-fund
+        run: npm ci --legacy-peer-deps --include=optional --no-audit --no-fund
 
       - name: Build all packages
         run: ./node_modules/.bin/turbo run build --filter='!@doorli/erp' --filter='!@doorli/mobile'
@@ -45,8 +51,14 @@ jobs:
           node-version: 22
           cache: 'npm'
 
+      - name: Verify npm package manager
+        run: |
+          test "$(node -p "require('./package.json').packageManager")" = "npm@11.14.1"
+          corepack disable || true
+          npm --version
+
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps --no-audit --no-fund
+        run: npm ci --legacy-peer-deps --include=optional --no-audit --no-fund
 
       - name: Check for EXPO_TOKEN
         id: check-token

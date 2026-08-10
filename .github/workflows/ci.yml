@@ -29,6 +29,12 @@ jobs:
           node-version: 22
           cache: 'npm'
 
+      - name: Verify npm package manager
+        run: |
+          test "$(node -p "require('./package.json').packageManager")" = "npm@11.14.1"
+          corepack disable || true
+          npm --version
+
       - name: Validate lockfile JSON
         run: node -e "const fs=require('fs'); JSON.parse(fs.readFileSync('package-lock.json','utf8')); console.log('package-lock.json is valid JSON')"
 
@@ -55,7 +61,7 @@ jobs:
           "
 
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps --no-audit --no-fund
+        run: npm ci --legacy-peer-deps --include=optional --no-audit --no-fund
 
       # Embedded Retail Smart ERP has a latent Next 15 monorepo dual-React prerender
       # failure (/404 useContext). Marketplace packages still build; ERP tracked separately.
