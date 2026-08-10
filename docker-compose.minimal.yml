@@ -129,6 +129,7 @@ services:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-doorli}:${POSTGRES_PASSWORD:-doorli_secret}@db:5432/${POSTGRES_DB:-doorli}?schema=public
       - REDIS_URL=redis://redis:6379
       - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - ERP_INTERNAL_SECRET=${ERP_INTERNAL_SECRET:-change-me-in-production}
       - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID:-}
       - FIREBASE_PRIVATE_KEY=${FIREBASE_PRIVATE_KEY:-}
       - FIREBASE_CLIENT_EMAIL=${FIREBASE_CLIENT_EMAIL:-}
