@@ -1,6 +1,7 @@
 {
   "name": "doorli",
   "version": "0.1.0",
+  "packageManager": "npm@11.14.1",
   "private": true,
   "description": "Doorli — Everything Local. Delivered.",
   "author": {
