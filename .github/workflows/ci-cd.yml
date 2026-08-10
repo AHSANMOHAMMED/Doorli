@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       COREPACK_ENABLE_STRICT: 0
+      npm_config_user_agent: npm
     steps:
       - uses: actions/checkout@v4
 
@@ -23,7 +24,8 @@ jobs:
       - name: Verify npm package manager
         run: |
           test "$(node -p "require('./package.json').packageManager")" = "npm@11.14.1"
-          corepack disable || true
+          corepack enable
+          npm config set registry https://registry.npmjs.org/
           npm --version
 
       - name: Install dependencies
@@ -54,7 +56,8 @@ jobs:
       - name: Verify npm package manager
         run: |
           test "$(node -p "require('./package.json').packageManager")" = "npm@11.14.1"
-          corepack disable || true
+          corepack enable
+          npm config set registry https://registry.npmjs.org/
           npm --version
 
       - name: Install dependencies
@@ -112,6 +115,13 @@ jobs:
         with:
           node-version: 22
           cache: 'npm'
+
+      - name: Verify npm package manager
+        run: |
+          test "$(node -p "require('./package.json').packageManager")" = "npm@11.14.1"
+          corepack enable
+          npm config set registry https://registry.npmjs.org/
+          npm --version
 
       - name: Install dependencies
         run: npm ci --legacy-peer-deps --no-audit --no-fund
