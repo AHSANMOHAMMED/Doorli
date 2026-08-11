@@ -17,9 +17,9 @@ export type ComposioAgentStreamOptions = {
   userId?: string;
 };
 
-let _composio: Composio | null = null;
+let _composio: Composio<any> | null = null;
 
-function getComposio(): Composio {
+function getComposio(): Composio<any> {
   if (!process.env.COMPOSIO_API_KEY) {
     throw new Error(
       'Composio agent is not configured (COMPOSIO_API_KEY missing); set the key or disable the agent.',
