@@ -354,17 +354,25 @@ async function erpControlCall<T = unknown>(
     if (isEnterprise && (res.status === 403 || res.status === 401)) {
       return { success: false, error: 'Enterprise control unauthorized (check DOORLI_WEBHOOK_SECRET)' };
     }
-    const json = (await res.json().catch(() => null)) as { success?: boolean; error?: string; message?: string; data?: T } | null;
-    if (!res.ok || !json || json.success === false) {
+    const json = (await res.json().catch(() => null)) as {
+      success?: boolean;
+      error?: string;
+      message?: string | T;
+      data?: T;
+    } | null;
+    // Frappe wraps whitelisted method return values in `message`; unwrap it so
+    // enterprise responses share the same shape as the embedded ERP channel.
+    const payload = isEnterprise && json && typeof json.message === 'object' ? (json.message as unknown as { success?: boolean; error?: string; message?: string; data?: T }) : json;
+    if (!res.ok || !payload || payload.success === false) {
       return {
         success: false,
-        error: json?.error || json?.message || `ERP control failed (${res.status})`,
+        error: payload?.error || (typeof payload?.message === 'string' ? payload.message : undefined) || `ERP control failed (${res.status})`,
       };
     }
-    if ('data' in (json as object)) {
-      return { success: true, data: json.data as T };
+    if ('data' in (payload as object)) {
+      return { success: true, data: payload.data as T };
     }
-    return { success: true, data: json as unknown as T };
+    return { success: true, data: payload as unknown as T };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'ERP unreachable';
     return { success: false, error: `${provider} control unreachable: ${message}` };
