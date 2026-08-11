@@ -12,6 +12,7 @@ import {
   POS_KEY,
 } from '../../lib/featureFlags.js';
 import { ErpIntegrationService } from '../../lib/erpIntegration.js';
+import { setMaintenance, getMaintenanceAware } from '../../lib/control.js';
 import { randomUUID } from 'crypto';
 import os from 'os';
 const syncOrderToErpIfLinked = async (orderId: string, options?: { force?: boolean }) => {
@@ -386,27 +387,43 @@ const maintenanceWindows: Array<{
   description: string;
   status: 'scheduled' | 'active' | 'completed';
   createdAt: string;
+} | {
+  active: boolean;
+  message?: string;
+  scope?: string;
+  endsAt?: string;
+  updatedAt?: string;
 }> = [];
 
 adminRouter.post('/maintenance', async (req, res, next) => {
   try {
     requireAdmin(req);
     const body = z.object({
-      startTime: z.string().datetime(),
-      endTime: z.string().datetime(),
-      description: z.string().min(1),
+      active: z.boolean().optional(),
+      startTime: z.string().datetime().optional(),
+      endTime: z.string().datetime().optional(),
+      description: z.string().min(1).optional(),
+      message: z.string().optional(),
+      scope: z.string().optional(),
     }).parse(req.body);
 
-    const window = {
-      id: `MW-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      startTime: body.startTime,
-      endTime: body.endTime,
-      description: body.description,
-      status: 'scheduled' as const,
-      createdAt: new Date().toISOString(),
-    };
-    maintenanceWindows.push(window);
+    const window = await setMaintenance({
+      active: body.active ?? true,
+      message: body.message || body.description,
+      endsAt: body.endTime ?? req.body.endsAt ?? null,
+      scope: (body.scope as NonNullable<Parameters<typeof setMaintenance>[0]>['scope']) || 'all',
+    });
     res.status(201).json({ success: true, data: window });
+  } catch (err) {
+    next(err);
+  }
+});
+
+adminRouter.get('/maintenance', async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    const window = await getMaintenanceAware();
+    res.json({ success: true, data: window ? [window] : [] });
   } catch (err) {
     next(err);
   }

@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 import { randomUUID } from 'node:crypto';
 import Redis from 'ioredis';
 import dotenv from 'dotenv';
@@ -147,6 +148,52 @@ app.post('/auth/verify-otp', async (req: Request, res: Response) => {
     return res.json({ success: true, ...tokens, user: userPublicFields(user) });
   } catch (err) {
     console.error('[verify-otp]', err);
+    return res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
+/**
+ * POST /auth/login
+ * Email + password login for staff / super-admin console.
+ * Returns access + refresh tokens and the user profile.
+ */
+app.post('/auth/login', async (req: Request, res: Response) => {
+  try {
+    const { email, password } = req.body as { email?: string; password?: string };
+
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required.' });
+    }
+
+    const normalized = String(email).trim().toLowerCase();
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [{ email: { equals: normalized, mode: 'insensitive' } }, { username: { equals: normalized, mode: 'insensitive' } }],
+      },
+    });
+
+    if (!user || !user.passwordHash) {
+      return res.status(401).json({ error: 'Invalid email or password.' });
+    }
+
+    const valid = await bcrypt.compare(password, user.passwordHash);
+    if (!valid) {
+      return res.status(401).json({ error: 'Invalid email or password.' });
+    }
+    if (!user.isActive) {
+      return res.status(403).json({ error: 'Account is deactivated.' });
+    }
+
+    const tokens = await issueTokenPair({
+      userId: user.id,
+      role: user.role,
+      phone: user.phone,
+      email: user.email,
+    });
+
+    return res.json({ success: true, ...tokens, user: userPublicFields(user) });
+  } catch (err) {
+    console.error('[login]', err);
     return res.status(500).json({ error: 'Internal server error.' });
   }
 });

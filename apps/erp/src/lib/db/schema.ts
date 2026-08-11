@@ -375,6 +375,8 @@ export const subscriptions = pgTable('subscriptions', {
   cancelAtPeriodEnd: boolean('cancel_at_period_end').notNull().default(false),
   overrideDatabaseBytes: bigint('override_database_bytes', { mode: 'number' }),
   overrideFileStorageBytes: bigint('override_file_storage_bytes', { mode: 'number' }),
+  overrideMaxUsers: integer('override_max_users'),
+  overrideMaxSalesMonthly: integer('override_max_sales_monthly'),
   billingCycle: varchar('billing_cycle', { length: 20 }).default('monthly'),
   payhereSubscriptionId: varchar('payhere_subscription_id', { length: 100 }),
   lastPaymentAt: timestamp('last_payment_at'),

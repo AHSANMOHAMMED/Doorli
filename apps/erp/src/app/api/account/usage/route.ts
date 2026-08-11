@@ -112,8 +112,10 @@ export async function GET() {
           updatedAt: usage.updatedAt,
         } : null,
         limits: sub?.tier ? {
-          maxUsers: sub.tier.maxUsers,
-          maxSalesMonthly: sub.tier.maxSalesMonthly,
+          maxUsers: sub.subscription.overrideMaxUsers ?? sub.tier.maxUsers ?? null,
+          maxSalesMonthly: sub.subscription.overrideMaxSalesMonthly ?? sub.tier.maxSalesMonthly ?? null,
+          maxDatabaseBytes: sub.subscription.overrideDatabaseBytes ?? sub.tier.maxDatabaseBytes ?? null,
+          maxFileStorageBytes: sub.subscription.overrideFileStorageBytes ?? sub.tier.maxFileStorageBytes ?? null,
         } : null,
       }
     })

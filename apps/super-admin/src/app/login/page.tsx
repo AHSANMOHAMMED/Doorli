@@ -24,13 +24,13 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
 
-      if (res.success && res.data?.accessToken) {
+      if (res.success && res.accessToken) {
         // Verify they are an admin
-        if (res.data.user.role !== 'admin') {
+        if (res.user?.role !== 'admin') {
           throw new Error('Access denied. You are not a Super Admin.');
         }
         
-        localStorage.setItem('doorli_superadmin_token', res.data.accessToken);
+        localStorage.setItem('doorli_superadmin_token', res.accessToken);
         router.push('/');
       } else {
         throw new Error('Invalid login response');

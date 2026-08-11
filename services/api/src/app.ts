@@ -7,6 +7,7 @@ import swaggerUi from 'swagger-ui-express';
 import routes from './routes/index.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { requestLogger } from './middleware/requestLogger.js';
+import { controlGate } from './middleware/controlGate.js';
 
 const openApiSpec = {
   openapi: '3.0.0',
@@ -92,6 +93,7 @@ export function createApp() {
 
   app.use(express.json());
   app.use(requestLogger);
+  app.use(controlGate);
 
   app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
   app.use(routes);
