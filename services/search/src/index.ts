@@ -12,6 +12,8 @@ const ES_URL = process.env.ES_URL || 'http://localhost:9200';
 
 const esClient = new Client({
   node: ES_URL,
+  requestTimeout: 2000,
+  maxRetries: 1,
   // Since we disabled security for local dev, we don't need auth here
 });
 
