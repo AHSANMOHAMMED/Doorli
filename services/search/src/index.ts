@@ -17,9 +17,58 @@ const esClient = new Client({
 
 const INDEX_NAME = 'products';
 
-app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', service: 'search' });
+function isEsUnavailable(err: unknown): boolean {
+  const e = err as { name?: string; code?: string; warnings?: unknown; statusCode?: number };
+  return (
+    e?.name === 'ConnectionError' ||
+    e?.code === 'ECONNREFUSED' ||
+    e?.code === 'ECONNRESET' ||
+    (e?.warnings != null && e?.statusCode == null)
+  );
+}
+
+app.get('/health', async (_req, res) => {
+  let es = false;
+  try {
+    es = await esClient.ping();
+  } catch {
+    es = false;
+  }
+  res.json({ status: 'ok', service: 'search', es });
 });
+
+/**
+ * Postgres-backed fallback for product search when Elasticsearch is
+ * unreachable. Returns the same document shape ES produces so consumers are
+ * agnostic to which backend served the query.
+ */
+async function dbSearchProducts(q: string, limit = 20) {
+  const listingSets = await getMarketplaceListingSets();
+  const rows = await prisma.product.findMany({
+    where: {
+      isAvailable: true,
+      OR: [
+        { name: { contains: q, mode: 'insensitive' as const } },
+        { description: { contains: q, mode: 'insensitive' as const } },
+        { vendor: { businessName: { contains: q, mode: 'insensitive' as const } } },
+      ],
+    },
+    include: { vendor: { select: { businessName: true } } },
+    orderBy: { price: 'asc' as const },
+    take: limit,
+  });
+  return rows
+    .filter((p: { vendorId: string }) => isVendorListed(p.vendorId, listingSets))
+    .map((p) => ({
+      id: p.id,
+      name: p.name,
+      description: p.description,
+      price: Number(p.price),
+      vendorId: p.vendorId,
+      vendorName: p.vendor.businessName,
+      image_url: p.imageUrl,
+    }));
+}
 
 /**
  * Vendors whose products may appear in search (Req 11.3/11.8):
@@ -164,6 +213,9 @@ app.post('/api/search/sync', async (_req: Request, res: Response): Promise<any> 
     });
   } catch (error) {
     console.error('Failed to sync products:', error);
+    if (isEsUnavailable(error)) {
+      return res.status(503).json({ message: 'Search unavailable: Elasticsearch is not reachable' });
+    }
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -216,12 +268,16 @@ app.post('/api/search/vendor-sync', async (req: Request, res: Response): Promise
     res.status(200).json({ message: 'Vendor indexed', vendorId, count: products.length });
   } catch (error) {
     console.error('Failed to vendor-sync:', error);
+    if (isEsUnavailable(error)) {
+      return res.status(503).json({ message: 'Search unavailable: Elasticsearch is not reachable' });
+    }
     res.status(500).json({ message: 'Internal server error' });
   }
 });
 
 // Full-text search endpoint
 app.get('/api/search/products', async (req: Request, res: Response): Promise<any> => {
+  const rawQ = req.query.q;
   try {
     const { q } = req.query;
 
@@ -252,6 +308,12 @@ app.get('/api/search/products', async (req: Request, res: Response): Promise<any
     // If the index is missing, return empty instead of 500
     if (error.meta?.body?.error?.type === 'index_not_found_exception') {
       return res.status(200).json({ results: [], total: { value: 0 } });
+    }
+    // Elasticsearch unreachable → degrade to Postgres-backed search so the
+    // marketplace keeps working without the dedicated search cluster.
+    if (isEsUnavailable(error)) {
+      const docs = await dbSearchProducts(String(rawQ)).catch(() => []);
+      return res.status(200).json({ results: docs, total: { value: docs.length } });
     }
     console.error('Failed to search products:', error);
     res.status(500).json({ message: 'Internal server error' });
