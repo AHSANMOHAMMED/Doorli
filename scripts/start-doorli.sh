@@ -62,6 +62,7 @@ start_ws() {
 }
 
 start_ws api npm run start --workspace=@doorli/api
+start_ws auth npm run start --workspace=@doorli/auth
 start_ws search env PORT=4004 npm run start --workspace=@doorli/search
 start_ws storage env STORAGE_PORT=4005 npm run start --workspace=@doorli/storage
 start_ws ai env AI_PORT=4006 npm run start --workspace=@doorli/ai
