@@ -20,16 +20,17 @@ stop_port() {
   fi
 }
 
-echo "Ensuring Docker infra + ERP database..."
-if docker info >/dev/null 2>&1; then
-  docker compose up -d >/dev/null
-  for _ in $(seq 1 30); do
-    if docker exec doorli-postgres pg_isready -U doorli_user >/dev/null 2>&1; then
-      break
-    fi
+echo "Ensuring infra is reachable (OCI runs bare containers erp-db/core-db/doorli-redis)..."
+if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+  # OCI: infra is managed as standalone containers (erp-db :5432, core-db :5433,
+  # doorli-redis :6379). Do NOT run docker compose here — it would fight the
+  # running containers and try to pull images (kafka/ES/etc.) that don't exist
+  # on OCI. Wait a moment for them to be ready instead.
+  for _ in $(seq 1 15); do
+    ss -tln 2>/dev/null | grep -qE ":5432 |:6379 " && break
     sleep 1
   done
-  bash "$ROOT/scripts/ensure-erp-db.sh"
+  echo "Infra ports: $(ss -tln 2>/dev/null | grep -Eo ':(5432|5433|6379) ' | tr -d ' \n:' | tr '\n' ' ' | sed 's/  / /g')"
 else
   echo "WARNING: Docker is not running — ERP/API may fail without Postgres/Redis."
 fi
