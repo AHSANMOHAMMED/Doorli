@@ -17,7 +17,19 @@ export type ComposioAgentStreamOptions = {
   userId?: string;
 };
 
-const composio = new Composio({ provider: new VercelProvider() });
+let _composio: Composio | null = null;
+
+function getComposio(): Composio {
+  if (!process.env.COMPOSIO_API_KEY) {
+    throw new Error(
+      'Composio agent is not configured (COMPOSIO_API_KEY missing); set the key or disable the agent.',
+    );
+  }
+  if (!_composio) {
+    _composio = new Composio({ provider: new VercelProvider() });
+  }
+  return _composio;
+}
 
 /**
  * Recommendation + intent assistant.
@@ -102,7 +114,7 @@ export async function createComposioAgentStream(
   options: ComposioAgentStreamOptions = {},
 ) {
   const userId = options.userId || process.env.COMPOSIO_USER_ID || 'user_q4b8yo';
-  const session = await composio.create(userId);
+  const session = await getComposio().create(userId);
   const tools = await session.tools();
   const model = resolveAgentModel();
 

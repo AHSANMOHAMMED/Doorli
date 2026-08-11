@@ -57,7 +57,9 @@ app.post('/api/ai/agent', async (req, res) => {
     res.end();
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, error: 'Agent failed' });
+    const msg = err instanceof Error ? err.message : '';
+    const status = /not configured/i.test(msg) ? 503 : 500;
+    res.status(status).json({ success: false, error: msg || 'Agent failed' });
   }
 });
 
