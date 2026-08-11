@@ -315,6 +315,11 @@ function erpControlPath(provider: ErpProvider, action: string): string {
   if (provider === 'enterprise') {
     return `/api/method/doorli_core.api.control_${action}`;
   }
+  // The embedded ERP serves the status snapshot at /api/internal/control
+  // itself (no /status suffix); tenant/module/quota/settings are sub-routes.
+  if (action === 'status') {
+    return '/api/internal/control';
+  }
   return `/api/internal/control/${action}`;
 }
 
