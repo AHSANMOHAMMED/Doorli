@@ -27,6 +27,7 @@ for url in \
   http://127.0.0.1:3000/ \
   http://127.0.0.1:3002/vendor \
   http://127.0.0.1:3005/admin \
+  http://127.0.0.1:3006/super-admin/login \
   http://127.0.0.1:3010/login
 do
   code=$(health "$url")
@@ -44,5 +45,5 @@ fi
 
 echo "=== PUBLIC CHECK ==="
 curl -s http://127.0.0.1/health; echo
-echo "Done. Use http://140.245.207.93/ from your Mac."
+echo "Done. Use http://140.245.207.93/ from your Mac. Super Admin: /super-admin/login"
 EOF

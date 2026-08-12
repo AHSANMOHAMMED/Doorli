@@ -36,7 +36,7 @@ else
 fi
 
 echo "Stopping previous Doorli node processes (ports)..."
-for p in 4000 4004 4005 4006 4007 8085 8086 3000 3002 3005 3010; do
+for p in 4000 4004 4005 4006 4007 8085 8086 3000 3002 3005 3006 3010; do
   stop_port "$p"
 done
 pkill -f "node dist/index.js" 2>/dev/null || true
@@ -87,6 +87,11 @@ if [ -f apps/admin/.next/BUILD_ID ]; then
 else
   start_ws admin npm run dev --workspace=@doorli/admin -- -p 3005
 fi
+if [ -f apps/super-admin/.next/BUILD_ID ]; then
+  start_ws super-admin npm run start --workspace=@doorli/super-admin -- -p 3006
+else
+  start_ws super-admin npm run dev --workspace=@doorli/super-admin -- -p 3006
+fi
 
 # ERP (Retail Smart) — always start with marketplace stack
 if [ ! -f apps/erp/server.js ]; then
@@ -123,9 +128,11 @@ curl -s http://127.0.0.1:4000/health || true
 echo
 echo "ERP:"
 curl -s -o /dev/null -w "HTTP %{http_code}\n" http://127.0.0.1:3010/ || true
+echo "Super Admin:"
+curl -s -o /dev/null -w "HTTP %{http_code}\n" http://127.0.0.1:3006/super-admin/login || true
 echo "Customer:"
 curl -s -o /dev/null -w "HTTP %{http_code}\n" http://127.0.0.1:3000/ || true
 echo "Logs in /tmp/doorli-logs — sync search:"
 curl -s -X POST http://127.0.0.1:4004/api/search/sync || true
 echo
-echo "Done. URLs: API :4000 | Customer :3000 | Vendor :3002 | Admin :3005 | ERP :3010"
+echo "Done. URLs: API :4000 | Customer :3000 | Vendor :3002 | Admin :3005 | Super Admin :3006 | ERP :3010"
