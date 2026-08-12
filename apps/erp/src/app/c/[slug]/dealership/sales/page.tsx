@@ -9,6 +9,7 @@ import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { toast } from '@/components/ui/toast'
 import { usePaginatedData } from '@/hooks'
 import { Pagination } from '@/components/ui/pagination'
+import { Modal } from '@/components/ui/modal'
 
 interface VehicleSale {
   id: string
@@ -50,6 +51,9 @@ export default function VehicleSalesPage() {
   const [showCancellationModal, setShowCancellationModal] = useState(false)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
   const [cancelling, setCancelling] = useState(false)
+  const [showSaleForm, setShowSaleForm] = useState(false)
+  const [creatingSale, setCreatingSale] = useState(false)
+  const [saleForm, setSaleForm] = useState({ vehicleInventoryId: '', askingPrice: '', taxAmount: '0', notes: '' })
 
   const {
     data: sales,
@@ -86,6 +90,39 @@ export default function VehicleSalesPage() {
     } finally {
       setDeleting(false)
       setDeleteId(null)
+    }
+  }
+
+  async function handleCreateSale(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!saleForm.vehicleInventoryId || !saleForm.askingPrice) {
+      toast.error('Vehicle inventory ID and asking price are required')
+      return
+    }
+    setCreatingSale(true)
+    try {
+      const res = await fetch('/api/vehicle-sales', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vehicleInventoryId: saleForm.vehicleInventoryId,
+          askingPrice: Number(saleForm.askingPrice),
+          taxAmount: Number(saleForm.taxAmount || 0),
+          tradeInAllowance: 0,
+          downPayment: 0,
+          notes: saleForm.notes || undefined,
+        }),
+      })
+      const payload = await res.json().catch(() => null)
+      if (!res.ok) throw new Error(payload?.error || 'Failed to create vehicle sale')
+      toast.success('Vehicle sale created')
+      setShowSaleForm(false)
+      setSaleForm({ vehicleInventoryId: '', askingPrice: '', taxAmount: '0', notes: '' })
+      refresh()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to create vehicle sale')
+    } finally {
+      setCreatingSale(false)
     }
   }
 
@@ -134,7 +171,7 @@ export default function VehicleSalesPage() {
       title="Vehicle Sales"
       actionContent={
         <button
-          onClick={() => toast.info('Vehicle sale creation coming soon')}
+          onClick={() => setShowSaleForm(true)}
           className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 transition-colors"
         >
           <Plus size={16} />
@@ -146,6 +183,29 @@ export default function VehicleSalesPage() {
       onRefresh={refresh}
       searchPlaceholder="Invoice #, customer, vehicle..."
     >
+      <Modal
+        isOpen={showSaleForm}
+        onClose={() => setShowSaleForm(false)}
+        title="Create vehicle sale"
+        size="lg"
+        footer={
+          <div className="flex justify-end gap-2">
+            <button type="button" onClick={() => setShowSaleForm(false)} className="px-4 py-2 text-sm rounded border border-gray-300 dark:border-gray-600">Cancel</button>
+            <button form="vehicle-sale-form" type="submit" disabled={creatingSale} className="px-4 py-2 text-sm rounded bg-blue-600 text-white disabled:opacity-50">{creatingSale ? 'Creating…' : 'Create sale'}</button>
+          </div>
+        }
+      >
+        <form id="vehicle-sale-form" onSubmit={handleCreateSale} className="space-y-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400">Enter the inventory record and sale amount. The ERP will validate the vehicle, create the invoice, mark inventory as sold, and broadcast the update.</p>
+          <label className="block text-sm font-medium">Vehicle inventory ID<input required value={saleForm.vehicleInventoryId} onChange={(e) => setSaleForm({ ...saleForm, vehicleInventoryId: e.target.value })} className="mt-1 w-full rounded border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-2" placeholder="Paste the vehicle inventory ID" /></label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <label className="block text-sm font-medium">Asking price<input required type="number" min="0.01" step="0.01" value={saleForm.askingPrice} onChange={(e) => setSaleForm({ ...saleForm, askingPrice: e.target.value })} className="mt-1 w-full rounded border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-2" /></label>
+            <label className="block text-sm font-medium">Tax amount<input type="number" min="0" step="0.01" value={saleForm.taxAmount} onChange={(e) => setSaleForm({ ...saleForm, taxAmount: e.target.value })} className="mt-1 w-full rounded border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-2" /></label>
+          </div>
+          <label className="block text-sm font-medium">Notes<textarea value={saleForm.notes} onChange={(e) => setSaleForm({ ...saleForm, notes: e.target.value })} className="mt-1 w-full rounded border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-2 min-h-24" /></label>
+        </form>
+      </Modal>
+
       {/* Filter Tabs */}
       <div className="px-4 pb-2">
         <div className="flex gap-1 border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
