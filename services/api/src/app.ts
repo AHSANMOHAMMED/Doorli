@@ -91,7 +91,24 @@ export function createApp() {
     next();
   });
 
-  app.use(express.json());
+  // Leave proxied routes' body streams intact so http-proxy can forward them —
+  // otherwise express.json() consumes the stream and proxied POSTs hang.
+  const PROXIED_PREFIXES = [
+    '/api/v1/auth',
+    '/api/v1/orders',
+    '/api/v1/drivers',
+    '/api/v1/payments',
+    '/api/v1/gov',
+    '/api/v1/forums',
+    '/api/v1/emergency',
+    '/api/v1/notifications',
+    '/api/search',
+  ];
+  const jsonParser = express.json();
+  app.use((req, _res, next) => {
+    if (PROXIED_PREFIXES.some((prefix) => req.path.startsWith(prefix))) return next();
+    return jsonParser(req, _res, next);
+  });
   app.use(requestLogger);
   app.use(controlGate);
 

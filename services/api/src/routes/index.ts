@@ -64,23 +64,26 @@ router.get('/api/v1', (_req: Request, res: Response) => {
 // MICROSERVICES PROXY ROUTES
 // ==========================================
 
+// Express strips the mount prefix (e.g. `/api/v1/auth`) from req.url before the
+// proxy middleware runs, so pathRewrite sees only the remainder (e.g. `/login`).
+// The rewrite must therefore PREPEND the backend's expected prefix.
 // Auth Microservice Proxy (Port 4001)
 router.use('/api/v1/auth', createProxyMiddleware({
   target: env.AUTH_SERVICE_URL,
   changeOrigin: true,
-  pathRewrite: { '^/api/v1/auth': '/auth' },
+  pathRewrite: (path) => `/auth${path}`,
 }));
 
 // Delivery Microservice Proxy
-const deliveryProxy = createProxyMiddleware({
+const deliveryProxy = (prefix: string) => createProxyMiddleware({
   target: env.DELIVERY_SERVICE_URL,
   changeOrigin: true,
-  pathRewrite: (path) => path.replace(/^\/api\/v1\/(orders|drivers|payments)/, '/$1'),
+  pathRewrite: (path) => `${prefix}${path}`,
 });
 
-router.use('/api/v1/orders', deliveryProxy);
-router.use('/api/v1/drivers', deliveryProxy);
-router.use('/api/v1/payments', deliveryProxy);
+router.use('/api/v1/orders', deliveryProxy('/orders'));
+router.use('/api/v1/drivers', deliveryProxy('/drivers'));
+router.use('/api/v1/payments', deliveryProxy('/payments'));
 
 // ==========================================
 // MONOLITH ROUTES (To be migrated)
@@ -117,35 +120,35 @@ router.use('/api/v1/corporate', corporateRouter);
 router.use('/api/v1/gov', createProxyMiddleware({
   target: env.GOV_SERVICE_URL,
   changeOrigin: true,
-  pathRewrite: { '^/api/v1/gov': '/api/v1/gov' },
+  pathRewrite: (path) => `/api/v1/gov${path}`,
 }));
 
 // Forum Microservice Proxy (Port 8087)
 router.use('/api/v1/forums', createProxyMiddleware({
   target: env.FORUM_SERVICE_URL,
   changeOrigin: true,
-  pathRewrite: { '^/api/v1/forums': '/' },
+  pathRewrite: (path) => path,
 }));
 
 // Emergency Microservice Proxy (Port 8088)
 router.use('/api/v1/emergency', createProxyMiddleware({
   target: env.EMERGENCY_SERVICE_URL,
   changeOrigin: true,
-  pathRewrite: { '^/api/v1/emergency': '/' },
+  pathRewrite: (path) => path,
 }));
 
 // Notifications Microservice Proxy (Port 4007)
 router.use('/api/v1/notifications', createProxyMiddleware({
   target: env.NOTIFICATIONS_SERVICE_URL,
   changeOrigin: true,
-  pathRewrite: { '^/api/v1/notifications': '' },
+  pathRewrite: (path) => `/api/notifications${path}`,
 }));
 
 // Search Service Proxy (Port 4004)
 router.use('/api/search', createProxyMiddleware({
   target: env.SEARCH_SERVICE_URL,
   changeOrigin: true,
-  pathRewrite: { '^/api/search': '/api/search' },
+  pathRewrite: (path) => `/api/search${path}`,
 }));
 
 // ==========================================

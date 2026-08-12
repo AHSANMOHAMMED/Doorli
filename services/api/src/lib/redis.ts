@@ -7,7 +7,6 @@ export function getRedis(): Redis {
   if (!redis) {
     redis = new Redis(env.REDIS_URL, {
       maxRetriesPerRequest: 1,
-      lazyConnect: true,
       connectTimeout: 2000,
       retryStrategy: () => null,
     });
