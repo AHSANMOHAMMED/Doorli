@@ -16,7 +16,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProductCard } from '../../../components/ProductCard';
-import { fetchVendor, fetchVendorReviews, formatPrice, Product } from '../../../lib/api';
+import { addToWishlist, fetchVendor, fetchVendorReviews, formatPrice, Product, removeFromWishlist } from '../../../lib/api';
 import { useCartStore } from '../../../store/cart';
 import { 
   Star, 
@@ -44,6 +44,8 @@ export default function VendorDetailScreen() {
   const cartCount = useCartStore((s) => s.totalItems());
   const cartTotal = useCartStore((s) => s.subtotal());
   const [activeTab, setActiveTab] = useState('All');
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [wishlistBusy, setWishlistBusy] = useState(false);
 
   const { data: vendor, isLoading } = useQuery({
     queryKey: ['vendor', id],
@@ -56,6 +58,25 @@ export default function VendorDetailScreen() {
     queryFn: async () => fetchVendorReviews(id!),
     enabled: !!id,
   });
+
+  async function toggleWishlist() {
+    const firstProduct = vendor?.products?.[0];
+    if (!firstProduct || wishlistBusy) return;
+    setWishlistBusy(true);
+    try {
+      if (isWishlisted) {
+        await removeFromWishlist(firstProduct.id);
+        setIsWishlisted(false);
+      } else {
+        await addToWishlist(firstProduct.id);
+        setIsWishlisted(true);
+      }
+    } catch (error) {
+      Alert.alert('Sign in required', 'Please sign in to save products to your wishlist.');
+    } finally {
+      setWishlistBusy(false);
+    }
+  }
 
   function handleAdd(product: Product) {
     if (!vendor) return;
@@ -100,7 +121,7 @@ export default function VendorDetailScreen() {
           <ArrowLeft color={ON_SURFACE} size={24} />
         </TouchableOpacity>
         <View style={{ flexDirection: 'row', gap: 8 }}>
-          <TouchableOpacity style={styles.iconButton} onPress={() => Alert.alert('Coming Soon', 'Wishlist coming soon')}>
+          <TouchableOpacity style={styles.iconButton} onPress={toggleWishlist} disabled={wishlistBusy} accessibilityLabel={isWishlisted ? 'Remove from wishlist' : 'Save to wishlist'}>
             <Heart color={ON_SURFACE} size={24} />
           </TouchableOpacity>
           <TouchableOpacity

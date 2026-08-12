@@ -479,6 +479,21 @@ export async function updateProfile(updates: {
   return res.data.data;
 }
 
+export async function addToWishlist(productId: string) {
+  const res = await apiClient.post('/wishlist', { productId });
+  return res.data;
+}
+
+export async function removeFromWishlist(productId: string) {
+  const res = await apiClient.delete(`/wishlist/${productId}`);
+  return res.data;
+}
+
+export async function checkWishlist(productId: string): Promise<boolean> {
+  const res = await apiClient.get(`/wishlist/check/${productId}`);
+  return Boolean(res.data?.isWishlisted);
+}
+
 export async function fetchVendorOrders() {
   const res = await apiClient.get('/orders/vendor/mine');
   if (!res.data?.success) return [];
