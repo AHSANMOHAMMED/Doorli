@@ -138,10 +138,12 @@ router.use('/api/v1/emergency', createProxyMiddleware({
 }));
 
 // Notifications Microservice Proxy (Port 4007)
-router.use('/api/v1/notifications', createProxyMiddleware({
+// Keep read/read-state operations in the Marketplace database routes below;
+// only enqueue operations belong to the notification worker.
+router.use('/api/v1/notifications/enqueue', createProxyMiddleware({
   target: env.NOTIFICATIONS_SERVICE_URL,
   changeOrigin: true,
-  pathRewrite: (path) => `/api/notifications${path}`,
+  pathRewrite: (path) => `/api/notifications/enqueue${path}`,
 }));
 
 // Search Service Proxy (Port 4004)
@@ -154,7 +156,7 @@ router.use('/api/search', createProxyMiddleware({
 // ==========================================
 // NOTIFICATION READ ENDPOINTS (API Monolith)
 // ==========================================
-router.get('/notifications', authenticateToken, async (req, res, next) => {
+router.get('/api/v1/notifications', authenticateToken, async (req, res, next) => {
   try {
     const cursor = (Array.isArray(req.query.cursor) ? req.query.cursor[0] : req.query.cursor) as string | undefined;
     const limit = Math.min(Number(req.query.limit) || 20, 50);
@@ -173,7 +175,7 @@ router.get('/notifications', authenticateToken, async (req, res, next) => {
   }
 });
 
-router.patch('/notifications/:id/read', authenticateToken, async (req, res, next) => {
+router.patch('/api/v1/notifications/:id/read', authenticateToken, async (req, res, next) => {
   try {
     const notification = await prisma.notification.update({
       where: { id: String(req.params.id) },
@@ -185,7 +187,7 @@ router.patch('/notifications/:id/read', authenticateToken, async (req, res, next
   }
 });
 
-router.patch('/notifications/read-all', authenticateToken, async (req, res, next) => {
+router.patch('/api/v1/notifications/read-all', authenticateToken, async (req, res, next) => {
   try {
     const count = await prisma.notification.updateMany({
       where: { userId: req.user!.id as string, isRead: false },
