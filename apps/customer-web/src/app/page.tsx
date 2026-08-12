@@ -233,7 +233,7 @@ export default function Home() {
         <div className="doorli-orb doorli-orb--c" aria-hidden />
 
         {/* Global Navigation Header */}
-        <nav className="relative z-30 w-full shrink-0 border-b border-white/10 backdrop-blur-md bg-[#060b1c]/60">
+        <nav className="relative z-30 w-full shrink-0 border-b border-white/10 bg-[#081326]/95">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 h-18 flex items-center justify-between">
             <div className="flex items-center gap-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -252,30 +252,30 @@ export default function Home() {
             <div className="flex items-center gap-2 sm:gap-4">
               <Link 
                 href="/ride" 
-                className="hidden lg:flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 transition"
+                className="hidden lg:flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-xl bg-[#122541] hover:bg-[#1a3457] text-white/80 transition"
               >
                 <Car className="w-3.5 h-3.5 text-[#378add]" />
                 Rides
               </Link>
 
               <a 
-                href="http://doorli.me:3006" 
+                href="/super-admin/login" 
                 target="_blank" 
                 rel="noreferrer"
                 className="hidden md:flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/30 transition"
               >
                 <Shield className="w-3.5 h-3.5 text-purple-300" />
-                Super Admin
+                Operations admin
               </a>
 
               <a 
-                href="http://doorli.me:3001" 
+                href="/vendor/login" 
                 target="_blank" 
                 rel="noreferrer"
                 className="hidden sm:flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl bg-teal-500/15 hover:bg-teal-500/25 text-teal-300 border border-teal-500/30 transition"
               >
                 <Building2 className="w-3.5 h-3.5 text-teal-300" />
-                Vendor ERP
+                Vendor workspace
               </a>
 
               <button
@@ -317,7 +317,7 @@ export default function Home() {
           <div className="max-w-4xl mx-auto w-full text-center">
             
             {/* Live Status Pill */}
-            <div className="animate-bounce-in inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full doorli-glass border border-white/15 mb-6 text-xs sm:text-sm text-white/90 shadow-xl animate-pulse-glow">
+            <div className="animate-bounce-in inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#122541] border border-white/20 mb-6 text-xs sm:text-sm text-white/90 shadow-xl animate-pulse-glow">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#5dcaa5] opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-[#5dcaa5]"></span>
@@ -559,8 +559,8 @@ export default function Home() {
           </div>
 
           <div className="flex items-center gap-4 text-white/60">
-            <a href="http://doorli.me:3006" target="_blank" rel="noreferrer" className="hover:text-white">Super Admin</a>
-            <a href="http://doorli.me:3001" target="_blank" rel="noreferrer" className="hover:text-white">API Health</a>
+            <a href="/super-admin/login" target="_blank" rel="noreferrer" className="hover:text-white">Operations admin</a>
+            <a href="/vendor/login" target="_blank" rel="noreferrer" className="hover:text-white">Vendor workspace</a>
             <Link href="/ride" className="hover:text-white">Ride App</Link>
             <Link href="/events" className="hover:text-white">Events</Link>
           </div>

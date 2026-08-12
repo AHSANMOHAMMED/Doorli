@@ -113,16 +113,12 @@ body {
    6. Glassmorphism Surfaces
    -------------------------------------------------------------------------- */
 .doorli-glass {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(17, 30, 56, 0.94);
   border: 1px solid var(--doorli-line-strong);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
 }
 
 .doorli-glass-card {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: #111e38;
   border: 1px solid var(--doorli-line);
   box-shadow: var(--doorli-shadow);
   border-radius: var(--doorli-radius-lg);
@@ -164,7 +160,7 @@ body {
   border-radius: var(--doorli-radius-sm);
   font-weight: 600;
   color: var(--doorli-text);
-  background: rgba(255, 255, 255, 0.08);
+  background: #162746;
   border: 1px solid var(--doorli-line-strong);
   transition: background 0.2s ease, border-color 0.2s ease;
 }
