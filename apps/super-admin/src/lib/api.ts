@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || '/api/v1').replace(/\/$/, '');
 
 export async function superAdminFetch(endpoint: string, options: RequestInit = {}) {
   const token = typeof window !== 'undefined' ? localStorage.getItem('doorli_superadmin_token') : null;
@@ -18,7 +18,7 @@ export async function superAdminFetch(endpoint: string, options: RequestInit = {
     if (response.status === 401) {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('doorli_superadmin_token');
-        window.location.href = '/login';
+        window.location.href = '/super-admin/login';
       }
     }
     const errorData = await response.json().catch(() => ({}));

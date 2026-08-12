@@ -405,7 +405,11 @@ export function erpModuleToggle(payload: {
   isEnabled: boolean;
 }, provider: ErpProvider = 'simple') {
   if (provider === 'enterprise') {
-    return erpControlCall('/module', { moduleKey: payload.moduleKey, isEnabled: payload.isEnabled }, provider);
+    return erpControlCall('/module', {
+      company: payload.tenantId ?? undefined,
+      moduleKey: payload.moduleKey,
+      isEnabled: payload.isEnabled,
+    }, provider);
   }
   return erpControlCall('/module', payload, provider);
 }

@@ -158,7 +158,7 @@ export default function VendorsManagementPage() {
 </div>
 <div className="mt-auto pt-3 border-t border-surface-variant flex justify-between items-center">
 <span className="text-caption font-caption text-on-surface-variant">Reviews: {vendor.totalReviews}</span>
-<a href={`/vendor-detail?id=${vendor.id}`} className="text-secondary hover:underline font-label-medium text-label-medium">Manage</a>
+<div className="flex items-center gap-3"><a href={`/vendor-detail?id=${vendor.id}`} className="text-secondary hover:underline font-label-medium text-label-medium">Manage</a><a href={`/vendor-erp-access?id=${vendor.id}`} className="text-primary hover:underline font-label-medium text-label-medium">ERP access</a></div>
 </div>
 </div>
 ))}

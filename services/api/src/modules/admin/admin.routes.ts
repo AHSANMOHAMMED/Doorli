@@ -12,9 +12,26 @@ import {
   POS_KEY,
 } from '../../lib/featureFlags.js';
 import { ErpIntegrationService } from '../../lib/erpIntegration.js';
-import { setMaintenance, getMaintenanceAware } from '../../lib/control.js';
+import { setMaintenance, getMaintenanceAware, erpModuleToggle } from '../../lib/control.js';
 import { randomUUID } from 'crypto';
 import os from 'os';
+
+const ERP_MODULE_BY_FEATURE: Record<string, string> = {
+  erp_dashboard: 'dashboard', erp_stock: 'stock', erp_selling: 'selling',
+  erp_buying: 'buying', erp_auto_service: 'auto-service', erp_restaurant: 'restaurant',
+  erp_hr: 'hr', erp_accounting: 'accounting', erp_reports: 'reports',
+  erp_my: 'my', erp_settings: 'settings', inventory_management: 'stock',
+  accounting_reports: 'accounting', pos_integration: 'selling',
+};
+function erpModuleForFeature(featureKey: string): string | null {
+  return ERP_MODULE_BY_FEATURE[featureKey] || (featureKey.startsWith('erp_') ? featureKey.slice(4).replace(/_/g, '-') : null);
+}
+async function syncVendorErpFeature(vendor: { erpProvider?: string | null; erpTenantId?: string | null }, featureKey: string, isEnabled: boolean) {
+  const moduleKey = erpModuleForFeature(featureKey);
+  if (!moduleKey || vendor.erpProvider !== 'enterprise' || !vendor.erpTenantId) return;
+  const result = await erpModuleToggle({ tenantId: vendor.erpTenantId, moduleKey, isEnabled }, 'enterprise');
+  if (!result.success) throw new AppError(502, result.error || 'Enterprise ERP module update failed');
+}
 const syncOrderToErpIfLinked = async (orderId: string, options?: { force?: boolean }) => {
   try {
     const order = await prisma.order.findUnique({
@@ -1093,7 +1110,7 @@ adminRouter.patch('/vendors/:id/features', async (req, res, next) => {
       isEnabled: z.boolean(),
     }).parse(req.body);
 
-    const vendor = await prisma.vendor.findUnique({ where: { id: vendorId }, select: { id: true } });
+    const vendor = await prisma.vendor.findUnique({ where: { id: vendorId }, select: { id: true, erpProvider: true, erpTenantId: true } });
     if (!vendor) throw new AppError(404, 'Vendor not found');
 
     const feature = await prisma.featureFlag.findUnique({ where: { key: featureKey } });
@@ -1108,11 +1125,12 @@ adminRouter.patch('/vendors/:id/features', async (req, res, next) => {
 
     await invalidateFeatureCache(vendorId);
 
-    if (featureKey === MARKETPLACE_LISTING_KEY) {
+        if (featureKey === MARKETPLACE_LISTING_KEY) {
       syncVendorMarketplaceIndex(vendorId, isEnabled);
     }
-
+    await syncVendorErpFeature(vendor, featureKey, isEnabled);
     res.json({ success: true, data: vendorFeature });
+
   } catch (err) {
     next(err);
   }
