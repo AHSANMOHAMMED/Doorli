@@ -30,19 +30,23 @@ export async function apiFetch<T = unknown>(
   options: RequestInit = {},
 ): Promise<T> {
   const token = getCustomerToken();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
   const res = await fetch(`${getApiBase()}/api/v1${path}`, {
     ...options,
+    signal: options.signal || controller.signal,
     headers: {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers || {}),
     },
   });
+  clearTimeout(timeout);
   const json = await res.json().catch(() => ({}));
   if (!res.ok || json.success === false) {
     throw new Error(json.error || json.message || `Request failed (${res.status})`);
   }
-  return json.data as T;
+  return (json.data ?? json) as T;
 }
 
 export async function sendOtp(phone: string) {
@@ -85,9 +89,8 @@ export async function loginWithPassword(identifier: string, password: string) {
   }>('/auth/login', {
     method: 'POST',
     body: JSON.stringify({
-      identifier,
+      email: identifier,
       password,
-      expectedRole: 'customer',
     }),
   });
   setCustomerToken(data.accessToken);

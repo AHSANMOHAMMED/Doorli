@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
-import { Car, ArrowLeft } from "lucide-react";
+import { Car, ArrowLeft, RefreshCw, XCircle } from "lucide-react";
 import { apiFetch, getCustomerToken } from "@/lib/api";
 
 const MARK = "/brand/doorli-mark.svg";
@@ -28,11 +28,13 @@ function coordsFor(address: string) {
 export default function RidePage() {
   const [pickup, setPickup] = useState("Colombo Fort");
   const [dropoff, setDropoff] = useState("Galle Face");
+  const [vehicleType, setVehicleType] = useState<"bike" | "car" | "van" | "truck">("car");
   const [estimate, setEstimate] = useState<{ totalFare: number; distanceKm: number } | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [loggedIn] = useState(() => !!getCustomerToken());
+  const [rides, setRides] = useState<Array<{ id: string; status: string; totalFare: number; vehicleType: string; createdAt: string; pickupAddress?: string | null; dropoffAddress?: string | null }>>([]);
 
   useEffect(() => {
     const pickupC = coordsFor(pickup);
@@ -44,11 +46,19 @@ export default function RidePage() {
         pickupLng: pickupC.lng,
         dropoffLat: dropC.lat,
         dropoffLng: dropC.lng,
+        vehicleType,
       }),
     })
       .then(setEstimate)
       .catch(() => setEstimate(null));
-  }, [pickup, dropoff]);
+  }, [pickup, dropoff, vehicleType]);
+
+  async function loadRides() {
+    if (!getCustomerToken()) return;
+    try { setRides(await apiFetch<typeof rides>("/rides/my")); } catch { /* form errors remain actionable */ }
+  }
+
+  useEffect(() => { void loadRides(); }, []);
 
   async function requestRide(e: FormEvent) {
     e.preventDefault();
@@ -66,9 +76,11 @@ export default function RidePage() {
         "/rides",
         {
           method: "POST",
+          headers: { "Idempotency-Key": crypto.randomUUID() },
           body: JSON.stringify({
             pickupAddress: pickup,
             dropoffAddress: dropoff,
+            vehicleType,
             pickupLat: pickupC.lat,
             pickupLng: pickupC.lng,
             dropoffLat: dropC.lat,
@@ -76,6 +88,7 @@ export default function RidePage() {
           }),
         },
       );
+      await loadRides();
       setStatus(
         data.status
           ? `Ride ${data.status}${data.id ? ` · #${data.id.slice(0, 8)}` : ""}${
@@ -121,6 +134,17 @@ export default function RidePage() {
             Pickup
             <input className={`mt-1.5 ${inputClass}`} value={pickup} onChange={(e) => setPickup(e.target.value)} required />
           </label>
+
+          <fieldset>
+            <legend className="text-sm text-white/80">Vehicle type</legend>
+            <div className="grid grid-cols-4 gap-2 mt-1.5">
+              {(["bike", "car", "van", "truck"] as const).map((type) => (
+                <button type="button" key={type} onClick={() => setVehicleType(type)} className={`capitalize rounded-xl border px-2 py-3 text-xs ${vehicleType === type ? "border-[var(--doorli-mint)] bg-[var(--doorli-teal)]/20 text-white" : "border-white/15 text-white/60"}`}>
+                  {type}
+                </button>
+              ))}
+            </div>
+          </fieldset>
           <label className="block text-sm text-white/80">
             Drop-off
             <input className={`mt-1.5 ${inputClass}`} value={dropoff} onChange={(e) => setDropoff(e.target.value)} required />
@@ -138,6 +162,13 @@ export default function RidePage() {
             {loading ? "Requesting…" : loggedIn ? "Request ride" : "Log in to request ride"}
           </button>
         </form>
+        <section className="doorli-glass rounded-2xl p-6 mt-5">
+          <div className="flex items-center justify-between"><h2 className="font-display text-xl font-bold">Your rides</h2><button type="button" onClick={() => void loadRides()} className="text-white/60 hover:text-white" aria-label="Refresh rides"><RefreshCw className="w-4 h-4" /></button></div>
+          <div className="mt-4 space-y-3">
+            {rides.length === 0 && <p className="text-sm text-white/45">No rides yet.</p>}
+            {rides.map((ride) => <div key={ride.id} className="rounded-xl border border-white/10 p-4"><div className="flex items-start justify-between gap-3"><div><p className="font-medium capitalize">{ride.status.replace(/_/g, " ")} · {ride.vehicleType}</p><p className="text-xs text-white/50 mt-1">{ride.pickupAddress || "Pickup"} to {ride.dropoffAddress || "Drop-off"}</p><p className="text-xs text-white/40 mt-1">{new Date(ride.createdAt).toLocaleString()}</p></div><span className="text-sm text-[var(--doorli-gold)]">LKR {Number(ride.totalFare).toLocaleString()}</span></div>{["searching", "assigned", "arrived", "in_transit"].includes(ride.status) && <button type="button" onClick={async () => { try { await apiFetch(`/rides/${ride.id}/cancel`, { method: "PATCH" }); await loadRides(); } catch (err) { setError(err instanceof Error ? err.message : "Unable to cancel ride."); } }} className="mt-3 text-xs text-rose-300 inline-flex items-center gap-1"><XCircle className="w-3.5 h-3.5" /> Cancel ride</button>}</div>)}
+          </div>
+        </section>
       </div>
     </main>
   );

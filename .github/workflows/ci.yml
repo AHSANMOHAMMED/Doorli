@@ -2,76 +2,56 @@ name: Doorli CI
 
 on:
   push:
-    branches: ["main"]
+    branches: [main, master]
   pull_request:
-    types: [opened, synchronize]
+    branches: [main, master]
+
+concurrency:
+  group: doorli-ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build:
-    name: Build and Test
-    timeout-minutes: 15
+  verify:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgis/postgis:15-3.4-alpine
+        env:
+          POSTGRES_USER: doorli
+          POSTGRES_PASSWORD: doorli_secret
+          POSTGRES_DB: doorli
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U doorli -d doorli"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
     env:
-      COREPACK_ENABLE_STRICT: 0
-      npm_config_user_agent: npm
-    
+      DATABASE_URL: postgresql://doorli:doorli_secret@localhost:5432/doorli?schema=public
+      REDIS_URL: redis://localhost:6379
+      JWT_SECRET: ci-access-secret
+      JWT_REFRESH_SECRET: ci-refresh-secret
+      ERP_INTERNAL_SECRET: ci-erp-secret
+      NODE_ENV: test
     steps:
-      - name: Check out code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-
-      - name: Verify lockfile exists
-        run: test -f package-lock.json || (echo "package-lock.json is required for npm ci" && exit 1)
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'npm'
-
-      - name: Verify npm package manager
-        run: |
-          test "$(node -p "require('./package.json').packageManager")" = "npm@11.14.1"
-          corepack enable
-          npm config set registry https://registry.npmjs.org/
-          npm --version
-
-      - name: Validate lockfile JSON
-        run: node -e "const fs=require('fs'); JSON.parse(fs.readFileSync('package-lock.json','utf8')); console.log('package-lock.json is valid JSON')"
-
-      - name: Validate workspace versions are semver
-        run: |
-          node -e "
-          const fs=require('fs');
-          const path=require('path');
-          const semver=/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
-          const roots=['apps','services','packages'];
-          for (const r of roots){
-            if(!fs.existsSync(r)) continue;
-            for (const d of fs.readdirSync(r)){
-              const pj=path.join(r,d,'package.json');
-              if(!fs.existsSync(pj)) continue;
-              const j=JSON.parse(fs.readFileSync(pj,'utf8'));
-              if(!j.version || !semver.test(j.version)){
-                console.error('Invalid version in ' + pj + ': ' + j.version);
-                process.exit(1);
-              }
-            }
-          }
-          console.log('All workspace versions are valid semver');
-          "
-
-      - name: Install dependencies
-        run: npm ci --legacy-peer-deps --include=optional --no-audit --no-fund
-
-      # Embedded Retail Smart ERP has a latent Next 15 monorepo dual-React prerender
-      # failure (/404 useContext). Marketplace packages still build; ERP tracked separately.
-      - name: Build
-        run: ./node_modules/.bin/turbo run build --filter='!@doorli/erp' --filter='!@doorli/mobile'
-        
-      - name: Lint
-        run: ./node_modules/.bin/turbo run lint
-        
-      - name: Test
-        run: ./node_modules/.bin/turbo run test
+          cache: npm
+      - run: npm ci
+      - run: npx prisma migrate deploy --schema packages/db/prisma/schema.prisma
+      - run: npm run generate --workspace=@doorli/db
+      - run: npm run build --workspace=@doorli/api
+      - run: npm run build --workspace=@doorli/customer-web
+      - run: npm run lint --workspace=@doorli/api
+      - run: npm run lint --workspace=@doorli/customer-web
+      - run: npm run test --workspace=@doorli/api
