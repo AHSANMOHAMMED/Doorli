@@ -58,6 +58,7 @@ function mapErpStatusToMarketplace(status: string): MarketplaceStatus | null {
   const map: Record<string, MarketplaceStatus> = {
     pending: 'pending',
     confirmed: 'confirmed',
+    processing: 'preparing',
     preparing: 'preparing',
     ready: 'ready',
     picked_up: 'picked_up',
