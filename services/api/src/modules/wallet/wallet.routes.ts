@@ -23,10 +23,38 @@ walletRouter.get('/balance', async (req, res, next) => {
 walletRouter.get('/transactions', async (req, res, next) => {
   try {
     const limit = Math.min(Math.max(Number(req.query.limit) || 20, 1), 100);
+    const type = typeof req.query.type === 'string' ? req.query.type : undefined;
+    const from = typeof req.query.from === 'string' ? new Date(req.query.from) : undefined;
+    const to = typeof req.query.to === 'string' ? new Date(req.query.to) : undefined;
     const transactions = await prisma.walletTransaction.findMany({
-      where: { userId: req.user!.id }, orderBy: { createdAt: 'desc' }, take: limit,
+      where: { userId: req.user!.id, ...(type ? { type } : {}), ...(from || to ? { createdAt: { ...(from ? { gte: from } : {}), ...(to ? { lte: to } : {}) } } : {}) }, orderBy: { createdAt: 'desc' }, take: limit,
     });
     res.json({ success: true, data: transactions.map((item) => ({ ...item, amount: Number(item.amount), balanceAfter: Number(item.balanceAfter) })) });
+  } catch (err) { next(err); }
+});
+
+walletRouter.get('/auto-topup/rules', async (req, res, next) => {
+  try { res.json({ success: true, data: await prisma.autoTopupRule.findMany({ where: { userId: req.user!.id }, orderBy: { createdAt: 'desc' } }) }); } catch (err) { next(err); }
+});
+
+walletRouter.post('/auto-topup/rules', async (req, res, next) => {
+  try {
+    const body = z.object({ threshold: z.number().positive(), topupAmount: z.number().positive(), method: z.enum(['stripe', 'upi', 'bank']) }).parse(req.body);
+    const rule = await prisma.autoTopupRule.create({ data: { userId: req.user!.id, ...body } });
+    res.status(201).json({ success: true, data: rule });
+  } catch (err) { next(err); }
+});
+
+walletRouter.delete('/auto-topup/rules/:id', async (req, res, next) => {
+  try { await prisma.autoTopupRule.updateMany({ where: { id: String(req.params.id), userId: req.user!.id }, data: { isActive: false } }); res.json({ success: true, data: { disabled: true } }); } catch (err) { next(err); }
+});
+
+walletRouter.post('/payout', async (req, res, next) => {
+  try {
+    const { amount, method, destination } = z.object({ amount: z.number().positive(), method: z.enum(['bank', 'upi']), destination: z.string().min(5) }).parse(req.body);
+    const ledger = await applyWalletTransaction({ userId: req.user!.id, amount: -amount, type: 'payout', idempotencyKey: String(req.headers['idempotency-key'] || ''), description: `Wallet payout via ${method}`, metadata: { destination } });
+    const payout = await prisma.walletPayout.create({ data: { userId: req.user!.id, amount, method, destination, status: 'pending', reference: ledger.transaction.id } });
+    res.status(202).json({ success: true, data: { payout, balanceAfter: Number(ledger.transaction.balanceAfter), message: 'Payout queued for gateway processing.' } });
   } catch (err) { next(err); }
 });
 
