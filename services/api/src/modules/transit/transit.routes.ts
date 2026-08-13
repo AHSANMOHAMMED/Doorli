@@ -5,6 +5,7 @@ import { prisma } from '@doorli/db';
 import { authenticateToken } from '../../middleware/authenticateToken.js';
 import { AppError } from '../../middleware/errorHandler.js';
 import { getRedis } from '../../lib/redis.js';
+import { applyWalletTransaction } from '../wallet/wallet.service.js';
 
 const transitRouter = Router();
 
@@ -86,14 +87,9 @@ transitRouter.post('/bus/seats/reserve', authenticateToken, async (req, res, nex
     if (!route) throw new AppError(404, 'Route not found');
 
     const redis = getRedis();
-    const key = `seats:${routeId}:${date}:${time}`;
-    const reservedRaw = await redis.get(key);
-    const reserved: string[] = reservedRaw ? JSON.parse(reservedRaw) : [];
-
-    if (reserved.includes(seatNumber)) throw new AppError(409, 'Seat already reserved');
-
-    reserved.push(seatNumber);
-    await redis.setex(key, 7200, JSON.stringify(reserved)); // 2 hour TTL for seat map
+    const seatLockKey = `seatlock:${routeId}:${date}:${time}:${seatNumber}`;
+    const locked = await redis.set(seatLockKey, req.user!.id, 'EX', 600, 'NX');
+    if (locked !== 'OK') throw new AppError(409, 'Seat already reserved');
 
     // Hold user's reservation token for 10 min
     const reservationToken = `RES:${routeId}:${date}:${time}:${seatNumber}:${req.user!.id}:${Date.now()}`;
@@ -119,19 +115,14 @@ transitRouter.post('/bus/bookings', authenticateToken, async (req, res, next) =>
     const route = ROUTES.find(r => r.id === routeId);
     if (!route) throw new AppError(404, 'Route not found');
 
-    // Deduct from wallet
     const fare = route.fareMin;
-    const wallet = await prisma.wallet.findUnique({ where: { userId: req.user!.id } });
-    if (!wallet || Number(wallet.balance) < fare)
-      throw new AppError(400, 'Insufficient wallet balance');
-
-    await prisma.wallet.update({ where: { userId: req.user!.id }, data: { balance: { decrement: fare } } });
-
-    // Generate QR
     const ticketId = `TKT-${Date.now().toString(36).toUpperCase()}`;
     const qrPayload = generateQR({ routeId, seat: seatNumber, date, userId: req.user!.id, ticketId });
 
     const bookingRef = `BUS${Date.now().toString().slice(-8)}`;
+    const departure = new Date(`${date}T${time}:00`);
+    const ledger = await applyWalletTransaction({ userId: req.user!.id, amount: -fare, type: 'transit_payment', idempotencyKey: `transit:${reservationToken}`, reference: bookingRef, description: `Bus ticket ${route.origin} to ${route.destination}` });
+    await prisma.transitTicket.create({ data: { userId: req.user!.id, routeId, seatNumber, departure, fareAmount: fare, bookingRef, qrPayload } });
 
     // Delete reservation token
     await redis.del(reservationToken);
@@ -143,7 +134,7 @@ transitRouter.post('/bus/bookings', authenticateToken, async (req, res, next) =>
         title: 'Bus Ticket Confirmed!',
         body: `${route.origin} → ${route.destination} | ${date} ${time} | Seat ${seatNumber} | Ref: ${bookingRef}`,
         type: 'transit_booking',
-        data: { bookingRef, qrPayload, routeId, seatNumber, date, time },
+         data: { bookingRef, qrPayload, routeId, seatNumber, date, time, transactionId: ledger.transaction.id },
       },
     });
 
@@ -175,22 +166,7 @@ transitRouter.post('/bus/tickets/validate', async (req, res, next) => {
 /** GET /transit/bus/tickets — user's tickets */
 transitRouter.get('/bus/tickets', authenticateToken, async (req, res, next) => {
   try {
-    const notifications = await prisma.notification.findMany({
-      where: { userId: req.user!.id, type: 'transit_booking' },
-      orderBy: { sentAt: 'desc' },
-      take: 20,
-    });
-    const tickets = notifications.map(n => ({
-      id: n.id,
-      bookingRef: (n.data as any)?.bookingRef,
-      qrPayload: (n.data as any)?.qrPayload,
-      routeId: (n.data as any)?.routeId,
-      seatNumber: (n.data as any)?.seatNumber,
-      date: (n.data as any)?.date,
-      time: (n.data as any)?.time,
-      title: n.title, body: n.body,
-      createdAt: n.sentAt,
-    }));
+    const tickets = await prisma.transitTicket.findMany({ where: { userId: req.user!.id }, orderBy: { departure: 'desc' }, take: 20 });
     res.json({ success: true, data: tickets });
   } catch (err) { next(err); }
 });

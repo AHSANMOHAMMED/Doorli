@@ -224,6 +224,7 @@ model User {
   moderationFlags    ModerationFlag[]
   premiumSubscription PremiumSubscription?
   aiSessions         AISession[]
+  transitTickets     TransitTicket[]
 
   // Support Domain Relations
   supportTickets  SupportTicket[]
@@ -837,6 +838,24 @@ model AIActionLog {
 
   @@index([sessionId, createdAt])
   @@map("ai_action_logs")
+}
+
+model TransitTicket {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  routeId    String   @map("route_id") @db.VarChar(50)
+  seatNumber String   @map("seat_number") @db.VarChar(10)
+  departure  DateTime
+  fareAmount Decimal  @map("fare_amount") @db.Decimal(10, 2)
+  bookingRef String   @unique @map("booking_ref") @db.VarChar(40)
+  qrPayload  String   @map("qr_payload")
+  status     String   @default("active") @db.VarChar(20)
+  createdAt  DateTime @default(now()) @map("created_at")
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, departure])
+  @@index([routeId, departure, seatNumber])
+  @@map("transit_tickets")
 }
 
 // ==========================================
