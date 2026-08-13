@@ -69,7 +69,7 @@ export async function verifyOtp(phone: string, code: string) {
     };
   }>('/auth/verify-otp', {
     method: 'POST',
-    body: JSON.stringify({ phone, code }),
+    body: JSON.stringify({ phone, otp: code }),
   });
   setCustomerToken(data.accessToken);
   return data;

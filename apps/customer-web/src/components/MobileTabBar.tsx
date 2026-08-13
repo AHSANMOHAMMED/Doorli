@@ -21,7 +21,7 @@ export function MobileTabBar() {
 
   return (
     <nav
-      className="fixed bottom-0 inset-x-0 z-50 md:hidden border-t border-white/10 bg-[#07101f]/95 backdrop-blur-xl safe-bottom"
+      className="fixed bottom-0 inset-x-0 z-50 md:hidden border-t border-white/10 bg-[#07101f]/90 backdrop-blur-2xl safe-bottom shadow-[0_-12px_40px_rgba(0,0,0,.28)]"
       aria-label="Primary"
     >
       <ul className="grid grid-cols-5 h-16 max-w-lg mx-auto">
@@ -35,11 +35,13 @@ export function MobileTabBar() {
               <Link
                 href={href}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-0.5 h-full text-[10px] font-medium",
-                  active ? "text-[var(--doorli-mint)]" : "text-white/50",
+                  "relative flex flex-col items-center justify-center gap-1 h-full text-[10px] font-semibold transition-colors",
+                  active ? "text-[var(--doorli-mint)]" : "text-white/50 hover:text-white/80",
                 )}
+                aria-current={active ? "page" : undefined}
               >
-                <Icon className={cn("w-5 h-5", active && "stroke-[2.5]")} />
+                <span className={cn("absolute top-0 h-0.5 w-8 rounded-full transition-all", active ? "bg-[var(--doorli-mint)] opacity-100" : "opacity-0")} />
+                <Icon className={cn("w-5 h-5 transition-transform", active && "stroke-[2.5] scale-110")} />
                 {label}
               </Link>
             </li>

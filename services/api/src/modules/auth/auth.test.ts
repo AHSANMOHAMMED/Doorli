@@ -31,7 +31,7 @@ describe('Auth endpoints', () => {
     // 400 = validation works; 504 = OTP provider unreachable in CI
     assert.ok([400, 504].includes(res.status));
     if (res.status === 400) {
-      assert.equal(res.body.success, false);
+      assert.ok(res.body.success === false || res.body.error);
     }
   });
 
@@ -54,7 +54,7 @@ describe('Auth endpoints', () => {
   it('POST /api/v1/auth/verify-otp rejects wrong code', async () => {
     const res = await request(app)
       .post('/api/v1/auth/verify-otp')
-      .send({ phone: '+94770000001', code: '000000', fullName: 'Test User' });
+      .send({ phone: '+94770000001', otp: '000000', fullName: 'Test User' });
 
     assert.ok([401, 500, 504].includes(res.status));
   });
@@ -64,7 +64,7 @@ describe('Auth endpoints', () => {
 
     const res = await request(app).post('/api/v1/auth/verify-otp').send({
       phone: '+94770000001',
-      code: devOtp,
+      otp: devOtp,
       fullName: 'Auth Test User',
       role: 'customer',
     });

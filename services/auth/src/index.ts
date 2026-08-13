@@ -87,14 +87,14 @@ app.post('/auth/send-otp', async (req: Request, res: Response) => {
     const { phone } = req.body as { phone?: string };
 
     if (!phone || !isValidPhone(phone)) {
-      return res.status(400).json({ error: 'Valid E.164 phone number is required.' });
+      return res.status(400).json({ success: false, error: 'Valid E.164 phone number is required.' });
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     await redis.set(`otp:${phone}`, otp, 'EX', 300);
     await sendSms(phone, `Your Doorli verification code is: ${otp}. Valid for 5 minutes.`);
 
-    return res.json({ success: true, message: 'OTP sent.' });
+    return res.json({ success: true, data: { message: 'OTP sent.' } });
   } catch (err) {
     console.error('[send-otp]', err);
     return res.status(500).json({ error: 'Internal server error.' });
@@ -107,21 +107,24 @@ app.post('/auth/send-otp', async (req: Request, res: Response) => {
  */
 app.post('/auth/verify-otp', async (req: Request, res: Response) => {
   try {
-    const { phone, otp, role = 'customer' } = req.body as {
+    const { phone, otp, code, fullName, role = 'customer' } = req.body as {
       phone?: string;
       otp?: string;
+      code?: string;
+      fullName?: string;
       role?: string;
     };
+    const suppliedOtp = otp || code;
 
-    if (!phone || !otp) {
-      return res.status(400).json({ error: 'Phone and OTP are required.' });
+    if (!phone || !suppliedOtp) {
+      return res.status(400).json({ success: false, error: 'Phone and OTP are required.' });
     }
 
     const storedOtp = await redis.get(`otp:${phone}`);
-    const isBypass = process.env.NODE_ENV !== 'production' && otp === '123456';
+    const isBypass = process.env.NODE_ENV !== 'production' && suppliedOtp === '123456';
 
-    if (!isBypass && (!storedOtp || storedOtp !== otp)) {
-      return res.status(401).json({ error: 'Invalid or expired OTP.' });
+    if (!isBypass && (!storedOtp || storedOtp !== suppliedOtp)) {
+      return res.status(401).json({ success: false, error: 'Invalid or expired OTP.' });
     }
     if (storedOtp) await redis.del(`otp:${phone}`);
 
@@ -132,7 +135,7 @@ app.post('/auth/verify-otp', async (req: Request, res: Response) => {
     let user = await prisma.user.findUnique({ where: { phone } });
     if (!user) {
       user = await prisma.user.create({
-        data: { phone, fullName: 'New User', role: validRole, isVerified: true, isActive: true },
+        data: { phone, fullName: fullName || 'New User', role: validRole, isVerified: true, isActive: true },
       });
     } else if (!user.isVerified) {
       user = await prisma.user.update({ where: { id: user.id }, data: { isVerified: true } });
@@ -145,7 +148,7 @@ app.post('/auth/verify-otp', async (req: Request, res: Response) => {
       email: user.email,
     });
 
-    return res.json({ success: true, ...tokens, user: userPublicFields(user) });
+    return res.json({ success: true, data: { ...tokens, user: userPublicFields(user) } });
   } catch (err) {
     console.error('[verify-otp]', err);
     return res.status(500).json({ error: 'Internal server error.' });

@@ -1,5 +1,5 @@
-import { Router, Request, Response } from 'express';
-import { createProxyMiddleware } from 'http-proxy-middleware';
+import express, { Router, Request, Response } from 'express';
+import { createProxyMiddleware, fixRequestBody } from 'http-proxy-middleware';
 import type { HealthCheckResponse } from '@doorli/types';
 import { checkDatabaseConnection } from '../lib/db.js';
 import { checkRedisConnection } from '../lib/redis.js';
@@ -31,6 +31,13 @@ import reportsRouter from '../modules/reports/reports.routes.js';
 import wishlistRouter from '../modules/wishlist/wishlist.routes.js';
 import groupOrdersRouter from '../modules/group-orders/group-orders.routes.js';
 import corporateRouter from '../modules/corporate/corporate.routes.js';
+import walletRouter from '../modules/wallet/wallet.routes.js';
+import billsRouter from '../modules/bills/bills.routes.js';
+import transitRouter from '../modules/transit/transit.routes.js';
+import healthRouter from '../modules/health/health.routes.js';
+import courierRouter, { errandsRouter } from '../modules/courier/courier.routes.js';
+import communityRouter from '../modules/community/community.routes.js';
+import membershipRouter from '../modules/membership/membership.routes.js';
 
 const router = Router();
 
@@ -68,10 +75,11 @@ router.get('/api/v1', (_req: Request, res: Response) => {
 // proxy middleware runs, so pathRewrite sees only the remainder (e.g. `/login`).
 // The rewrite must therefore PREPEND the backend's expected prefix.
 // Auth Microservice Proxy (Port 4001)
-router.use('/api/v1/auth', createProxyMiddleware({
+router.use('/api/v1/auth', express.json(), createProxyMiddleware({
   target: env.AUTH_SERVICE_URL,
   changeOrigin: true,
   pathRewrite: (path) => `/auth${path}`,
+  on: { proxyReq: fixRequestBody },
 }));
 
 // Delivery Microservice Proxy
@@ -79,6 +87,7 @@ const deliveryProxy = (prefix: string) => createProxyMiddleware({
   target: env.DELIVERY_SERVICE_URL,
   changeOrigin: true,
   pathRewrite: (path) => `${prefix}${path}`,
+  on: { proxyReq: fixRequestBody },
 });
 
 router.use('/api/v1/orders', deliveryProxy('/orders'));
@@ -111,6 +120,15 @@ router.use('/api/v1/reports', reportsRouter);
 router.use('/api/v1/wishlist', wishlistRouter);
 router.use('/api/v1/group-orders', groupOrdersRouter);
 router.use('/api/v1/corporate', corporateRouter);
+router.use('/api/v1/wallet', walletRouter);
+router.use('/api/v1/billers', billsRouter);
+router.use('/api/v1/bills', billsRouter);
+router.use('/api/v1/transit', transitRouter);
+router.use('/api/v1/health', healthRouter);
+router.use('/api/v1/courier', courierRouter);
+router.use('/api/v1/errands', errandsRouter);
+router.use('/api/v1/community', communityRouter);
+router.use('/api/v1/membership', membershipRouter);
 
 // ==========================================
 // STANDALONE SERVICE PROXY ROUTES

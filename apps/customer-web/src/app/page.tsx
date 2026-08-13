@@ -24,6 +24,8 @@ import {
   TrendingUp,
   MessageSquare,
   Building2,
+  WalletCards,
+  ReceiptText,
 } from "lucide-react";
 import { UniversalSearch } from "@/components/UniversalSearch";
 import { apiFetch, clearCustomerToken, getCustomerToken } from "@/lib/api";
@@ -342,10 +344,10 @@ export default function Home() {
                 Doorli
               </h1>
               <p className="animate-slide-up font-display mt-3 text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-white via-[#b5d4f4] to-[#5dcaa5] bg-clip-text text-transparent animate-gradient" style={{ animationDelay: '0.3s' }}>
-                Everything local. Delivered.
+                Everything you need, close to home.
               </p>
               <p className="animate-slide-up mt-4 text-sm sm:text-base md:text-lg text-[#9bb4d0] max-w-xl mx-auto leading-relaxed" style={{ animationDelay: '0.4s' }}>
-                Marketplace, food, hotels, halls, services, beauty, delivery & rides — one seamless app connected directly to merchant ERP behind the counter.
+                Find trusted local businesses, order what you need, book a service, or get a ride — all in one simple place.
               </p>
             </div>
 
@@ -358,20 +360,26 @@ export default function Home() {
             <div className="animate-slide-up mt-6 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3" style={{ animationDelay: '0.6s' }}>
               <Link href="/search?category=grocery" className="doorli-cta-ghost text-xs sm:text-sm py-2 px-3.5 flex items-center gap-1.5 hover:scale-105 transition-transform">
                 <Store className="w-4 h-4 text-[#378add]" />
-                Browse Marketplace
+                Shop nearby
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
               <Link href="/search?category=restaurant" className="doorli-cta-ghost text-xs sm:text-sm py-2 px-3.5 flex items-center gap-1.5 hover:scale-105 transition-transform">
                 <Utensils className="w-4 h-4 text-[#fac775]" />
-                Order Food
+                Get food delivered
               </Link>
               <Link href="/ride" className="doorli-cta-ghost text-xs sm:text-sm py-2 px-3.5 flex items-center gap-1.5 hover:scale-105 transition-transform">
                 <Car className="w-4 h-4 text-[#5dcaa5]" />
-                Book Ride
+                Get a ride
+              </Link>
+              <Link href="/wallet" className="doorli-cta-ghost text-xs sm:text-sm py-2 px-3.5 flex items-center gap-1.5 hover:scale-105 transition-transform">
+                <WalletCards className="w-4 h-4 text-[#5dcaa5]" /> Wallet
+              </Link>
+              <Link href="/bills" className="doorli-cta-ghost text-xs sm:text-sm py-2 px-3.5 flex items-center gap-1.5 hover:scale-105 transition-transform">
+                <ReceiptText className="w-4 h-4 text-[#fac775]" /> Bills
               </Link>
               <Link href="/ai-picks" className="doorli-cta-primary text-xs sm:text-sm py-2 px-3.5 flex items-center gap-1.5 hover:scale-105 transition-transform">
                 <Sparkles className="w-4 h-4 text-purple-200" />
-                AI Smart Picks
+                Help me choose
               </Link>
             </div>
 
@@ -379,7 +387,7 @@ export default function Home() {
             <div className="animate-slide-up mt-10 grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl mx-auto pt-6 border-t border-white/10 text-xs text-[#9bb4d0]" style={{ animationDelay: '0.7s' }}>
               <div className="flex items-center justify-center gap-1.5 group hover:scale-105 transition-transform">
                 <CheckCircle2 className="w-4 h-4 text-[#5dcaa5] group-hover:animate-bounce" />
-                <span>{vendorCount > 0 ? `${vendorCount}+ Verified Vendors` : "Verified Vendors"}</span>
+                <span>{vendorCount > 0 ? `${vendorCount}+ Trusted local businesses` : "Trusted local businesses"}</span>
               </div>
               <div className="flex items-center justify-center gap-1.5 group hover:scale-105 transition-transform">
                 <Clock className="w-4 h-4 text-[#fac775] group-hover:animate-bounce" />
@@ -387,7 +395,7 @@ export default function Home() {
               </div>
               <div className="flex items-center justify-center gap-1.5 group hover:scale-105 transition-transform">
                 <Shield className="w-4 h-4 text-[#378add] group-hover:animate-bounce" />
-                <span>Live ERP Sync</span>
+                <span>Reliable order updates</span>
               </div>
               <div className="flex items-center justify-center gap-1.5 group hover:scale-105 transition-transform">
                 <Star className="w-4 h-4 text-[#fac775] group-hover:animate-bounce" />
@@ -489,12 +497,12 @@ export default function Home() {
           <div className="flex items-center justify-between mb-8">
             <div>
               <h2 className="font-display text-2xl sm:text-4xl font-bold text-white tracking-tight">
-                Nearby Verified Merchants
+                What do you need today?
               </h2>
-              <p className="mt-1.5 text-[#9bb4d0] text-sm">Shops, restaurants & service providers live in your area.</p>
+              <p className="mt-1.5 text-[#9bb4d0] text-sm">Choose a local business, see what is available, and take the next step with confidence.</p>
             </div>
             <Link href="/search" className="text-xs sm:text-sm font-semibold text-[#5dcaa5] hover:underline flex items-center gap-1">
-              View All Vendors
+              See all local businesses
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
@@ -532,7 +540,7 @@ export default function Home() {
                     <span>{v.city || "Colombo"}</span>
                   </div>
                   <div className="flex items-center gap-1 font-semibold text-[#5dcaa5] group-hover:translate-x-1 transition-transform">
-                    <span>Order Now</span>
+                    <span>View and choose</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </div>
                 </div>
@@ -541,7 +549,7 @@ export default function Home() {
 
             {loading && vendors.length === 0 && (
               <div className="col-span-full py-12 text-center text-white/40 font-mono text-sm">
-                Loading live vendors from ERP database…
+                Finding trusted businesses near you…
               </div>
             )}
           </div>

@@ -96,7 +96,7 @@ describe('ErpIntegrationService routing', () => {
       assert.equal(req.headers['x-doorli-secret'], SECRET);
       return { status: 200, json: { message: { status: 'success', erp_order_id: 'SO-1' } } };
     });
-    process.env.ERP_ENTERPRISE_URL = `${stub.baseUrl}/api/method/doorli_core.api.create_order`;
+    process.env.ERP_ENTERPRISE_URL = stub.baseUrl + "/api/method/doorli_core.api.create_order";
 
     const res = await ErpIntegrationService.syncOrderToErp({ provider: 'enterprise', ...baseOrder });
     assert.equal(res.success, true);
@@ -117,7 +117,7 @@ describe('ErpIntegrationService routing', () => {
 
   it('reports failure when the ERP rejects the shared secret', async () => {
     stub = await startStub(() => ({ status: 403, json: { message: { status: 'error', message: 'bad secret' } } }));
-    process.env.ERP_ENTERPRISE_URL = `${stub.baseUrl}/api/method/doorli_core.api.create_order`;
+    process.env.ERP_ENTERPRISE_URL = stub.baseUrl + "/api/method/doorli_core.api.create_order";
 
     const res = await ErpIntegrationService.syncOrderToErp({ provider: 'enterprise', ...baseOrder });
     assert.equal(res.success, false);
@@ -127,7 +127,7 @@ describe('ErpIntegrationService routing', () => {
 
   it('reports "ERP unreachable" when the backend is down', async () => {
     // Port 1 is not listening; axios connection error is caught.
-    process.env.ERP_ENTERPRISE_URL = 'http://127.0.0.1:1/api/method/doorli_core.api.create_order';
+    process.env.ERP_ENTERPRISE_URL = "http://127.0.0.1:1/api/method/doorli_core.api.create_order";
     const res = await ErpIntegrationService.syncOrderToErp({ provider: 'enterprise', ...baseOrder });
     assert.equal(res.success, false);
     assert.match(res.message ?? '', /unreachable/i);
@@ -139,7 +139,7 @@ describe('ErpIntegrationService routing', () => {
       assert.equal(req.body.vendor_id, 'vendor-123');
       return { status: 200, json: { message: { status: 'success', company: 'Acme Company' } } };
     });
-    process.env.ERP_ENTERPRISE_URL = `${stub.baseUrl}/api/method/doorli_core.api.create_order`;
+    process.env.ERP_ENTERPRISE_URL = stub.baseUrl + "/api/method/doorli_core.api.create_order";
 
     const res = await ErpIntegrationService.provisionEnterpriseVendor({
       vendorId: 'vendor-123',
@@ -153,6 +153,26 @@ describe('ErpIntegrationService routing', () => {
     stub.server.close();
   });
 
+  it('pushes enterprise order status to the callback endpoint', async () => {
+    stub = await startStub((req) => {
+      assert.equal(req.headers['x-doorli-secret'], SECRET);
+      assert.equal(req.body.marketplace_order_id, 'order-abc');
+      assert.equal(req.body.erp_order_id, 'SO-1');
+      assert.equal(req.body.status, 'delivered');
+      return { status: 200, json: { message: { status: 'success' } } };
+    });
+    process.env.ERP_ENTERPRISE_URL = stub.baseUrl + "/api/method/doorli_core.api.create_order";
+    const res = await ErpIntegrationService.pushOrderStatusToErp({
+      provider: 'enterprise',
+      erpTenantId: 'Acme Company',
+      erpOrderId: 'SO-1',
+      marketplaceOrderId: 'order-abc',
+      status: 'delivered',
+    });
+    assert.equal(res.success, true);
+    assert.equal(stub.last()!.url, '/api/method/doorli_core.api.update_order_status');
+    stub.server.close();
+  });
   it('requires a marketplace order id for idempotency', async () => {
     const res = await ErpIntegrationService.syncOrderToErp({
       provider: 'simple',
