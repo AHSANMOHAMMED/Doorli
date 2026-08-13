@@ -38,6 +38,7 @@ import healthRouter from '../modules/health/health.routes.js';
 import courierRouter, { errandsRouter } from '../modules/courier/courier.routes.js';
 import communityRouter from '../modules/community/community.routes.js';
 import membershipRouter from '../modules/membership/membership.routes.js';
+import assistantRouter from '../modules/assistant/assistant.routes.js';
 
 const router = Router();
 
@@ -129,6 +130,7 @@ router.use('/api/v1/courier', courierRouter);
 router.use('/api/v1/errands', errandsRouter);
 router.use('/api/v1/community', communityRouter);
 router.use('/api/v1/membership', membershipRouter);
+router.use('/api/v1/assistant', assistantRouter);
 
 // ==========================================
 // STANDALONE SERVICE PROXY ROUTES

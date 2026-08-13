@@ -186,6 +186,8 @@ export default function Home() {
   const [mobilePreview, setMobilePreview] = useState<boolean>(false);
   const [vendorCount, setVendorCount] = useState(0);
   const [avgRating, setAvgRating] = useState("4.9");
+  const [assistantMessage, setAssistantMessage] = useState("");
+  const [assistantReply, setAssistantReply] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -225,6 +227,14 @@ export default function Home() {
   const filteredFeatures = activeTab === "all" 
     ? CORE_FEATURES 
     : CORE_FEATURES.filter(f => f.slug === activeTab || (activeTab === "marketplace" && ["grocery", "delivery"].includes(f.slug)));
+
+  async function askAssistant() {
+    if (!assistantMessage.trim()) return;
+    try {
+      const result = await apiFetch<{ clarification?: string; actions: Array<{ description: string }> }>("/assistant/parse", { method: "POST", body: JSON.stringify({ message: assistantMessage }) });
+      setAssistantReply(result.clarification || result.actions.map((action) => action.description).join(" + "));
+    } catch { setAssistantReply("Log in to use the Doorli Assistant."); }
+  }
 
   return (
     <main className="min-h-screen text-[var(--doorli-text)] selection:bg-[#185FA5]/40 relative">
@@ -354,6 +364,10 @@ export default function Home() {
             {/* Universal Search Bar */}
             <div className="animate-slide-up max-w-2xl mx-auto mt-8 relative z-40" style={{ animationDelay: '0.5s' }}>
               <UniversalSearch />
+            </div>
+            <div className="animate-slide-up max-w-2xl mx-auto mt-4 doorli-glass rounded-2xl p-3 text-left" style={{ animationDelay: '0.55s' }}>
+              <div className="flex gap-2"><input value={assistantMessage} onChange={(event) => setAssistantMessage(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") void askAssistant(); }} placeholder="What do you need today? Try: ride + groceries" className="min-w-0 flex-1 bg-transparent px-2 py-2 text-sm text-white outline-none" /><button type="button" onClick={() => void askAssistant()} className="doorli-cta-primary py-2 px-3 text-xs">Ask Doorli</button></div>
+              {assistantReply && <p className="text-xs text-[var(--doorli-mint)] mt-2 px-2">{assistantReply}</p>}
             </div>
 
             {/* Quick Action Badges */}

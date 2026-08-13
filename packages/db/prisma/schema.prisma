@@ -189,6 +189,7 @@ model User {
   stripeCustomerId String?  @unique @map("stripe_customer_id") @db.VarChar(100)
   isVerified       Boolean  @default(false) @map("is_verified")
   isActive         Boolean  @default(true) @map("is_active")
+  locality         String?  @db.VarChar(100)
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 
@@ -218,6 +219,11 @@ model User {
   grantedModerations ForumModerator[]   @relation("UserGrantedModerator")
   reputationRecords  ReputationRecord[]
   forumBans          ForumBan[]
+  communityPosts     CommunityPost[]
+  groupMemberships   GroupMembership[]
+  moderationFlags    ModerationFlag[]
+  premiumSubscription PremiumSubscription?
+  aiSessions         AISession[]
 
   // Support Domain Relations
   supportTickets  SupportTicket[]
@@ -730,6 +736,107 @@ model DeviceToken {
 
   @@index([userId])
   @@map("device_tokens")
+}
+
+model CommunityPost {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  type       String   @db.VarChar(30)
+  content    String
+  locality   String   @db.VarChar(100)
+  mediaUrls  Json     @default("[]") @map("media_urls")
+  isDeleted  Boolean  @default(false) @map("is_deleted")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  flags      ModerationFlag[]
+
+  @@index([locality, createdAt])
+  @@index([userId, createdAt])
+  @@map("community_posts")
+}
+
+model InterestGroup {
+  id          String            @id @default(uuid()) @db.Uuid
+  name        String            @db.VarChar(100)
+  locality    String            @db.VarChar(100)
+  description String?
+  createdAt   DateTime          @default(now()) @map("created_at")
+  memberships GroupMembership[]
+
+  @@index([locality])
+  @@map("interest_groups")
+}
+
+model GroupMembership {
+  id        String        @id @default(uuid()) @db.Uuid
+  groupId   String        @map("group_id") @db.Uuid
+  userId    String        @map("user_id") @db.Uuid
+  createdAt DateTime      @default(now()) @map("created_at")
+  group     InterestGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@map("group_memberships")
+}
+
+model ModerationFlag {
+  id        String         @id @default(uuid()) @db.Uuid
+  postId    String         @map("post_id") @db.Uuid
+  userId    String         @map("user_id") @db.Uuid
+  reason    String?
+  createdAt DateTime       @default(now()) @map("created_at")
+  post      CommunityPost  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([postId, createdAt])
+  @@map("moderation_flags")
+}
+
+model PremiumSubscription {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @unique @map("user_id") @db.Uuid
+  tier          String   @db.VarChar(20)
+  status        String   @default("active") @db.VarChar(20)
+  startedAt     DateTime @default(now()) @map("started_at")
+  nextRenewalAt DateTime @map("next_renewal_at")
+  cancelAt      DateTime? @map("cancel_at")
+  totalSavings  Decimal  @default(0) @map("total_savings") @db.Decimal(12, 2)
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status, nextRenewalAt])
+  @@map("premium_subscriptions")
+}
+
+model AISession {
+  id          String       @id @default(uuid()) @db.Uuid
+  userId      String       @map("user_id") @db.Uuid
+  message     String
+  actionPlan  Json         @map("action_plan")
+  status      String       @default("planned") @db.VarChar(20)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  actions     AIActionLog[]
+
+  @@index([userId, createdAt])
+  @@map("ai_sessions")
+}
+
+model AIActionLog {
+  id          String    @id @default(uuid()) @db.Uuid
+  sessionId   String    @map("session_id") @db.Uuid
+  module      String    @db.VarChar(40)
+  params      Json
+  result      Json?
+  status      String    @default("pending") @db.VarChar(20)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  session     AISession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, createdAt])
+  @@map("ai_action_logs")
 }
 
 // ==========================================
