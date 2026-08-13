@@ -196,6 +196,7 @@ export class ErpIntegrationService {
           url,
           {
             company: input.erpTenantId,
+            vendor_company: input.erpTenantId,
             erp_order_id: input.erpOrderId || undefined,
             marketplace_order_id: input.marketplaceOrderId,
             status: input.status,

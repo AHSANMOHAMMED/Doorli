@@ -1084,6 +1084,12 @@ adminRouter.put('/vendors/:id/features', async (req, res, next) => {
     // Drop the auth-service feature cache so the toggle applies immediately (Req 18.4)
     await invalidateFeatureCache(vendorId);
 
+    const vendor = await prisma.vendor.findUnique({
+      where: { id: vendorId },
+      select: { erpProvider: true, erpTenantId: true },
+    });
+    if (vendor) await syncVendorErpFeature(vendor, vendorFeature.feature.key, isEnabled);
+
     // marketplace_listing controls search visibility → mirror into Elasticsearch (Req 11.8)
     if (vendorFeature.feature.key === MARKETPLACE_LISTING_KEY) {
       syncVendorMarketplaceIndex(vendorId, isEnabled);

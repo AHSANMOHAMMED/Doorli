@@ -121,7 +121,7 @@ router.post('/stock-update', requireErpSecret, async (req: Request, res: Respons
 });
 
 router.post('/order-status', requireErpSecret, async (req: Request, res: Response) => {
-  const { marketplace_order_id, erp_order_id, status } = req.body;
+  const { marketplace_order_id, erp_order_id, status, vendor_company } = req.body;
 
   if ((!marketplace_order_id && !erp_order_id) || !status) {
     return res.status(400).json({ error: 'Invalid payload: require status and an order id' });
@@ -139,10 +139,10 @@ router.post('/order-status', requireErpSecret, async (req: Request, res: Respons
     if (marketplace_order_id) {
       const id = String(marketplace_order_id);
       order = /^[0-9a-f-]{36}$/i.test(id)
-        ? await prisma.order.findUnique({ where: { id } })
-        : await prisma.order.findFirst({ where: { orderNumber: id } });
+        ? await prisma.order.findFirst({ where: { id, ...(vendor_company ? { vendor: { erpTenantId: String(vendor_company) } } : {}) } })
+        : await prisma.order.findFirst({ where: { orderNumber: id, ...(vendor_company ? { vendor: { erpTenantId: String(vendor_company) } } : {}) } });
     } else if (erp_order_id) {
-      order = await prisma.order.findFirst({ where: { erpOrderId: String(erp_order_id) } });
+      order = await prisma.order.findFirst({ where: { erpOrderId: String(erp_order_id), ...(vendor_company ? { vendor: { erpTenantId: String(vendor_company) } } : {}) } });
     }
 
     if (!order) {
