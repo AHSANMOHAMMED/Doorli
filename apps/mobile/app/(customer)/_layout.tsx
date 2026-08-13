@@ -92,6 +92,11 @@ export default function CustomerLayout() {
       <Tabs.Screen name="group-order" options={{ href: null, title: 'Group Order' }} />
       <Tabs.Screen name="checkout/payment" options={{ href: null, title: 'Secure Payment' }} />
       <Tabs.Screen name="payment-methods" options={{ href: null, title: 'Payment Methods' }} />
+      <Tabs.Screen name="wallet" options={{ href: null, title: 'Wallet' }} />
+      <Tabs.Screen name="bills" options={{ href: null, title: 'Bills' }} />
+      <Tabs.Screen name="mobility" options={{ href: null, title: 'Mobility' }} />
+      <Tabs.Screen name="community" options={{ href: null, title: 'Community' }} />
+      <Tabs.Screen name="bus-ticket" options={{ href: null, title: 'Bus Ticket' }} />
       <Tabs.Screen name="gov/index" options={{ href: null, title: 'Gov' }} />
       <Tabs.Screen name="emergency/index" options={{ href: null, title: 'Emergency' }} />
     </Tabs>
