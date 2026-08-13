@@ -119,11 +119,12 @@ export function registerSocketAuth(ioServer: Server): void {
     }
 
     try {
-      const decoded = jwt.verify(token, JWT_SECRET) as any;
-      if (!decoded || !decoded.userId) {
+      const decoded = jwt.verify(token, JWT_SECRET) as { sub?: string; userId?: string; id?: string; role?: string; phone?: string };
+      const userId = decoded.sub || decoded.userId || decoded.id;
+      if (!userId || !decoded.role) {
         return next(new Error('Authentication error'));
       }
-      socket.data.user = decoded;
+      socket.data.user = { ...decoded, id: userId };
       next();
     } catch (err) {
       return next(new Error('Authentication error'));
