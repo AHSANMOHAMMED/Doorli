@@ -12,32 +12,34 @@ This report maps `.kiro/specs/doorli-full-platform-completion/` to the implement
 - Customer web pages now exist for `/wallet`, `/bills`, `/ride`, `/mobility`, `/mobility/bus`, `/health`, and `/courier`.
 - API, auth service, customer web, and Super Admin production builds pass locally.
 - GitHub Actions CI provisions PostgreSQL and Redis, applies migrations, builds, lints, and runs API tests.
+- Community persistence now uses Prisma models for posts, groups, memberships, and moderation flags.
+- Premium membership is persisted and charged through the wallet ledger.
+- AI sessions and action logs are persisted with rule-based parse and confirmation-gated execution.
+- Transit tickets are persisted and seat reservations use atomic Redis locks.
+- Mobile customer screens exist for Wallet, Bills, Mobility, Bus Tickets, and Community.
+- Wallet supports persistent auto-top-up rules, filtered history, payout requests, and double-entry journal records.
 
 ## Implemented But Not Production Complete
 
-- Community posts currently use an in-memory array. They do not survive process restarts and do not satisfy the Prisma persistence/moderation requirements.
 - Health, courier, and transit seed data are in route modules rather than persisted domain models and partner integrations.
-- Wallet currently has an auditable transaction layer but not the full spec model set for double-entry journal accounts, auto-top-up rules, payout withdrawals, or payment gateway settlement.
-- Bus reservations use a Redis list with a longer seat-map TTL; a production implementation needs atomic seat locking and durable `TransitTicket`/`IntercityBooking` records.
+- Wallet payout requests remain pending until a real bank/UPI gateway worker settles them.
 - Ride matching and driver settlement require integration with the dedicated ride-hailing service and real driver location flow.
 - The customer pages use coordinate defaults for courier jobs and do not yet provide map/geocoding selection.
 
 ## Missing From The Current Repository
 
-- Community database models, interest groups, persisted flags, and a customer Community page.
-- AI assistant API/session/action models and confirmed multi-action execution flow.
-- Premium subscription model, renewal job, delivery waiver, and priority dispatch.
-- Auto-top-up/reminder jobs, payout withdrawal, and full wallet KYC document flow.
+- Premium renewal job, delivery waiver, and priority dispatch.
+- Auto-top-up execution/reminder jobs, payout withdrawal, and full wallet KYC document flow.
 - Full health models, prescription upload/storage validation, medicine ordering, and appointment uniqueness.
 - Full courier job state machine, runner dispatch, tracking, proof-of-delivery storage, and delayed redispatch.
-- Customer mobile wallet, bills, transit, health, courier, and AI screens.
+- Customer mobile health, courier, and AI screens.
 - Complete Super Admin live-data audit across every scaffolded page.
 
 ## Recommended Build Order
 
-1. Replace Community in-memory state with Prisma models and a customer feed page.
-2. Add durable transit ticket/intercity models and atomic Redis seat locks.
-3. Complete wallet double-entry accounts, auto-top-up, payouts, and gateway webhooks.
-4. Add Premium membership and delivery/dispatch benefits.
-5. Add AI parse/confirm/execute with action audit logs.
-6. Port the verified web flows to mobile and run authenticated end-to-end tests with PostgreSQL, Redis, Stripe test keys, and a test SMS provider.
+1. Persist health and courier jobs, add provider/runner dispatch, and add map/geocoding selection.
+2. Connect Stripe/UPI/bank gateways, payout settlement workers, auto-top-up jobs, and SMS confirmations.
+3. Integrate ride-hailing and delivery Socket.io rooms with real driver location/offer flows.
+4. Add Premium renewal, free-delivery waiver, priority dispatch, and exclusive deals.
+5. Port Health, Courier, and Assistant flows to mobile.
+6. Run authenticated end-to-end tests with PostgreSQL, Redis, Stripe test keys, and a test SMS provider.

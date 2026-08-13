@@ -51,6 +51,13 @@ export async function applyWalletTransaction(input: LedgerInput) {
         metadata: input.metadata,
       },
     });
+    const before = Number(wallet.balance);
+    const after = Number(updated.balance);
+    const credit = input.amount > 0;
+    await tx.walletJournalEntry.createMany({ data: [
+      { transactionId: transaction.id, userId: input.userId, accountRef: input.userId, accountType: 'user_wallet', direction: credit ? 'credit' : 'debit', amount: absoluteAmount, currency: updated.currency, balanceBefore: before, balanceAfter: after },
+      { transactionId: transaction.id, accountRef: 'platform:settlement', accountType: 'platform', direction: credit ? 'debit' : 'credit', amount: absoluteAmount, currency: updated.currency, balanceBefore: 0, balanceAfter: 0 },
+    ] });
     return { transaction, replayed: false };
   });
 }
@@ -72,7 +79,12 @@ export async function transferWalletFunds(input: { fromUserId: string; toUserId:
       tx.wallet.update({ where: { id: toWallet.id }, data: { balance: { increment: input.amount } } }),
     ]);
     const outgoing = await tx.walletTransaction.create({ data: { walletId: fromWallet.id, userId: input.fromUserId, idempotencyKey: input.idempotencyKey, type: 'transfer_out', amount: -input.amount, balanceAfter: fromUpdated.balance, currency: fromUpdated.currency, reference: input.toUserId, description: input.description } });
-    await tx.walletTransaction.create({ data: { walletId: toWallet.id, userId: input.toUserId, idempotencyKey: `${input.idempotencyKey}:in`, type: 'transfer_in', amount: input.amount, balanceAfter: toUpdated.balance, currency: toUpdated.currency, reference: input.fromUserId, description: input.description } });
+    const incoming = await tx.walletTransaction.create({ data: { walletId: toWallet.id, userId: input.toUserId, idempotencyKey: `${input.idempotencyKey}:in`, type: 'transfer_in', amount: input.amount, balanceAfter: toUpdated.balance, currency: toUpdated.currency, reference: input.fromUserId, description: input.description } });
+    await tx.walletJournalEntry.createMany({ data: [
+      { transactionId: outgoing.id, userId: input.fromUserId, accountRef: input.fromUserId, accountType: 'user_wallet', direction: 'debit', amount: input.amount, currency: fromUpdated.currency, balanceBefore: Number(fromWallet.balance), balanceAfter: Number(fromUpdated.balance) },
+      { transactionId: outgoing.id, userId: input.toUserId, accountRef: input.toUserId, accountType: 'user_wallet', direction: 'credit', amount: input.amount, currency: toUpdated.currency, balanceBefore: Number(toWallet.balance), balanceAfter: Number(toUpdated.balance) },
+      { transactionId: incoming.id, userId: input.toUserId, accountRef: input.toUserId, accountType: 'user_wallet', direction: 'credit', amount: input.amount, currency: toUpdated.currency, balanceBefore: Number(toWallet.balance), balanceAfter: Number(toUpdated.balance) },
+    ] });
     return { transaction: outgoing, replayed: false };
   });
 }
