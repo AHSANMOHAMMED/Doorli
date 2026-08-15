@@ -1,4 +1,3 @@
-import sharp from 'sharp'
 import { uploadToR2 } from './r2'
 
 const THUMB_MAX_WIDTH = 400
@@ -28,6 +27,7 @@ export async function generateThumbnail(
   if (fileType === 'image/svg+xml') return null
 
   try {
+    const { default: sharp } = await import('sharp')
     const image = sharp(buffer)
     const metadata = await image.metadata()
 
