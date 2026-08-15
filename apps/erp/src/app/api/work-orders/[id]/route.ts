@@ -14,6 +14,9 @@ import { validateBody, validateParams } from '@/lib/validation/helpers'
 import { updateWorkOrderSchema } from '@/lib/validation/schemas/work-orders'
 import { idParamSchema } from '@/lib/validation/schemas/common'
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 // Issue #24: Expanded workflow with intermediate states
 const validStatusTransitions: Record<string, string[]> = {
   draft: ['confirmed', 'cancelled'],
