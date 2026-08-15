@@ -14,6 +14,9 @@ import { deleteFilesByDocument } from '@/lib/utils/file-cleanup'
 import { adjustFileStorage } from '@/lib/db/storage-quota'
 import { idParamSchema } from '@/lib/validation/schemas/common'
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 // GET single item
 export async function GET(
   request: NextRequest,
