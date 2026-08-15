@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 import { withAuthTenant, TenantDb } from '@/lib/db'
 import { insuranceEstimates, insuranceEstimateItems, workOrders, workOrderParts, items, heldSales, warehouseStock, stockTransfers, stockTransferItems } from '@/lib/db/schema'
 import { eq, and, sql, max } from 'drizzle-orm'

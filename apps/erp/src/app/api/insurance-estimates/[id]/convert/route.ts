@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 import { authWithCompany, resolveUserIdRequired } from '@/lib/auth'
 import { withTenant } from '@/lib/db'
 import { insuranceEstimates, insuranceEstimateItems, workOrders, workOrderServices, workOrderParts, items, warehouseStock } from '@/lib/db/schema'
