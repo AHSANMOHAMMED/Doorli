@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cdnUrl } from '@/lib/files'
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 /**
  * Backward compatibility for old /uploads/... URLs.
  * Redirects to CDN URL on Cloudflare R2.
