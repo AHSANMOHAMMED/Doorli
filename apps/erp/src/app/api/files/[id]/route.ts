@@ -14,6 +14,9 @@ import { validateBody, validateParams } from '@/lib/validation/helpers'
 import { updateFileSchema } from '@/lib/validation/schemas/files'
 import { idParamSchema } from '@/lib/validation/schemas/common'
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 // GET single file metadata
 export async function GET(
   request: NextRequest,

@@ -7,6 +7,9 @@ import { getFromR2, keyFromUrl, cdnUrl } from '@/lib/files'
 import { validateParams } from '@/lib/validation/helpers'
 import { idParamSchema } from '@/lib/validation/schemas/common'
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 // GET lightweight thumbnail endpoint — no audit logging, aggressive caching
 // Serves pre-generated thumbnail when available, falls back to original file
 export async function GET(

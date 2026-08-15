@@ -9,6 +9,9 @@ import { validateSearchParams, validateParams } from '@/lib/validation/helpers'
 import { fileAuditListSchema } from '@/lib/validation/schemas/files'
 import { idParamSchema } from '@/lib/validation/schemas/common'
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 // GET audit log for a file
 export async function GET(
   request: NextRequest,

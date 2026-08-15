@@ -12,6 +12,9 @@ import { requireQuota, invalidateStorageCache } from '@/lib/db/storage-quota'
 import { validateParams } from '@/lib/validation/helpers'
 import { idParamSchema } from '@/lib/validation/schemas/common'
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 // GET list all versions of a file
 export async function GET(
   request: NextRequest,

@@ -9,6 +9,9 @@ import { logError } from '@/lib/ai/error-logger'
 import { validateParams } from '@/lib/validation/helpers'
 import { idParamSchema } from '@/lib/validation/schemas/common'
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 // POST toggle star/unstar on a file
 export async function POST(
   request: NextRequest,
