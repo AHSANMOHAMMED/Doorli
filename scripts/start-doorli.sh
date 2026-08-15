@@ -3,6 +3,10 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
+NODE_BIN="${DOORLI_NODE_BIN:-${HOME}/.local/node-v22.23.2-linux-x64/bin}"
+if [ -d "$NODE_BIN" ]; then
+  export PATH="$NODE_BIN:$PATH"
+fi
 export PATH="${HOME}/.npm-global/bin:${PATH}"
 mkdir -p /tmp/doorli-logs
 
