@@ -27,13 +27,13 @@ jobs:
       - id: check
         env:
           OCI_HOST: ${{ secrets.OCI_HOST }}
-          OCI_SSH_KEY: ${{ secrets.OCI_SSH_KEY }}
+          OCI_SSH_KEY_B64: ${{ secrets.OCI_SSH_KEY_B64 }}
         run: |
-          if [ -n "$OCI_HOST" ] && [ -n "$OCI_SSH_KEY" ]; then
+          if [ -n "$OCI_HOST" ] && [ -n "$OCI_SSH_KEY_B64" ]; then
             echo "enabled=true" >> "$GITHUB_OUTPUT"
           else
             echo "enabled=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::OCI_HOST and OCI_SSH_KEY are not configured; deployment is skipped."
+            echo "::warning::OCI_HOST and OCI_SSH_KEY_B64 are not configured; deployment is skipped."
           fi
 
   deploy:
@@ -50,13 +50,13 @@ jobs:
 
       - name: Setup SSH
         env:
-          OCI_SSH_KEY: ${{ secrets.OCI_SSH_KEY }}
+          OCI_SSH_KEY_B64: ${{ secrets.OCI_SSH_KEY_B64 }}
           OCI_KNOWN_HOSTS: ${{ secrets.OCI_KNOWN_HOSTS }}
         run: |
-          test -n "$OCI_SSH_KEY"
+          test -n "$OCI_SSH_KEY_B64"
           test -n "${{ secrets.OCI_HOST }}"
           mkdir -p ~/.ssh
-          printf '%s\n' "$OCI_SSH_KEY" > ~/.ssh/doorli_oci.key
+          printf '%s' "$OCI_SSH_KEY_B64" | base64 --decode > ~/.ssh/doorli_oci.key
           chmod 600 ~/.ssh/doorli_oci.key
           if [ -n "$OCI_KNOWN_HOSTS" ]; then
             printf '%s\n' "$OCI_KNOWN_HOSTS" > ~/.ssh/known_hosts
