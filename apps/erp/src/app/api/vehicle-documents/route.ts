@@ -8,6 +8,9 @@ import { logAndBroadcast } from '@/lib/websocket/broadcast'
 import { logError } from '@/lib/ai/error-logger'
 import { requireQuota } from '@/lib/db/storage-quota'
 import { requirePermission } from '@/lib/auth/roles'
+
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 import { validateSearchParams, validateBody } from '@/lib/validation/helpers'
 import { vehicleDocumentsListSchema, createVehicleDocumentSchema } from '@/lib/validation/schemas/vehicles'
 

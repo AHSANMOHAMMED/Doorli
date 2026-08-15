@@ -11,6 +11,9 @@ import { updateVehicleDocumentSchema } from '@/lib/validation/schemas/vehicles'
 import { deleteFromR2, keyFromUrl } from '@/lib/files'
 import { idParamSchema } from '@/lib/validation/schemas/common'
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 // GET single vehicle document
 export async function GET(
   request: NextRequest,
