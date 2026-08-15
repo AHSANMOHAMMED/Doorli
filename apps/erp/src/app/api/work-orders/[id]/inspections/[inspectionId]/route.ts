@@ -11,6 +11,9 @@ import { validateBody, validateParams } from '@/lib/validation/helpers'
 import { updateInspectionSchema } from '@/lib/validation/schemas/work-orders'
 import { z } from 'zod'
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 // GET single inspection
 export async function GET(
   request: NextRequest,
