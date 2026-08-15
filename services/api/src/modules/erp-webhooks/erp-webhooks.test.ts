@@ -8,9 +8,10 @@
  * semantically acceptable status (200/404/500).
  */
 
-import { describe, it, before } from 'node:test';
+import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import request from 'supertest';
+import { prisma } from '@doorli/db';
 import { createApp } from '../../app.js';
 
 const SECRET = 'doorli_internal_sync_secret';
@@ -21,6 +22,10 @@ describe('ERP webhooks', () => {
 
   before(() => {
     process.env.ERP_INTERNAL_SECRET = SECRET;
+  });
+
+  after(async () => {
+    await prisma.$disconnect();
   });
 
   // ── Existing auth tests (preserved) ────────────────────────────────────────

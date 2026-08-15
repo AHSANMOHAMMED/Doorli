@@ -1,10 +1,15 @@
-import { describe, it } from 'node:test';
+import { describe, it, after } from 'node:test';
 import assert from 'node:assert/strict';
 import request from 'supertest';
+import { prisma } from '@doorli/db';
 import { createApp } from '../../app.js';
 
 describe('Vendor endpoints', () => {
   const app = createApp();
+
+  after(async () => {
+    await prisma.$disconnect();
+  });
 
   it('GET /api/v1/vendors returns paginated list', async () => {
     const res = await request(app).get('/api/v1/vendors');

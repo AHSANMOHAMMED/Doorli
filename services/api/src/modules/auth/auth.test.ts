@@ -1,6 +1,7 @@
 import { describe, it, after, before } from 'node:test';
 import assert from 'node:assert/strict';
 import request from 'supertest';
+import { prisma } from '@doorli/db';
 import { createApp } from '../../app.js';
 import { getRedis } from '../../lib/redis.js';
 
@@ -24,6 +25,7 @@ describe('Auth endpoints', () => {
     } catch {
       // ignore
     }
+    await prisma.$disconnect();
   });
 
   it('POST /api/v1/auth/send-otp validates phone', async () => {

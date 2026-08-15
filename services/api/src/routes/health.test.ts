@@ -1,6 +1,7 @@
 import { describe, it, after } from 'node:test';
 import assert from 'node:assert/strict';
 import request from 'supertest';
+import { prisma } from '@doorli/db';
 import { createApp } from '../app.js';
 import { getRedis } from '../lib/redis.js';
 
@@ -14,6 +15,7 @@ describe('Health endpoint', () => {
     } catch {
       // ignore cleanup errors in test env
     }
+    await prisma.$disconnect();
   });
 
   it('GET /api/v1 returns version info', async () => {
