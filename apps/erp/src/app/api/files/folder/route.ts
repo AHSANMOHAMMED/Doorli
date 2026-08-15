@@ -10,6 +10,9 @@ import { requireQuota } from '@/lib/db/storage-quota'
 import { validateBody } from '@/lib/validation/helpers'
 import { createFolderSchema } from '@/lib/validation/schemas/files'
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 // POST create folder
 export async function POST(request: NextRequest) {
   try {

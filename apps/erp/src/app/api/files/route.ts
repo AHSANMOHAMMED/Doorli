@@ -13,6 +13,9 @@ import { requireQuota, invalidateStorageCache } from '@/lib/db/storage-quota'
 import { validateSearchParams } from '@/lib/validation/helpers'
 import { filesListSchema } from '@/lib/validation/schemas/files'
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 // GET list files with filters
 export async function GET(request: NextRequest) {
   try {

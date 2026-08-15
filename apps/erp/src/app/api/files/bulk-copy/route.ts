@@ -11,6 +11,9 @@ import { requireQuota } from '@/lib/db/storage-quota'
 import { validateBody } from '@/lib/validation/helpers'
 import { bulkCopySchema } from '@/lib/validation/schemas/files'
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 // POST: Copy files to a target folder (duplicate DB records, reuse R2 objects via contentHash)
 export async function POST(request: NextRequest) {
   try {

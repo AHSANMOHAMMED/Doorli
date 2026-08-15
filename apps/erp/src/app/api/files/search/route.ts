@@ -9,6 +9,9 @@ import { logError } from '@/lib/ai/error-logger'
 import { validateSearchParams } from '@/lib/validation/helpers'
 import { fileSearchSchema } from '@/lib/validation/schemas/files'
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 // GET full-text search across files
 export async function GET(request: NextRequest) {
   try {

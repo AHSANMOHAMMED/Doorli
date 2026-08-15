@@ -12,6 +12,9 @@ import { invalidateStorageCache } from '@/lib/db/storage-quota'
 import { validateBody } from '@/lib/validation/helpers'
 import { bulkFileOperationSchema } from '@/lib/validation/schemas/files'
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 // POST bulk operations on files
 export async function POST(request: NextRequest) {
   try {
