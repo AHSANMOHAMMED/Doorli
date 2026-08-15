@@ -1,0 +1,104 @@
+name: Doorli OCI CD
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Commit, branch, or tag to deploy
+        required: false
+        default: main
+        type: string
+  push:
+    branches: [main]
+
+concurrency:
+  group: production-oci
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 35
+    steps:
+      - name: Checkout deployment ref
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+
+      - name: Setup SSH
+        env:
+          OCI_SSH_KEY: ${{ secrets.OCI_SSH_KEY }}
+          OCI_KNOWN_HOSTS: ${{ secrets.OCI_KNOWN_HOSTS }}
+        run: |
+          test -n "$OCI_SSH_KEY"
+          test -n "${{ secrets.OCI_HOST }}"
+          mkdir -p ~/.ssh
+          printf '%s\n' "$OCI_SSH_KEY" > ~/.ssh/doorli_oci.key
+          chmod 600 ~/.ssh/doorli_oci.key
+          if [ -n "$OCI_KNOWN_HOSTS" ]; then
+            printf '%s\n' "$OCI_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            ssh-keyscan -H '${{ secrets.OCI_HOST }}' >> ~/.ssh/known_hosts
+          fi
+
+      - name: Deploy isolated OCI release
+        env:
+          OCI_HOST: ${{ secrets.OCI_HOST }}
+          OCI_USER: ${{ secrets.OCI_USER || 'opc' }}
+          RELEASE_SHA: ${{ inputs.ref || github.sha }}
+          REPOSITORY: ${{ github.server_url }}/${{ github.repository }}.git
+        run: |
+          ssh -i ~/.ssh/doorli_oci.key "$OCI_USER@$OCI_HOST" \
+            "REPOSITORY='$REPOSITORY' RELEASE_SHA='$RELEASE_SHA' bash -s" <<'REMOTE'
+          set -euo pipefail
+          RELEASE_ROOT="/home/opc/releases/${RELEASE_SHA}"
+          if [ ! -d "$RELEASE_ROOT/.git" ]; then
+            mkdir -p /home/opc/releases
+            git clone --quiet "$REPOSITORY" "$RELEASE_ROOT"
+          fi
+          cd "$RELEASE_ROOT"
+          git fetch --quiet origin
+          git checkout --quiet "$RELEASE_SHA"
+
+          # Preserve production configuration and the legacy checkout.
+          cp /home/opc/Doorli/.env .env
+          if [ -f /home/opc/Doorli/packages/db/.env ]; then
+            cp /home/opc/Doorli/packages/db/.env packages/db/.env
+          fi
+
+          NODE_BIN="${HOME}/.local/node-v22.23.2-linux-x64/bin"
+          if [ ! -x "$NODE_BIN/node" ]; then
+            echo "Node 22 is required at $NODE_BIN" >&2
+            exit 1
+          fi
+          export PATH="$NODE_BIN:$PATH"
+          node --version
+          npm --version
+          npm ci --no-audit --no-fund
+          npm install --workspace=@doorli/inventory --include=optional --os=linux --cpu=x64 sharp --no-audit --no-fund
+          npm run db:generate
+          npm run db:migrate:deploy
+          npm run build
+          bash scripts/start-doorli.sh
+
+          for endpoint in \
+            http://127.0.0.1:4000/health \
+            http://127.0.0.1:4010/health/live \
+            http://127.0.0.1:3000/ \
+            http://127.0.0.1:3002/ \
+            http://127.0.0.1:3006/super-admin/login \
+            http://127.0.0.1:3010/; do
+            for attempt in $(seq 1 20); do
+              if curl -fsS "$endpoint" >/dev/null 2>&1; then break; fi
+              if [ "$attempt" = 20 ]; then
+                echo "Health check failed: $endpoint" >&2
+                exit 1
+              fi
+              sleep 2
+            done
+          done
+          REMOTE

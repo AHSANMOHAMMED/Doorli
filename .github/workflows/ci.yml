@@ -2,56 +2,76 @@ name: Doorli CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [main]
   pull_request:
-    branches: [main, master]
+    branches: [main]
 
 concurrency:
-  group: doorli-ci-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  verify:
+  build-and-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     services:
       postgres:
-        image: postgis/postgis:15-3.4-alpine
+        image: postgres:15
         env:
           POSTGRES_USER: doorli
-          POSTGRES_PASSWORD: doorli_secret
+          POSTGRES_PASSWORD: doorli
           POSTGRES_DB: doorli
-        ports: ["5432:5432"]
+        ports: ['5432:5432']
         options: >-
-          --health-cmd "pg_isready -U doorli -d doorli"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 20
+          --health-cmd="pg_isready -U doorli -d doorli"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
       redis:
-        image: redis:7-alpine
-        ports: ["6379:6379"]
+        image: redis:7
+        ports: ['6379:6379']
         options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 20
+          --health-cmd="redis-cli ping"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
     env:
-      DATABASE_URL: postgresql://doorli:doorli_secret@localhost:5432/doorli?schema=public
-      REDIS_URL: redis://localhost:6379
-      JWT_SECRET: ci-access-secret
-      JWT_REFRESH_SECRET: ci-refresh-secret
-      ERP_INTERNAL_SECRET: ci-erp-secret
       NODE_ENV: test
+      DATABASE_URL: postgresql://doorli:doorli@127.0.0.1:5432/doorli?schema=public
+      REDIS_URL: redis://127.0.0.1:6379
+      JWT_SECRET: doorli-ci-access-secret
+      JWT_REFRESH_SECRET: doorli-ci-refresh-secret
+      ERP_INTERNAL_SECRET: doorli-ci-erp-secret
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
-      - run: npx prisma migrate deploy --schema packages/db/prisma/schema.prisma
-      - run: npm run generate --workspace=@doorli/db
-      - run: npm run build --workspace=@doorli/api
-      - run: npm run build --workspace=@doorli/customer-web
-      - run: npm run lint --workspace=@doorli/api
-      - run: npm run lint --workspace=@doorli/customer-web
-      - run: npm run test --workspace=@doorli/api
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Generate Prisma client
+        run: npm run db:generate
+
+      - name: Apply database migrations
+        run: npm run db:migrate:deploy
+
+      - name: Build all workspaces
+        run: npm run build
+
+      - name: Run API tests
+        run: npm test --workspace=@doorli/api
+
+      - name: Run delivery tests
+        run: npm test --workspace=@doorli/delivery
+
+      - name: Run forum tests
+        run: npm test --workspace=@doorli/forum
+
+      - name: Check formatting whitespace
+        run: git diff --check
