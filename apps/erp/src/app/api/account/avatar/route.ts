@@ -7,6 +7,11 @@ import crypto from 'crypto'
 import { logError } from '@/lib/ai/error-logger'
 import { uploadToR2, deleteFromR2, keyFromUrl } from '@/lib/files'
 
+// This route depends on the authenticated request and database/R2 state.
+// Prevent Next from attempting to collect it as static page data during builds.
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp']
 const MAX_SIZE = 2 * 1024 * 1024 // 2MB
 
