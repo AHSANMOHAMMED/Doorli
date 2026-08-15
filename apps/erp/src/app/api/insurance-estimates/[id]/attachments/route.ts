@@ -11,6 +11,9 @@ import { requireQuota, invalidateStorageCache } from '@/lib/db/storage-quota'
 import { validateParams } from '@/lib/validation/helpers'
 import { idParamSchema } from '@/lib/validation/schemas/common'
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 // E23: Photo attachments API for estimates (backed by unified files table)
 
 // GET all attachments for an estimate

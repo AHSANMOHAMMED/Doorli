@@ -2,6 +2,9 @@ import { createAttachmentHandler } from '@/lib/api/attachment-handler'
 import { purchases } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 const handler = createAttachmentHandler({
   entityType: 'purchase',
   broadcastEntityType: 'purchase',
