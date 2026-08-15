@@ -79,6 +79,7 @@ jobs:
             mkdir -p /home/opc/releases
             git clone --quiet "$REPOSITORY" "$RELEASE_ROOT"
           fi
+          find /home/opc/releases -mindepth 1 -maxdepth 1 -type d ! -path "$RELEASE_ROOT" -exec rm -rf {} +
           cd "$RELEASE_ROOT"
           git fetch --quiet origin
           git checkout --quiet "$RELEASE_SHA"
@@ -97,6 +98,7 @@ jobs:
           export PATH="$NODE_BIN:$PATH"
           node --version
           npm --version
+          npm cache clean --force >/dev/null 2>&1 || true
           npm ci --no-audit --no-fund
           npm install --workspace=@doorli/inventory --include=optional --os=linux --cpu=x64 sharp --no-audit --no-fund
           npm run db:generate
