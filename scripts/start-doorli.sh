@@ -128,6 +128,11 @@ start_ws erp env \
   npm run start --workspace=@doorli/erp
 
 sleep 10
+if ! curl -fsS http://127.0.0.1:4010/health/live >/dev/null 2>&1; then
+  echo "Inventory did not remain available; restarting it..."
+  start_ws inventory env PORT=4010 npm run start --workspace=@doorli/inventory
+  sleep 2
+fi
 echo "Health:"
 curl -s http://127.0.0.1:4000/health || true
 echo
