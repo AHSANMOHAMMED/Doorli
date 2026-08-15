@@ -36,7 +36,7 @@ else
 fi
 
 echo "Stopping previous Doorli node processes (ports)..."
-for p in 4000 4004 4005 4006 4007 8085 8086 3000 3002 3005 3006 3010; do
+for p in 4000 4004 4005 4006 4007 4010 8085 8086 3000 3002 3005 3006 3010; do
   stop_port "$p"
 done
 pkill -f "node dist/index.js" 2>/dev/null || true
@@ -64,6 +64,7 @@ start_ws() {
 
 start_ws api npm run start --workspace=@doorli/api
 start_ws auth npm run start --workspace=@doorli/auth
+start_ws inventory env PORT=4010 npm run start --workspace=@doorli/inventory
 start_ws search env PORT=4004 npm run start --workspace=@doorli/search
 start_ws storage env STORAGE_PORT=4005 npm run start --workspace=@doorli/storage
 start_ws ai env AI_PORT=4006 npm run start --workspace=@doorli/ai
