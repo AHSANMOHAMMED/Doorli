@@ -97,6 +97,12 @@ export default function CustomerLayout() {
       <Tabs.Screen name="mobility" options={{ href: null, title: 'Mobility' }} />
       <Tabs.Screen name="community" options={{ href: null, title: 'Community' }} />
       <Tabs.Screen name="bus-ticket" options={{ href: null, title: 'Bus Ticket' }} />
+      <Tabs.Screen name="health" options={{ href: null, title: 'Health' }} />
+      <Tabs.Screen name="services" options={{ href: null, title: 'Home Services' }} />
+      <Tabs.Screen name="courier" options={{ href: null, title: 'Courier' }} />
+      <Tabs.Screen name="assistant" options={{ href: null, title: 'Assistant' }} />
+      <Tabs.Screen name="family" options={{ href: null, title: 'Family Profiles' }} />
+      <Tabs.Screen name="kyc" options={{ href: null, title: 'Wallet Verification' }} />
       <Tabs.Screen name="gov/index" options={{ href: null, title: 'Gov' }} />
       <Tabs.Screen name="emergency/index" options={{ href: null, title: 'Emergency' }} />
     </Tabs>

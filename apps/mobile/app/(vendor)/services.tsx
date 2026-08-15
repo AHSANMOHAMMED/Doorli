@@ -41,7 +41,6 @@ const STATUS_TABS = [
   { key: 'all', label: 'All' },
   { key: 'open', label: 'Open' },
   { key: 'assigned', label: 'Assigned' },
-  { key: 'accepted', label: 'Accepted' },
   { key: 'in_progress', label: 'In Progress' },
   { key: 'completed', label: 'Completed' },
 ];
@@ -141,7 +140,7 @@ export default function VendorServiceJobs() {
       case 'open':
       case 'assigned':
         return [{ label: 'Accept', action: 'accept', icon: CheckCircle }];
-      case 'accepted':
+      case 'assigned':
         return [{ label: 'Start', action: 'start', icon: Play }];
       case 'in_progress':
         return [{ label: 'Complete', action: 'complete', icon: Check }];

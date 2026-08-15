@@ -32,6 +32,7 @@ const envSchema = z.object({
   OTP_TTL_SECONDS: z.coerce.number().default(300),
   AUTH_SERVICE_URL: z.string().url().default('http://localhost:4001'),
   DELIVERY_SERVICE_URL: z.string().url().default('http://localhost:8086'),
+  INVENTORY_SERVICE_URL: z.string().url().default('http://localhost:4010'),
   NOTIFICATIONS_SERVICE_URL: z.string().url().default('http://localhost:4007'),
   SEARCH_SERVICE_URL: z.string().url().default('http://localhost:4004'),
   FORUM_SERVICE_URL: z.string().url().default('http://localhost:8087'),

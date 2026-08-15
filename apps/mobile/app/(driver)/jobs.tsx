@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -38,6 +38,7 @@ export default function DriverJobs() {
   const queryClient = useQueryClient();
   const [isOnline, setIsOnline] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>('active');
+  const [offerCountdown, setOfferCountdown] = useState(30);
 
   useDriverLocationPublish(isOnline, user?.id);
 
@@ -69,6 +70,13 @@ export default function DriverJobs() {
   const history = historyData ?? [];
 
   const currentList = activeTab === 'active' ? active : activeTab === 'available' ? available : history;
+
+  useEffect(() => {
+    if (activeTab !== 'available' || available.length === 0) return;
+    setOfferCountdown(30);
+    const timer = setInterval(() => setOfferCountdown((value) => Math.max(0, value - 1)), 1000);
+    return () => clearInterval(timer);
+  }, [activeTab, available[0]?.id]);
 
   async function toggleOnline(next: boolean) {
     try {
@@ -140,9 +148,10 @@ export default function DriverJobs() {
             <Text style={styles.total}>{formatPrice(Number(item.totalAmount))}</Text>
             <Text style={styles.fee}>Fee: {formatPrice(Number(item.deliveryFee))}</Text>
           </View>
-          {!isCompleted && item.items && (
-            <Text style={styles.itemCount}>{item.items.length} item(s)</Text>
-          )}
+           {!isCompleted && item.items && (
+             <Text style={styles.itemCount}>{item.items.length} item(s)</Text>
+           )}
+           {mode === 'available' && <Text style={styles.offerTimer}>Offer expires in {offerCountdown}s</Text>}
           <View style={styles.actions}>
             {mode === 'available' && (
               <>
@@ -352,6 +361,7 @@ const styles = StyleSheet.create({
   total: { fontWeight: '700', color: '#f8fafc', fontSize: 16 },
   fee: { fontSize: 12, color: '#94a3b8' },
   itemCount: { marginTop: 4, fontSize: 12, color: '#64748b' },
+  offerTimer: { marginTop: 6, fontSize: 12, color: '#f59e0b', fontWeight: '700' },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
   actionBtn: {
     backgroundColor: '#00B241',

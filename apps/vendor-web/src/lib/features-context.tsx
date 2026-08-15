@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/auth-context';
 
 type FeaturesContextValue = {
   features: Record<string, boolean>;
+  vendor: { id: string; businessName: string; erpProvider?: string | null; erpTenantId?: string | null } | null;
   hasFeature: (key: string) => boolean;
   loading: boolean;
 };
@@ -15,12 +16,14 @@ const FeaturesContext = createContext<FeaturesContextValue | undefined>(undefine
 export function FeaturesProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [features, setFeatures] = useState<Record<string, boolean>>({});
+  const [vendor, setVendor] = useState<FeaturesContextValue['vendor']>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadFeatures() {
       if (!user || user.role !== 'vendor') {
         setFeatures({});
+        setVendor(null);
         setLoading(false);
         return;
       }
@@ -29,24 +32,8 @@ export function FeaturesProvider({ children }: { children: ReactNode }) {
         const res = await apiFetch('/vendors/me/features');
         const data = (res as any).data || res;
         
-        const vendorFeatures = data.vendorFeatures || [];
-        const globalFeatures = data.globalFeatures || [];
-        
-        const featureMap: Record<string, boolean> = {};
-        
-        // Add global defaults
-        globalFeatures.forEach((f: any) => {
-          featureMap[f.key] = true;
-        });
-        
-        // Override with explicit vendor configurations
-        vendorFeatures.forEach((vf: any) => {
-          if (vf.feature) {
-            featureMap[vf.feature.key] = vf.isEnabled;
-          }
-        });
-        
-        setFeatures(featureMap);
+        setFeatures(data.features || {});
+        setVendor(data.vendor || null);
       } catch (err) {
         console.error('Failed to load features', err);
       } finally {
@@ -62,7 +49,7 @@ export function FeaturesProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <FeaturesContext.Provider value={{ features, hasFeature, loading }}>
+    <FeaturesContext.Provider value={{ features, vendor, hasFeature, loading }}>
       {children}
     </FeaturesContext.Provider>
   );

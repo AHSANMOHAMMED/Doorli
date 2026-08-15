@@ -35,8 +35,8 @@ const NAV: NavItem[] = [
 
 const NAV_FEATURE_REQUIREMENTS: Record<string, string> = {
   '/dashboard/pos': 'pos',
-  '/dashboard/analytics': 'advanced_analytics',
-  '/dashboard/reviews': 'ai_reviews',
+  '/dashboard/orders': 'doorli_delivery',
+  '/dashboard/deliveries': 'doorli_delivery',
 };
 
 import { FeaturesProvider, useFeatures } from '@/lib/features-context';

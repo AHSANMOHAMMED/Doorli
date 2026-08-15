@@ -18,6 +18,7 @@ import { prisma } from '@doorli/db';
 import { z } from 'zod';
 import {
   invalidateFeatureCache,
+  getVendorFeatureMap,
   syncVendorMarketplaceIndex,
   MARKETPLACE_LISTING_KEY,
 } from '../../lib/featureFlags.js';
@@ -103,7 +104,22 @@ router.get(
       // Full catalog so clients can render toggles for non-global (opt-in) flags too
       const allFeatures = await prisma.featureFlag.findMany();
 
-      res.json({ success: true, data: { vendorFeatures, globalFeatures, allFeatures } });
+      const features = await getVendorFeatureMap(vendor.id);
+      res.json({
+        success: true,
+        data: {
+          features,
+          vendor: {
+            id: vendor.id,
+            businessName: vendor.businessName,
+            erpProvider: vendor.erpProvider,
+            erpTenantId: vendor.erpTenantId,
+          },
+          vendorFeatures,
+          globalFeatures,
+          allFeatures,
+        },
+      });
     } catch (err) {
       next(err);
     }

@@ -1,5 +1,8 @@
 import express from 'express';
 import { z } from 'zod';
+import { prisma } from '@doorli/db';
+import { authenticateToken, requireRole } from '../../middleware/authenticateToken.js';
+import { AppError } from '../../middleware/errorHandler.js';
 
 const router = express.Router();
 
@@ -17,48 +20,88 @@ const createHotelSchema = z.object({
   availableRooms: z.number().int().min(0, 'Available rooms cannot be negative'),
   images: z.array(z.string()).optional(),
   amenities: z.array(z.string()).optional(),
+  ownerUserId: z.string().uuid().optional(),
+  roomType: z.string().min(2).max(100).default('Standard Room'),
+  roomCapacity: z.number().int().positive().max(20).default(2),
 });
 
-router.post('/', async (req, res) => {
+router.post('/', authenticateToken, requireRole('vendor', 'admin'), async (req, res, next) => {
   try {
     const validatedData = createHotelSchema.parse(req.body);
-    
-    // Generate hotel ID (would typically use UUID or database auto-increment)
-    const hotelId = `hotel-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
-    // Create hotel in database
-    // For now, we'll simulate successful creation
-    const newHotel = {
-      id: hotelId,
-      ...validatedData,
-      isFeatured: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    
-    // Simulate database operation delay
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
+    if (!req.user) return next(new AppError(401, 'Authentication required'));
+    const ownerUserId = req.user.role === 'admin' && validatedData.ownerUserId
+      ? validatedData.ownerUserId
+      : req.user.id;
+
+    const hotel = await prisma.$transaction(async (tx) => {
+      const existingVendor = await tx.vendor.findUnique({ where: { userId: ownerUserId } });
+      if (existingVendor && existingVendor.category !== 'hotel') {
+        throw new AppError(409, 'This account already owns a non-hotel vendor');
+      }
+      const vendor = existingVendor
+        ? await tx.vendor.update({
+            where: { id: existingVendor.id },
+            data: {
+              businessName: validatedData.businessName,
+              description: validatedData.description,
+              phone: validatedData.phone,
+              addressLine: validatedData.address,
+              city: validatedData.city,
+              ...(validatedData.rating === undefined ? {} : { avgRating: validatedData.rating }),
+            },
+          })
+        : await tx.vendor.create({
+            data: {
+              userId: ownerUserId,
+              businessName: validatedData.businessName,
+              category: 'hotel',
+              description: validatedData.description,
+              phone: validatedData.phone,
+              addressLine: validatedData.address,
+              city: validatedData.city,
+              avgRating: validatedData.rating ?? 0,
+            },
+          });
+
+      const room = await tx.hotelRoom.upsert({
+        where: { vendorId_roomType: { vendorId: vendor.id, roomType: validatedData.roomType } },
+        create: {
+          vendorId: vendor.id,
+          roomType: validatedData.roomType,
+          capacity: validatedData.roomCapacity,
+          totalRooms: validatedData.totalRooms,
+          price: validatedData.pricePerNight,
+          amenities: validatedData.amenities ?? [],
+        },
+        update: {
+          capacity: validatedData.roomCapacity,
+          totalRooms: validatedData.totalRooms,
+          price: validatedData.pricePerNight,
+          amenities: validatedData.amenities ?? [],
+          isActive: true,
+        },
+      });
+
+      return { vendor, room };
+    });
+
     res.status(201).json({
       success: true,
-      data: newHotel,
-      message: 'Hotel created successfully'
+      data: {
+        ...hotel.vendor,
+        hotelRooms: [hotel.room],
+      },
+      message: 'Hotel created successfully',
     });
-    
-  } catch (error) {
+  } catch (error: unknown) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({
         success: false,
         error: 'Validation failed',
-        details: error.errors
+        details: error.errors,
       });
     }
-    
-    console.error('Error creating hotel:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to create hotel'
-    });
+    next(error);
   }
 });
 

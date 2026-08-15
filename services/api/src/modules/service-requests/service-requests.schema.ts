@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const createServiceRequestSchema = z.object({
-  serviceType: z.string(),
+  serviceType: z.string().min(2).max(100),
   title: z.string().min(5).max(200),
   description: z.string().optional(),
   addressLine: z.string(),
@@ -10,6 +10,7 @@ export const createServiceRequestSchema = z.object({
   isUrgent: z.boolean().default(false),
   offeredRate: z.number().positive().optional(),
   scheduledAt: z.string().optional(),
+  metadata: z.record(z.unknown()).optional(),
 });
 
 export const acceptServiceRequestSchema = z.object({

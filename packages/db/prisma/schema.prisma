@@ -163,6 +163,43 @@ model WalletTransaction {
   @@map("wallet_transactions")
 }
 
+model Biller {
+  id        String        @id @db.VarChar(50)
+  name      String        @db.VarChar(120)
+  type      String        @db.VarChar(30)
+  logo      String?
+  isActive  Boolean       @default(true) @map("is_active")
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+  payments  BillPayment[]
+
+  @@index([type, isActive])
+  @@map("billers")
+}
+
+model BillPayment {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  billerId       String   @map("biller_id") @db.VarChar(50)
+  accountRef     String   @map("account_ref") @db.VarChar(150)
+  amount         Decimal  @db.Decimal(12, 2)
+  type           String   @db.VarChar(30)
+  status         String   @default("pending") @db.VarChar(20)
+  reference      String   @unique @db.VarChar(80)
+  idempotencyKey String   @map("idempotency_key") @db.VarChar(150)
+  providerRef    String?  @map("provider_ref") @db.VarChar(150)
+  metadata       Json?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  biller         Biller   @relation(fields: [billerId], references: [id])
+
+  @@unique([userId, idempotencyKey])
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@map("bill_payments")
+}
+
 model WalletJournalEntry {
   id            String   @id @default(uuid()) @db.Uuid
   transactionId String   @map("transaction_id") @db.Uuid
@@ -215,6 +252,12 @@ model User {
   updatedAt        DateTime @updatedAt @map("updated_at")
 
   addresses           Address[]
+  billPayments        BillPayment[]
+  prescriptions       Prescription[]
+  medicineOrders      MedicineOrder[]
+  familyProfiles      FamilyProfile[]
+  kycCases            KycCase[]
+  walletTopups        WalletTopupIntent[]
   vendor              Vendor?
   driver              Driver?
   wallet              Wallet?
@@ -281,6 +324,60 @@ model User {
   @@map("users")
 }
 
+model FamilyProfile {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  name          String   @db.VarChar(100)
+  relationship  String   @db.VarChar(40)
+  phone         String?  @db.VarChar(20)
+  dateOfBirth   DateTime? @map("date_of_birth") @db.Date
+  preferences   Json?
+  isDefault     Boolean  @default(false) @map("is_default")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name])
+  @@index([userId, isDefault])
+  @@map("family_profiles")
+}
+
+model KycCase {
+  id              String    @id @default(uuid()) @db.Uuid
+  userId          String    @unique @map("user_id") @db.Uuid
+  level           Int       @default(1)
+  status          String    @default("pending") @db.VarChar(20)
+  idNumberHash    String?   @map("id_number_hash") @db.VarChar(128)
+  documentUrl     String?   @map("document_url")
+  rejectionReason String?   @map("rejection_reason")
+  reviewedBy      String?   @map("reviewed_by") @db.Uuid
+  submittedAt     DateTime  @default(now()) @map("submitted_at")
+  reviewedAt      DateTime? @map("reviewed_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status, level])
+  @@map("kyc_cases")
+}
+
+model WalletTopupIntent {
+  id                   String   @id @default(uuid()) @db.Uuid
+  userId               String   @map("user_id") @db.Uuid
+  amount               Decimal  @db.Decimal(12, 2)
+  method               String   @db.VarChar(20)
+  status               String   @default("requires_payment") @db.VarChar(30)
+  idempotencyKey       String   @map("idempotency_key") @db.VarChar(150)
+  providerTransactionId String? @map("provider_transaction_id") @db.VarChar(150)
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, idempotencyKey])
+  @@index([status, createdAt])
+  @@map("wallet_topup_intents")
+}
+
 model Address {
   id          String   @id @default(uuid()) @db.Uuid
   userId      String   @map("user_id") @db.Uuid
@@ -332,6 +429,9 @@ model Vendor {
   productAliases ProductAlias[]
   orders         Order[]
   bookings       Booking[]
+  hotelRooms     HotelRoom[]
+  hallSlots      HallSlot[]
+  beautyServices BeautyService[]
   reviews        Review[]
   features       VendorFeature[]
   groupOrders    GroupOrder[]
@@ -475,6 +575,10 @@ model Booking {
   requirements  String?
   durationMins  Int?          @map("duration_mins")
   roomType      String?       @map("room_type") @db.VarChar(100)
+  roomId        String?       @map("room_id") @db.Uuid
+  hallSlotId    String?       @map("hall_slot_id") @db.Uuid
+  beautyServiceId String?      @map("beauty_service_id") @db.Uuid
+  idempotencyKey String?      @map("idempotency_key") @db.VarChar(150)
   amenities     Json?
   contractUrl   String?       @map("contract_url")
   createdAt     DateTime      @default(now()) @map("created_at")
@@ -482,11 +586,75 @@ model Booking {
 
   customer User   @relation(fields: [customerId], references: [id])
   vendor   Vendor @relation(fields: [vendorId], references: [id])
+  room     HotelRoom? @relation(fields: [roomId], references: [id])
+  hallSlot HallSlot? @relation(fields: [hallSlotId], references: [id])
+  beautyService BeautyService? @relation(fields: [beautyServiceId], references: [id])
 
   @@index([customerId])
   @@index([vendorId])
   @@index([status])
+  @@index([roomId, checkInDate, checkOutDate])
+  @@index([hallSlotId, eventDate])
+  @@index([beautyServiceId, eventDate])
+  @@unique([customerId, idempotencyKey])
   @@map("bookings")
+}
+
+model HotelRoom {
+  id          String    @id @default(uuid()) @db.Uuid
+  vendorId    String    @map("vendor_id") @db.Uuid
+  roomType    String    @map("room_type") @db.VarChar(100)
+  description String?
+  capacity    Int       @default(2)
+  totalRooms  Int       @default(1) @map("total_rooms")
+  price       Decimal   @db.Decimal(12, 2)
+  amenities   Json?
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  vendor      Vendor    @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  bookings    Booking[]
+
+  @@unique([vendorId, roomType])
+  @@index([vendorId, isActive])
+  @@map("hotel_rooms")
+}
+
+model HallSlot {
+  id          String    @id @default(uuid()) @db.Uuid
+  vendorId    String    @map("vendor_id") @db.Uuid
+  name        String    @db.VarChar(100)
+  slotType    String    @map("slot_type") @db.VarChar(30)
+  capacity    Int
+  price       Decimal   @db.Decimal(12, 2)
+  amenities   Json?
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  vendor      Vendor    @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  bookings    Booking[]
+
+  @@unique([vendorId, name])
+  @@index([vendorId, isActive])
+  @@map("hall_slots")
+}
+
+model BeautyService {
+  id           String    @id @default(uuid()) @db.Uuid
+  vendorId     String    @map("vendor_id") @db.Uuid
+  name         String    @db.VarChar(120)
+  description  String?
+  durationMins Int       @map("duration_mins")
+  price        Decimal   @db.Decimal(12, 2)
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  vendor       Vendor    @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  bookings     Booking[]
+
+  @@unique([vendorId, name])
+  @@index([vendorId, isActive])
+  @@map("beauty_services")
 }
 
 model ServiceRequest {
@@ -503,6 +671,8 @@ model ServiceRequest {
   offeredRate        Decimal?             @map("offered_rate") @db.Decimal(10, 2)
   status             ServiceRequestStatus @default(open)
   scheduledAt        DateTime?            @map("scheduled_at")
+  idempotencyKey     String?              @map("idempotency_key") @db.VarChar(150)
+  metadata           Json?
   createdAt          DateTime             @default(now()) @map("created_at")
   updatedAt          DateTime             @updatedAt @map("updated_at")
 
@@ -513,6 +683,7 @@ model ServiceRequest {
   @@index([assignedProviderId])
   @@index([status])
   @@index([serviceType])
+  @@unique([customerId, idempotencyKey])
   @@map("service_requests")
 }
 
@@ -725,10 +896,12 @@ model EventPackage {
   status        String   @default("draft") @db.VarChar(40)
   totalEstimate Decimal? @map("total_estimate") @db.Decimal(12, 2)
   items         Json     @default("[]")
+  idempotencyKey String?  @map("idempotency_key") @db.VarChar(150)
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
   @@index([customerId])
+  @@unique([customerId, idempotencyKey])
   @@map("event_packages")
 }
 
@@ -882,6 +1055,138 @@ model TransitTicket {
   @@map("transit_tickets")
 }
 
+model HealthProvider {
+  id         String   @id
+  name       String   @db.VarChar(120)
+  type       String   @db.VarChar(30)
+  specialty  String?
+  city       String?  @db.VarChar(80)
+  latitude   Decimal? @db.Decimal(10, 8)
+  longitude  Decimal? @db.Decimal(11, 8)
+  fee        Decimal  @default(0) @db.Decimal(12, 2)
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@index([type, isActive])
+  @@index([city])
+  @@map("health_providers")
+}
+
+model Appointment {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  providerId String   @map("provider_id")
+  slotTime   DateTime @map("slot_time")
+  type       String   @db.VarChar(30)
+  status     String   @default("confirmed") @db.VarChar(20)
+  notes      String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@unique([providerId, slotTime])
+  @@index([userId, slotTime])
+  @@map("appointments")
+}
+
+model LabOrder {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  providerId     String   @map("provider_id")
+  tests          Json
+  collectionSlot DateTime @map("collection_slot")
+  address        String
+  status         String   @default("confirmed") @db.VarChar(20)
+  reference      String   @unique @db.VarChar(40)
+  createdAt      DateTime @default(now()) @map("created_at")
+  @@index([userId, createdAt])
+  @@map("lab_orders")
+}
+
+model MedicineOrder {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  pharmacyId     String   @map("pharmacy_id")
+  items          Json
+  prescriptionUrl String? @map("prescription_url")
+  prescriptionId String?  @map("prescription_id") @db.Uuid
+  idempotencyKey String   @default(uuid()) @map("idempotency_key") @db.VarChar(150)
+  status         String   @default("pending") @db.VarChar(20)
+  reference      String   @unique @db.VarChar(40)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prescription    Prescription? @relation(fields: [prescriptionId], references: [id])
+  @@unique([userId, idempotencyKey])
+  @@index([userId, createdAt])
+  @@map("medicine_orders")
+}
+
+model Prescription {
+  id          String         @id @default(uuid()) @db.Uuid
+  userId      String         @map("user_id") @db.Uuid
+  fileUrl     String         @map("file_url")
+  status      String         @default("pending_review") @db.VarChar(30)
+  notes       String?
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders      MedicineOrder[]
+
+  @@index([userId, createdAt])
+  @@map("prescriptions")
+}
+
+model NursingBooking {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  visitDate     DateTime @map("visit_date")
+  durationHours Int      @map("duration_hours")
+  requirements  String?
+  address       String
+  status        String   @default("confirmed") @db.VarChar(20)
+  reference     String   @unique @db.VarChar(40)
+  createdAt     DateTime @default(now()) @map("created_at")
+  @@index([userId, visitDate])
+  @@map("nursing_bookings")
+}
+
+model ClassBooking {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @map("user_id") @db.Uuid
+  providerId      String   @map("provider_id")
+  classDate       DateTime @map("class_date")
+  className       String   @map("class_name")
+  maxParticipants Int      @map("max_participants")
+  status          String   @default("confirmed") @db.VarChar(20)
+  reference       String   @unique @db.VarChar(40)
+  createdAt       DateTime @default(now()) @map("created_at")
+  @@index([providerId, classDate])
+  @@index([userId, createdAt])
+  @@map("class_bookings")
+}
+
+model CourierJob {
+  id             String   @id @default(uuid()) @db.Uuid
+  customerId     String   @map("customer_id") @db.Uuid
+  runnerId       String?  @map("runner_id") @db.Uuid
+  type           String   @db.VarChar(30)
+  status         String   @default("pending") @db.VarChar(30)
+  pickupAddress  String   @map("pickup_address")
+  pickupLatitude Decimal? @map("pickup_latitude") @db.Decimal(10, 8)
+  pickupLongitude Decimal? @map("pickup_longitude") @db.Decimal(11, 8)
+  dropoffAddress String   @map("dropoff_address")
+  dropoffLatitude Decimal? @map("dropoff_latitude") @db.Decimal(10, 8)
+  dropoffLongitude Decimal? @map("dropoff_longitude") @db.Decimal(11, 8)
+  fareEstimate   Decimal? @map("fare_estimate") @db.Decimal(12, 2)
+  proofUrl       String?  @map("proof_url")
+  metadata       Json?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  @@index([customerId, createdAt])
+  @@index([status, createdAt])
+  @@map("courier_jobs")
+}
+
 model AutoTopupRule {
   id             String   @id @default(uuid()) @db.Uuid
   userId         String   @map("user_id") @db.Uuid
@@ -905,10 +1210,16 @@ model WalletPayout {
   destination String?  @db.VarChar(150)
   status      String   @default("pending") @db.VarChar(20)
   reference   String?  @db.VarChar(100)
+  providerReference String? @map("provider_reference") @db.VarChar(150)
+  failureReason String? @map("failure_reason")
+  processedAt DateTime? @map("processed_at")
+  idempotencyKey String? @map("idempotency_key") @db.VarChar(150)
   createdAt   DateTime @default(now()) @map("created_at")
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
+  @@unique([userId, idempotencyKey])
+  @@index([status, createdAt])
   @@map("wallet_payouts")
 }
 

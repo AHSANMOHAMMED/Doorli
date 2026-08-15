@@ -21,23 +21,23 @@ This report maps `.kiro/specs/doorli-full-platform-completion/` to the implement
 
 ## Implemented But Not Production Complete
 
-- Health, courier, and transit seed data are in route modules rather than persisted domain models and partner integrations.
+- Health providers, appointments, lab orders, medicine orders, nursing bookings, class bookings, and courier jobs now have persisted Prisma domain models and migration coverage. Real provider/runner dispatch and partner integrations remain deployment work.
 - Wallet payout requests remain pending until a real bank/UPI gateway worker settles them.
 - Ride matching and driver settlement require integration with the dedicated ride-hailing service and real driver location flow.
-- The customer pages use coordinate defaults for courier jobs and do not yet provide map/geocoding selection.
+- Courier UI still uses coordinate defaults for address submission; map/geocoding selection remains deployment/provider work.
 
-## Missing From The Current Repository
+## Remaining Required Work
 
-- Premium renewal job, delivery waiver, and priority dispatch.
-- Auto-top-up execution/reminder jobs, payout withdrawal, and full wallet KYC document flow.
-- Full health models, prescription upload/storage validation, medicine ordering, and appointment uniqueness.
-- Full courier job state machine, runner dispatch, tracking, proof-of-delivery storage, and delayed redispatch.
-- Customer mobile health, courier, and AI screens.
-- Complete Super Admin live-data audit across every scaffolded page.
+- Premium renewal execution is implemented in the API scheduler; delivery waiver is implemented for Premium orders. Priority dispatch still needs the production dispatch provider.
+- Auto-top-up execution/reminder jobs, payout withdrawal settlement, and full wallet KYC document flow.
+- Prescription upload/storage validation and real medicine fulfillment.
+- Full courier runner dispatch, live runner tracking, and delayed redispatch.
+- Super Admin alternate/scaffolded pages still need a full live-data audit.
+- External Stripe/UPI/bank, SMS, maps, storage, push, and provider integrations.
 
 ## Recommended Build Order
 
-1. Persist health and courier jobs, add provider/runner dispatch, and add map/geocoding selection.
+1. Add provider/runner dispatch, live tracking, and map/geocoding selection.
 2. Connect Stripe/UPI/bank gateways, payout settlement workers, auto-top-up jobs, and SMS confirmations.
 3. Integrate ride-hailing and delivery Socket.io rooms with real driver location/offer flows.
 4. Add Premium renewal, free-delivery waiver, priority dispatch, and exclusive deals.

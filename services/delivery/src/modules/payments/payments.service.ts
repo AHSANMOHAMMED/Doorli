@@ -571,13 +571,15 @@ async function markPaymentByGatewayId(gatewayTransactionId: string, status: Paym
 }
 
 async function handleStripeWebhook(payload: unknown) {
-  const event = payload as { type?: string; data?: { object?: { id?: string; metadata?: { paymentId?: string } } } };
+  const event = payload as { type?: string; data?: { object?: { id?: string; metadata?: { paymentId?: string; walletTopupId?: string } } } };
   const type = event.type;
   const object = event.data?.object;
   const piId = object?.id;
   const paymentId = object?.metadata?.paymentId;
+  const walletTopupId = object?.metadata?.walletTopupId;
 
   if (type === 'payment_intent.succeeded') {
+    if (walletTopupId && piId) return settleWalletTopup(walletTopupId, piId);
     if (paymentId) {
       const payment = await prisma.payment.update({
         where: { id: paymentId },
@@ -596,6 +598,29 @@ async function handleStripeWebhook(payload: unknown) {
   }
 
   return { success: true };
+}
+
+async function settleWalletTopup(intentId: string, providerTransactionId: string) {
+  return prisma.$transaction(async (tx) => {
+    const intent = await tx.walletTopupIntent.findUnique({ where: { id: intentId } });
+    if (!intent) throw new AppError(404, 'Wallet top-up intent not found');
+    if (intent.status === 'paid') return { success: true, replayed: true, intentId };
+    const key = `wallet-topup:${intent.id}`;
+    const existing = await tx.walletTransaction.findUnique({ where: { userId_idempotencyKey: { userId: intent.userId, idempotencyKey: key } } });
+    if (existing) {
+      await tx.walletTopupIntent.update({ where: { id: intent.id }, data: { status: 'paid', providerTransactionId } });
+      return { success: true, replayed: true, intentId };
+    }
+    const wallet = await tx.wallet.upsert({ where: { userId: intent.userId }, create: { userId: intent.userId, balance: 0 }, update: {} });
+    const updatedWallet = await tx.wallet.update({ where: { id: wallet.id }, data: { balance: { increment: intent.amount } } });
+    const transaction = await tx.walletTransaction.create({ data: { walletId: wallet.id, userId: intent.userId, idempotencyKey: key, type: 'topup', amount: intent.amount, balanceAfter: updatedWallet.balance, currency: updatedWallet.currency, reference: providerTransactionId, description: 'Stripe wallet top-up', metadata: { topupIntentId: intent.id } } });
+    await tx.walletJournalEntry.createMany({ data: [
+      { transactionId: transaction.id, userId: intent.userId, accountRef: intent.userId, accountType: 'user_wallet', direction: 'credit', amount: intent.amount, currency: updatedWallet.currency, balanceBefore: Number(wallet.balance), balanceAfter: Number(updatedWallet.balance) },
+      { transactionId: transaction.id, accountRef: 'platform:stripe', accountType: 'platform', direction: 'debit', amount: intent.amount, currency: updatedWallet.currency, balanceBefore: 0, balanceAfter: 0 },
+    ] });
+    await tx.walletTopupIntent.update({ where: { id: intent.id }, data: { status: 'paid', providerTransactionId } });
+    return { success: true, replayed: false, intentId, transactionId: transaction.id };
+  });
 }
 
 async function handlePayHereWebhook(payload: unknown) {

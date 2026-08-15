@@ -1,254 +1,78 @@
 "use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { Star, MapPin, Wifi, Car, Coffee, Waves, ArrowLeft, Calendar, Users, Check } from 'lucide-react';
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
 
-const hotel = {
-  id: 'hotel-001',
-  businessName: 'Grand Hotel Colombo',
-  description: 'Luxury 5-star hotel with spa and pool, offering world-class amenities and exceptional service in the heart of Colombo.',
-  city: 'Colombo',
-  address: '123 Galle Road, Colombo 03',
-  phone: '+94 11 123 4567',
-  rating: 4.7,
-  totalReviews: 456,
-  pricePerNight: 8500,
-  amenities: ['Free WiFi', 'Parking', 'Breakfast', 'Pool', 'Spa', 'Air Conditioning', 'Gym', 'Room Service', 'Restaurant', 'Bar'],
-  rooms: [
-    { id: 'r1', type: 'Standard Room', price: 8500, capacity: 2, amenities: ['WiFi', 'AC', 'TV', 'Mini Bar'] },
-    { id: 'r2', type: 'Deluxe Room', price: 12000, capacity: 2, amenities: ['WiFi', 'AC', 'TV', 'Mini Bar', 'City View'] },
-    { id: 'r3', type: 'Suite', price: 18000, capacity: 3, amenities: ['WiFi', 'AC', 'TV', 'Mini Bar', 'Ocean View', 'Living Area'] },
-    { id: 'r4', type: 'Family Room', price: 15000, capacity: 4, amenities: ['WiFi', 'AC', 'TV', 'Mini Bar', 'Extra Beds'] },
-  ],
-  photos: ['/images/hotel1.jpg', '/images/hotel2.jpg', '/images/hotel3.jpg'],
-  policies: {
-    checkIn: '2:00 PM',
-    checkOut: '12:00 PM',
-    cancellation: 'Free cancellation up to 24 hours before check-in',
-    pets: 'Pets not allowed',
-    smoking: 'Non-smoking property',
-  },
-};
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api/v1";
+
+type Room = { id: string; roomType: string; capacity: number; price: number; availableRooms: number; amenities?: string[] };
+type Hotel = { id: string; businessName: string; description?: string; city?: string; addressLine?: string; avgRating?: number; phone?: string };
+
+function nightsBetween(from: string, to: string) {
+  if (!from || !to) return 0;
+  return Math.max(0, Math.ceil((new Date(`${to}T00:00:00Z`).getTime() - new Date(`${from}T00:00:00Z`).getTime()) / 86400000));
+}
 
 export default function HotelDetailPage() {
-  const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
-  const [checkIn, setCheckIn] = useState('');
-  const [checkOut, setCheckOut] = useState('');
+  const { id } = useParams<{ id: string }>();
+  const [hotel, setHotel] = useState<Hotel | null>(null);
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [roomId, setRoomId] = useState("");
+  const [checkIn, setCheckIn] = useState("");
+  const [checkOut, setCheckOut] = useState("");
   const [guests, setGuests] = useState(2);
+  const [token, setToken] = useState("");
+  const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  const calculateNights = () => {
-    if (!checkIn || !checkOut) return 0;
-    const start = new Date(checkIn);
-    const end = new Date(checkOut);
-    const diff = end.getTime() - start.getTime();
-    return Math.ceil(diff / (1000 * 60 * 60 * 24));
-  };
+  useEffect(() => {
+    const saved = window.localStorage.getItem("doorli_access_token");
+    if (saved) setToken(saved);
+    fetch(`${API}/vendors/${id}`).then((r) => r.json()).then((r) => setHotel(r.data || r)).catch(() => setMessage("Hotel could not be loaded."));
+  }, [id]);
 
-  const selectedRoomData = hotel.rooms.find(r => r.id === selectedRoom);
-  const nights = calculateNights();
-  const totalPrice = selectedRoomData ? selectedRoomData.price * nights : 0;
+  useEffect(() => {
+    if (!id) return;
+    const query = checkIn && checkOut ? `?from=${checkIn}T00:00:00.000Z&to=${checkOut}T00:00:00.000Z` : "";
+    fetch(`${API}/bookings/hotels/${id}/rooms${query}`).then((r) => r.json()).then((r) => { const next = r.data || []; setRooms(next); if (!roomId && next[0]) setRoomId(next[0].id); }).catch(() => setMessage("Room availability could not be loaded."));
+  }, [id, checkIn, checkOut, roomId]);
 
-  const getAmenityIcon = (amenity: string) => {
-    if (amenity.includes('WiFi')) return <Wifi className="w-5 h-5" />;
-    if (amenity.includes('Parking')) return <Car className="w-5 h-5" />;
-    if (amenity.includes('Breakfast') || amenity.includes('Restaurant')) return <Coffee className="w-5 h-5" />;
-    if (amenity.includes('Pool') || amenity.includes('Spa')) return <Waves className="w-5 h-5" />;
-    return <Check className="w-5 h-5" />;
-  };
+  const selectedRoom = rooms.find((room) => room.id === roomId);
+  const nights = nightsBetween(checkIn, checkOut);
+  const total = selectedRoom ? Number(selectedRoom.price) * nights : 0;
+  const today = new Date().toISOString().slice(0, 10);
 
-  return (
-    <div className="min-h-screen bg-[#0a0f2e] text-white pb-20">
-      {/* Header */}
-      <header className="w-full top-0 sticky border-b border-white/10 bg-[#0a0f2e]/95 backdrop-blur-xl z-50">
-        <div className="max-w-screen-xl mx-auto px-4 md:px-8 h-16 flex items-center gap-4">
-          <Link href="/" className="text-[#5dcaa5] hover:text-[#4db894]">
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <h1 className="text-lg font-bold">{hotel.businessName}</h1>
-        </div>
-      </header>
+  async function login() {
+    setBusy(true);
+    try {
+      const response = await fetch(`${API}/auth/login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ identifier, password, expectedRole: "customer" }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Login failed");
+      const next = data.data?.accessToken || data.accessToken;
+      if (!next) throw new Error("Login did not return an access token");
+      window.localStorage.setItem("doorli_access_token", next);
+      setToken(next); setMessage("Signed in. You can now book your room.");
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Login failed"); }
+    finally { setBusy(false); }
+  }
 
-      <main className="max-w-screen-lg mx-auto px-4 md:px-8 py-8">
-        {/* Photo Gallery */}
-        <div className="grid grid-cols-3 gap-2 mb-8 rounded-2xl overflow-hidden">
-          {hotel.photos.map((photo, i) => (
-            <div key={i} className="aspect-video bg-[#121a36] flex items-center justify-center">
-              <span className="text-4xl">🏨</span>
-            </div>
-          ))}
-        </div>
+  async function book() {
+    if (!token) return setMessage("Sign in before booking.");
+    if (!selectedRoom || !checkIn || !checkOut || nights < 1) return setMessage("Choose an available room and valid dates.");
+    if (selectedRoom.availableRooms < 1 || guests > selectedRoom.capacity) return setMessage("This room is not available for that guest count.");
+    setBusy(true);
+    try {
+      const response = await fetch(`${API}/bookings`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, "Idempotency-Key": `hotel-${id}-${roomId}-${checkIn}-${checkOut}` }, body: JSON.stringify({ vendorId: id, bookingType: "hotel", roomId, checkInDate: `${checkIn}T00:00:00.000Z`, checkOutDate: `${checkOut}T00:00:00.000Z`, guestCount: guests, totalAmount: total }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Booking failed");
+      setMessage(`Booking ${data.data?.bookingNumber || "created"} is pending hotel confirmation.`);
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Booking failed"); }
+    finally { setBusy(false); }
+  }
 
-        {/* Hotel Info */}
-        <div className="bg-[#121a36] rounded-2xl border border-white/10 p-6 mb-8">
-          <div className="flex flex-wrap items-center gap-4 mb-4">
-            <div className="flex items-center gap-1">
-              <Star className="w-5 h-5 text-[#fac775]" />
-              <span className="font-semibold">{hotel.rating}</span>
-              <span className="text-sm text-[#7b8ba3]">({hotel.totalReviews} reviews)</span>
-            </div>
-            <div className="flex items-center gap-1 text-[#7b8ba3]">
-              <MapPin className="w-4 h-4" />
-              <span>{hotel.city}</span>
-            </div>
-          </div>
-
-          <p className="text-[#7b8ba3] mb-4">{hotel.description}</p>
-
-          <div className="flex items-center gap-2 text-[#7b8ba3]">
-            <span>📞 {hotel.phone}</span>
-          </div>
-          <div className="flex items-center gap-2 text-[#7b8ba3] mt-2">
-            <span>📍 {hotel.address}</span>
-          </div>
-        </div>
-
-        {/* Amenities */}
-        <div className="bg-[#121a36] rounded-2xl border border-white/10 p-6 mb-8">
-          <h2 className="text-xl font-bold mb-4">Amenities</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {hotel.amenities.map((amenity, i) => (
-              <div key={i} className="flex items-center gap-3 text-[#7b8ba3]">
-                {getAmenityIcon(amenity)}
-                <span>{amenity}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Room Selection */}
-        <div className="bg-[#121a36] rounded-2xl border border-white/10 p-6 mb-8">
-          <h2 className="text-xl font-bold mb-4">Select Room</h2>
-          <div className="space-y-4">
-            {hotel.rooms.map((room) => (
-              <div
-                key={room.id}
-                className={`p-4 rounded-xl border cursor-pointer transition-all ${
-                  selectedRoom === room.id
-                    ? 'border-[#5dcaa5] bg-[#5dcaa5]/10'
-                    : 'border-white/10 hover:border-[#5dcaa5]/50'
-                }`}
-                onClick={() => setSelectedRoom(room.id)}
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="font-semibold text-lg">{room.type}</h3>
-                    <p className="text-sm text-[#7b8ba3] mt-1">
-                      <Users className="w-4 h-4 inline mr-1" />
-                      Up to {room.capacity} guests
-                    </p>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {room.amenities.map((amenity, i) => (
-                        <span key={i} className="text-xs bg-[#0a0f2e] px-2 py-1 rounded text-[#7b8ba3]">
-                          {amenity}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-[#5dcaa5]">
-                      Rs. {room.price.toLocaleString()}
-                    </div>
-                    <div className="text-sm text-[#7b8ba3]">per night</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Booking Form */}
-        {selectedRoom && (
-          <div className="bg-[#121a36] rounded-2xl border border-white/10 p-6 mb-8">
-            <h2 className="text-xl font-bold mb-4">Book Your Stay</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-sm text-[#7b8ba3] mb-2">Check-in Date</label>
-                <input
-                  type="date"
-                  value={checkIn}
-                  onChange={(e) => setCheckIn(e.target.value)}
-                  min={new Date().toISOString().split('T')[0]}
-                  className="w-full bg-[#0a0f2e] border border-white/10 rounded-lg px-3 py-3 text-white focus:border-[#5dcaa5] focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-[#7b8ba3] mb-2">Check-out Date</label>
-                <input
-                  type="date"
-                  value={checkOut}
-                  onChange={(e) => setCheckOut(e.target.value)}
-                  min={checkIn || new Date().toISOString().split('T')[0]}
-                  className="w-full bg-[#0a0f2e] border border-white/10 rounded-lg px-3 py-3 text-white focus:border-[#5dcaa5] focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-[#7b8ba3] mb-2">Guests</label>
-                <select
-                  value={guests}
-                  onChange={(e) => setGuests(parseInt(e.target.value))}
-                  className="w-full bg-[#0a0f2e] border border-white/10 rounded-lg px-3 py-3 text-white focus:border-[#5dcaa5] focus:outline-none"
-                >
-                  {[1, 2, 3, 4, 5, 6].map(num => (
-                    <option key={num} value={num}>{num} guest{num > 1 ? 's' : ''}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {nights > 0 && (
-              <div className="border-t border-white/10 pt-4 mt-4">
-                <div className="flex justify-between mb-2">
-                  <span className="text-[#7b8ba3]">{selectedRoomData?.type}</span>
-                  <span>Rs. {selectedRoomData?.price.toLocaleString()} x {nights} nights</span>
-                </div>
-                <div className="flex justify-between text-xl font-bold">
-                  <span>Total</span>
-                  <span className="text-[#5dcaa5]">Rs. {totalPrice.toLocaleString()}</span>
-                </div>
-              </div>
-            )}
-
-            <button
-              className={`w-full mt-6 py-3 rounded-xl font-semibold text-lg transition-all ${
-                !checkIn || !checkOut || nights <= 0
-                  ? 'bg-[#1a2340] text-[#5a6a80] cursor-not-allowed'
-                  : 'bg-[#5dcaa5] text-[#0a0f2e] hover:bg-[#4db894]'
-              }`}
-              disabled={!checkIn || !checkOut || nights <= 0}
-            >
-              {nights <= 0 ? 'Select dates to continue' : `Book for Rs. ${totalPrice.toLocaleString()}`}
-            </button>
-          </div>
-        )}
-
-        {/* Policies */}
-        <div className="bg-[#121a36] rounded-2xl border border-white/10 p-6">
-          <h2 className="text-xl font-bold mb-4">Hotel Policies</h2>
-          <div className="space-y-3 text-[#7b8ba3]">
-            <div className="flex justify-between">
-              <span>Check-in:</span>
-              <span className="text-white">{hotel.policies.checkIn}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Check-out:</span>
-              <span className="text-white">{hotel.policies.checkOut}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Cancellation:</span>
-              <span className="text-white">{hotel.policies.cancellation}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Pets:</span>
-              <span className="text-white">{hotel.policies.pets}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Smoking:</span>
-              <span className="text-white">{hotel.policies.smoking}</span>
-            </div>
-          </div>
-        </div>
-      </main>
-    </div>
-  );
+  const roomList = useMemo(() => rooms.filter((room) => room.availableRooms > 0), [rooms]);
+  return <main className="min-h-screen bg-[#0a0f2e] text-white px-4 py-8"><div className="max-w-4xl mx-auto"><Link href="/" className="text-[#5dcaa5]">← Hotels</Link><section className="mt-6 bg-[#121a36] rounded-2xl border border-white/10 p-6"><h1 className="text-3xl font-bold">{hotel?.businessName || "Loading hotel..."}</h1><p className="text-[#7b8ba3] mt-2">{hotel?.description || "Live rooms and availability"}</p><p className="text-[#7b8ba3] mt-2">{hotel?.city || ""} {hotel?.addressLine ? `· ${hotel.addressLine}` : ""}</p></section><section className="mt-6 bg-[#121a36] rounded-2xl border border-white/10 p-6"><h2 className="text-xl font-bold">Search rooms</h2><div className="grid md:grid-cols-3 gap-3 mt-4"><label className="text-sm text-[#7b8ba3]">Check-in<input type="date" min={today} value={checkIn} onChange={(e) => setCheckIn(e.target.value)} className="block w-full mt-1 bg-[#0a0f2e] p-3 rounded-lg text-white" /></label><label className="text-sm text-[#7b8ba3]">Check-out<input type="date" min={checkIn || today} value={checkOut} onChange={(e) => setCheckOut(e.target.value)} className="block w-full mt-1 bg-[#0a0f2e] p-3 rounded-lg text-white" /></label><label className="text-sm text-[#7b8ba3]">Guests<select value={guests} onChange={(e) => setGuests(Number(e.target.value))} className="block w-full mt-1 bg-[#0a0f2e] p-3 rounded-lg text-white">{[1, 2, 3, 4, 5, 6].map((n) => <option key={n}>{n}</option>)}</select></label></div><div className="grid md:grid-cols-3 gap-3 mt-5">{roomList.map((room) => <button key={room.id} onClick={() => setRoomId(room.id)} className={`text-left p-4 rounded-xl border ${roomId === room.id ? "border-[#5dcaa5] bg-[#5dcaa5]/10" : "border-white/10"}`}><strong>{room.roomType}</strong><p className="text-sm text-[#7b8ba3] mt-1">LKR {Number(room.price).toLocaleString()} / night</p><p className="text-xs text-[#7b8ba3]">{room.availableRooms} available · up to {room.capacity} guests</p></button>)}</div>{nights > 0 && <p className="mt-4 text-[#5dcaa5]">{nights} nights · LKR {total.toLocaleString()}</p>}</section><section className="mt-6 bg-[#121a36] rounded-2xl border border-white/10 p-6">{!token ? <><h2 className="text-xl font-bold">Sign in to book</h2><div className="grid md:grid-cols-2 gap-3 mt-4"><input value={identifier} onChange={(e) => setIdentifier(e.target.value)} placeholder="Email or username" className="bg-[#0a0f2e] p-3 rounded-lg" /><input value={password} onChange={(e) => setPassword(e.target.value)} type="password" placeholder="Password" className="bg-[#0a0f2e] p-3 rounded-lg" /></div><button disabled={busy} onClick={login} className="mt-4 bg-[#5dcaa5] text-[#0a0f2e] px-5 py-3 rounded-lg font-bold">{busy ? "Signing in..." : "Sign in"}</button></> : <button disabled={busy || !selectedRoom || nights < 1} onClick={book} className="bg-[#5dcaa5] text-[#0a0f2e] px-5 py-3 rounded-lg font-bold">{busy ? "Booking..." : `Book ${selectedRoom?.roomType || "room"}`}</button>}{message && <p className="mt-4 text-[#5dcaa5]">{message}</p>}</section></div></main>;
 }

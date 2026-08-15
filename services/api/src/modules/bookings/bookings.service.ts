@@ -1,4 +1,6 @@
 import { prisma, BookingType, BookingStatus } from '@doorli/db';
+import { Prisma } from '@doorli/db';
+import { randomUUID } from 'node:crypto';
 import { AppError } from '../../middleware/errorHandler.js';
 import { getSocketServer } from '../../lib/socket.js';
 import { enqueueNotification } from '../../lib/notifications.js';
@@ -143,6 +145,38 @@ export async function createBooking(userId: string, input: CreateBookingInput) {
     throw new AppError(404, 'Vendor not found');
   }
 
+  const idempotencyKey = (input as CreateBookingInput & { idempotencyKey?: string }).idempotencyKey;
+  if (idempotencyKey) {
+    const existing = await prisma.booking.findFirst({ where: { customerId: userId, idempotencyKey } });
+    if (existing) return existing;
+  }
+
+  let hotelRoom: Awaited<ReturnType<typeof prisma.hotelRoom.findFirst>> = null;
+  let hallSlot: Awaited<ReturnType<typeof prisma.hallSlot.findFirst>> = null;
+  let beautyService: Awaited<ReturnType<typeof prisma.beautyService.findFirst>> = null;
+  if (input.bookingType === 'hotel') {
+    if (!input.checkInDate || !input.checkOutDate) throw new AppError(400, 'Hotel check-in and check-out dates are required');
+    const checkIn = new Date(input.checkInDate);
+    const checkOut = new Date(input.checkOutDate);
+    if (!(checkIn < checkOut)) throw new AppError(400, 'Check-out must be after check-in');
+    hotelRoom = await prisma.hotelRoom.findFirst({ where: { vendorId: input.vendorId, isActive: true, ...(input.roomId ? { id: input.roomId } : input.roomType ? { roomType: input.roomType } : {}) } });
+    if (!hotelRoom) throw new AppError(404, 'Hotel room type is not available');
+    if (input.guestCount && input.guestCount > hotelRoom.capacity) throw new AppError(400, 'Guest count exceeds room capacity');
+  }
+  if (input.bookingType === 'hall') {
+    if (!input.eventDate) throw new AppError(400, 'Hall event date is required');
+    hallSlot = await prisma.hallSlot.findFirst({ where: { id: input.hallSlotId, vendorId: input.vendorId, isActive: true } });
+    if (!hallSlot) throw new AppError(404, 'Hall slot is not available');
+    if (input.guestCount && input.guestCount > hallSlot.capacity) throw new AppError(400, 'Guest count exceeds hall capacity');
+  }
+  if (input.bookingType === 'beauty') {
+    if (!input.eventDate || !input.startTime || !input.endTime) throw new AppError(400, 'Beauty date, start time, and end time are required');
+    beautyService = await prisma.beautyService.findFirst({ where: { id: input.beautyServiceId, vendorId: input.vendorId, isActive: true } });
+    if (!beautyService) throw new AppError(404, 'Beauty service is not available');
+    const duration = new Date(input.endTime).getTime() - new Date(input.startTime).getTime();
+    if (!Number.isFinite(duration) || duration < beautyService.durationMins * 60000) throw new AppError(400, 'Selected time range is shorter than the service duration');
+  }
+
   // Beauty / hall slot conflict check
   if (input.startTime && input.endTime && input.eventDate) {
     const day = new Date(input.eventDate);
@@ -160,8 +194,8 @@ export async function createBooking(userId: string, input: CreateBookingInput) {
     }
   }
 
-  // Hotel date overlap
-  if (input.checkInDate && input.checkOutDate) {
+  // Non-inventory hotel bookings retain the generic overlap check for legacy callers.
+  if (input.bookingType !== 'hotel' && input.checkInDate && input.checkOutDate) {
     const conflict = await prisma.booking.findFirst({
       where: {
         vendorId: input.vendorId,
@@ -176,10 +210,9 @@ export async function createBooking(userId: string, input: CreateBookingInput) {
     }
   }
 
-  const bookingNumber = `BK${Date.now().toString().slice(-8)}`;
+  const bookingNumber = `BK${Date.now().toString().slice(-8)}${randomUUID().slice(0, 4).toUpperCase()}`;
 
-  const booking = await prisma.booking.create({
-    data: {
+  const bookingData = {
       bookingNumber,
       customerId: userId,
       vendorId: input.vendorId,
@@ -190,59 +223,134 @@ export async function createBooking(userId: string, input: CreateBookingInput) {
       startTime: input.startTime ? new Date(input.startTime) : null,
       endTime: input.endTime ? new Date(input.endTime) : null,
       guestCount: input.guestCount,
-      totalAmount: input.totalAmount,
+      totalAmount: hotelRoom
+        ? Number(hotelRoom.price) * Math.ceil((new Date(input.checkOutDate!).getTime() - new Date(input.checkInDate!).getTime()) / 86400000)
+        : hallSlot
+          ? Number(hallSlot.price)
+          : beautyService
+            ? Number(beautyService.price)
+            : input.totalAmount,
       depositAmount: input.depositAmount,
       requirements: input.requirements,
       durationMins: (input as { durationMins?: number }).durationMins,
-      roomType: (input as { roomType?: string }).roomType,
+      roomType: hotelRoom?.roomType ?? (input as { roomType?: string }).roomType,
+      roomId: hotelRoom?.id,
+      hallSlotId: hallSlot?.id,
+      beautyServiceId: beautyService?.id,
+      idempotencyKey,
       status: BookingStatus.pending,
-    },
-    include: {
-      vendor: true,
-      customer: true,
-    },
-  });
+    };
+  const booking = hotelRoom
+    ? await prisma.$transaction(async (tx) => {
+      const occupied = await tx.booking.count({ where: { roomId: hotelRoom!.id, status: { in: [BookingStatus.pending, BookingStatus.confirmed] }, checkInDate: { lt: new Date(input.checkOutDate!) }, checkOutDate: { gt: new Date(input.checkInDate!) } } });
+      if (occupied >= hotelRoom!.totalRooms) throw new AppError(409, 'No rooms available for those dates');
+      return tx.booking.create({ data: bookingData, include: { vendor: true, customer: true } });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable })
+    : hallSlot
+    ? await prisma.$transaction(async (tx) => {
+      const occupied = await tx.booking.count({ where: { hallSlotId: hallSlot!.id, status: { in: [BookingStatus.pending, BookingStatus.confirmed] }, eventDate: new Date(input.eventDate!) } });
+      if (occupied > 0) throw new AppError(409, 'Hall slot is already booked for that date');
+      return tx.booking.create({ data: bookingData, include: { vendor: true, customer: true } });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable })
+    : await prisma.booking.create({ data: bookingData, include: { vendor: true, customer: true } });
+  const hydratedBooking = booking;
 
   const deposit = Number(input.depositAmount ?? 0);
   let payment = null;
   if (deposit > 0) {
-    const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-    if (stripeSecretKey) {
-      // Real Stripe PaymentIntent
+    try {
+      const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+      if (!stripeSecretKey) {
+        throw new Error('Stripe not configured. Set STRIPE_SECRET_KEY to process deposit payments.');
+      }
       const stripe = (await import('stripe')).default;
       const stripeInstance = new stripe(stripeSecretKey);
       const paymentIntent = await stripeInstance.paymentIntents.create({
-        amount: Math.round(deposit * 100), // Convert to cents
+        amount: Math.round(deposit * 100),
         currency: 'lkr',
         metadata: {
-          bookingId: booking.id,
-          bookingNumber: booking.bookingNumber,
+          bookingId: hydratedBooking.id,
+          bookingNumber: hydratedBooking.bookingNumber,
         },
       });
       payment = {
         clientSecret: paymentIntent.client_secret,
         paymentIntentId: paymentIntent.id,
       };
-    } else {
-      throw new Error('Stripe not configured. Set STRIPE_SECRET_KEY to process deposit payments.');
+    } catch (error) {
+      // Do not leave an inventory-consuming pending booking when its deposit
+      // payment intent could not be created.
+      await prisma.booking.delete({ where: { id: hydratedBooking.id } }).catch(() => undefined);
+      throw error;
     }
   }
 
   const io = getSocketServer();
   io?.to(`vendor:${vendor.id}`).emit('booking:new', {
-    bookingId: booking.id,
-    bookingNumber: booking.bookingNumber,
+    bookingId: hydratedBooking.id,
+    bookingNumber: hydratedBooking.bookingNumber,
   });
 
   await enqueueNotification({
     userId: vendor.userId,
     title: 'New booking',
-    body: `Booking ${booking.bookingNumber} received`,
+    body: `Booking ${hydratedBooking.bookingNumber} received`,
     type: 'booking_new',
-    data: { bookingId: booking.id },
+    data: { bookingId: hydratedBooking.id },
   });
 
-  return { ...booking, payment };
+  return { ...hydratedBooking, payment };
+}
+
+export async function getHotelRooms(vendorId: string, from?: string, to?: string) {
+  const vendor = await prisma.vendor.findFirst({ where: { id: vendorId, category: 'hotel' } });
+  if (!vendor) throw new AppError(404, 'Hotel not found');
+  const rooms = await prisma.hotelRoom.findMany({ where: { vendorId, isActive: true }, orderBy: { price: 'asc' } });
+  if (!from || !to) return rooms.map((room) => ({ ...room, price: Number(room.price), availableRooms: room.totalRooms }));
+  const checkIn = new Date(from); const checkOut = new Date(to);
+  if (!(checkIn < checkOut)) throw new AppError(400, 'Invalid stay dates');
+  return Promise.all(rooms.map(async (room) => {
+    const occupied = await prisma.booking.count({ where: { roomId: room.id, status: { in: [BookingStatus.pending, BookingStatus.confirmed] }, checkInDate: { lt: checkOut }, checkOutDate: { gt: checkIn } } });
+    return { ...room, price: Number(room.price), availableRooms: Math.max(0, room.totalRooms - occupied) };
+  }));
+}
+
+export async function createHotelRoom(vendorId: string, userId: string, role: string, input: { roomType: string; description?: string; capacity: number; totalRooms: number; price: number; amenities?: string[] }) {
+  const vendor = await prisma.vendor.findUnique({ where: { id: vendorId } });
+  if (!vendor || vendor.category !== 'hotel') throw new AppError(404, 'Hotel not found');
+  if (vendor.userId !== userId && role !== 'admin') throw new AppError(403, 'Access denied');
+  return prisma.hotelRoom.upsert({ where: { vendorId_roomType: { vendorId, roomType: input.roomType } }, create: { vendorId, ...input }, update: { ...input, isActive: true } });
+}
+
+export async function getHallSlots(vendorId: string, eventDate?: string) {
+  const vendor = await prisma.vendor.findFirst({ where: { id: vendorId, category: 'hall' } });
+  if (!vendor) throw new AppError(404, 'Hall venue not found');
+  const slots = await prisma.hallSlot.findMany({ where: { vendorId, isActive: true }, orderBy: { price: 'asc' } });
+  return Promise.all(slots.map(async (slot) => {
+    const booked = eventDate ? await prisma.booking.count({ where: { hallSlotId: slot.id, eventDate: new Date(eventDate), status: { in: [BookingStatus.pending, BookingStatus.confirmed] } } }) : 0;
+    return { ...slot, price: Number(slot.price), available: booked === 0 };
+  }));
+}
+
+export async function createHallSlot(vendorId: string, userId: string, role: string, input: { name: string; slotType: string; capacity: number; price: number; amenities?: string[] }) {
+  const vendor = await prisma.vendor.findUnique({ where: { id: vendorId } });
+  if (!vendor || vendor.category !== 'hall') throw new AppError(404, 'Hall venue not found');
+  if (vendor.userId !== userId && role !== 'admin') throw new AppError(403, 'Access denied');
+  return prisma.hallSlot.upsert({ where: { vendorId_name: { vendorId, name: input.name } }, create: { vendorId, ...input }, update: { ...input, isActive: true } });
+}
+
+export async function getBeautyServices(vendorId: string) {
+  const vendor = await prisma.vendor.findFirst({ where: { id: vendorId, category: 'beauty' } });
+  if (!vendor) throw new AppError(404, 'Beauty provider not found');
+  const services = await prisma.beautyService.findMany({ where: { vendorId, isActive: true }, orderBy: { price: 'asc' } });
+  return services.map((service) => ({ ...service, price: Number(service.price) }));
+}
+
+export async function createBeautyService(vendorId: string, userId: string, role: string, input: { name: string; description?: string; durationMins: number; price: number }) {
+  const vendor = await prisma.vendor.findUnique({ where: { id: vendorId } });
+  if (!vendor || vendor.category !== 'beauty') throw new AppError(404, 'Beauty provider not found');
+  if (vendor.userId !== userId && role !== 'admin') throw new AppError(403, 'Access denied');
+  return prisma.beautyService.upsert({ where: { vendorId_name: { vendorId, name: input.name } }, create: { vendorId, ...input }, update: { ...input, isActive: true } });
 }
 
 export async function getAvailability(vendorId: string, from: string, to: string) {

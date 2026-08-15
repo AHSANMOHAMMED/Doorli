@@ -12,6 +12,9 @@ type LedgerInput = {
 };
 
 export async function applyWalletTransaction(input: LedgerInput) {
+  if (!Number.isFinite(input.amount) || input.amount === 0) {
+    throw new AppError(400, 'Transaction amount must be a non-zero finite number');
+  }
   if (!input.idempotencyKey || input.idempotencyKey.length > 150) {
     throw new AppError(400, 'A valid Idempotency-Key header is required');
   }
@@ -63,6 +66,12 @@ export async function applyWalletTransaction(input: LedgerInput) {
 }
 
 export async function transferWalletFunds(input: { fromUserId: string; toUserId: string; amount: number; idempotencyKey: string; description?: string }) {
+  if (!Number.isFinite(input.amount) || input.amount <= 0) {
+    throw new AppError(400, 'Transfer amount must be a positive finite number');
+  }
+  if (input.fromUserId === input.toUserId) {
+    throw new AppError(400, 'Cannot transfer to yourself');
+  }
   if (!input.idempotencyKey || input.idempotencyKey.length > 150) {
     throw new AppError(400, 'A valid Idempotency-Key header is required');
   }

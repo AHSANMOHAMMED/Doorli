@@ -17,6 +17,7 @@ export default function TrackOrderScreen() {
   const { orderId } = useLocalSearchParams<{ orderId: string }>();
   const router = useRouter();
   const [driverLoc, setDriverLoc] = useState<{ lat: number; lng: number } | null>(null);
+  const [liveStatus, setLiveStatus] = useState<string | null>(null);
 
   const { data: order, isLoading } = useQuery({
     queryKey: ['order', orderId],
@@ -34,9 +35,16 @@ export default function TrackOrderScreen() {
         setDriverLoc({ lat: payload.lat, lng: payload.lng });
       }
     };
+    const onStatus = (payload: { orderId?: string; newStatus?: string; status?: string }) => {
+      if ((!payload.orderId || payload.orderId === orderId) && (payload.newStatus || payload.status)) {
+        setLiveStatus(payload.newStatus || payload.status || null);
+      }
+    };
     socket.on('driver:location_update', onLoc);
+    socket.on('order:status_update', onStatus);
     return () => {
       socket.off('driver:location_update', onLoc);
+      socket.off('order:status_update', onStatus);
     };
   }, [orderId, order?.customerId]);
 
@@ -48,6 +56,7 @@ export default function TrackOrderScreen() {
     );
   }
 
+  const status = liveStatus || order.status;
   const vendorLat = Number(order.vendor?.latitude ?? DEFAULT_LOCATION.lat);
   const vendorLng = Number(order.vendor?.longitude ?? DEFAULT_LOCATION.lng);
   const dropLat = Number(order.deliveryAddress?.latitude ?? vendorLat + 0.01);
@@ -107,16 +116,16 @@ export default function TrackOrderScreen() {
               </Text>
             </View>
             <View style={styles.statusBadge}>
-              <Text style={styles.statusText}>{order.status.replace(/_/g, ' ')}</Text>
+               <Text style={styles.statusText}>{status.replace(/_/g, ' ')}</Text>
             </View>
           </View>
 
           <View style={styles.timeline}>
             {[
               { label: 'Order Placed', desc: 'Your order has been placed.', done: true },
-              { label: 'Preparing', desc: 'The shop is getting your order ready.', done: ['preparing', 'ready', 'picked_up', 'delivered'].includes(order.status) },
-              { label: 'Out for Delivery', desc: driverLoc ? 'Driver is on the way.' : 'Waiting for driver to pick up.', done: ['picked_up', 'delivered'].includes(order.status) },
-              { label: 'Delivered', desc: 'Enjoy your order!', done: order.status === 'delivered' },
+               { label: 'Preparing', desc: 'The shop is getting your order ready.', done: ['preparing', 'ready', 'picked_up', 'delivered'].includes(status) },
+               { label: 'Out for Delivery', desc: driverLoc ? 'Driver is on the way.' : 'Waiting for driver to pick up.', done: ['picked_up', 'delivered'].includes(status) },
+               { label: 'Delivered', desc: 'Enjoy your order!', done: status === 'delivered' },
             ].map((step, idx) => (
               <View key={idx} style={styles.timelineItem}>
                 <View style={[styles.timelineIcon, { backgroundColor: step.done ? PRIMARY : 'rgba(255,255,255,0.08)' }]}>

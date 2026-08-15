@@ -50,7 +50,12 @@ function buildItems(
 
 // ─── Create event package (Req 7.1) ──────────────────────────────────────────
 
-export async function createEventPackage(customerId: string, input: CreateEventInput) {
+export async function createEventPackage(customerId: string, input: CreateEventInput, idempotencyKey?: string) {
+  if (new Date(input.eventDate) <= new Date()) throw new AppError(400, 'Event date must be in the future');
+  if (idempotencyKey) {
+    const existing = await prisma.eventPackage.findFirst({ where: { customerId, idempotencyKey } });
+    if (existing) return existing;
+  }
   const items: EventItem[] = input.items ?? [];
   const totalEstimate = items.reduce((s, i) => s + (i.amount ?? i.estimatedCost ?? 0), 0);
 
@@ -66,6 +71,7 @@ export async function createEventPackage(customerId: string, input: CreateEventI
       items: storedItems as any,
       totalEstimate,
       status: 'draft',
+      idempotencyKey,
     },
   });
 
@@ -176,50 +182,22 @@ export async function confirmEventPackage(eventId: string, customerId: string) {
     throw new AppError(400, 'Cannot confirm event with no vendors');
   }
 
-  // Create a Booking record for each item that has a vendorId
-  const createdBookings: Awaited<ReturnType<typeof prisma.booking.create>>[] = [];
-
-  for (const item of items) {
-    if (!item.vendorId) continue;
-
-    const bookingNumber = `EV${Date.now().toString().slice(-8)}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
-
-    const booking = await prisma.booking.create({
-      data: {
-        bookingNumber,
-        customerId,
-        vendorId: item.vendorId,
-        bookingType: BookingType.service,
-        eventDate: pkg.eventDate,
-        guestCount: pkg.guestCount,
-        totalAmount: item.amount ?? item.estimatedCost ?? 0,
-        requirements: `Event: ${pkg.title} | Role: ${item.serviceType}`,
-        status: BookingStatus.confirmed,
-      },
-      include: {
-        vendor: { select: { userId: true, businessName: true } },
-      },
-    });
-
-    createdBookings.push(booking);
-
-    // Notify each vendor
-    const vendorUserId = (booking as any).vendor?.userId;
-    if (vendorUserId) {
-      await enqueueNotification({
-        userId: vendorUserId,
-        title: 'New event booking',
-        body: `You have been booked for "${pkg.title}" on ${pkg.eventDate.toLocaleDateString()}`,
-        type: 'event_booking_confirmed',
-        data: { bookingId: booking.id, eventId: pkg.id },
-      });
+  const createdBookings = await prisma.$transaction(async (tx) => {
+    const current = await tx.eventPackage.findUnique({ where: { id: eventId } });
+    if (!current || current.status !== 'draft') throw new AppError(409, 'Event has already been confirmed');
+    const bookings = [];
+    for (const item of items) {
+      if (!item.vendorId) continue;
+      const booking = await tx.booking.create({ data: { bookingNumber: `EV${Date.now().toString().slice(-8)}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`, customerId, vendorId: item.vendorId, bookingType: BookingType.service, eventDate: pkg.eventDate, guestCount: pkg.guestCount, totalAmount: item.amount ?? item.estimatedCost ?? 0, requirements: `Event: ${pkg.title} | Role: ${item.serviceType}`, status: BookingStatus.confirmed }, include: { vendor: { select: { userId: true, businessName: true } } } });
+      bookings.push(booking);
     }
-  }
-
-  const confirmed = await prisma.eventPackage.update({
-    where: { id: eventId },
-    data: { status: 'confirmed' },
+    await tx.eventPackage.update({ where: { id: eventId }, data: { status: 'confirmed' } });
+    return bookings;
   });
+  const confirmed = await prisma.eventPackage.findUniqueOrThrow({ where: { id: eventId } });
+  for (const booking of createdBookings) {
+    await enqueueNotification({ userId: booking.vendor.userId, title: 'New event booking', body: `You have been booked for "${pkg.title}" on ${pkg.eventDate.toLocaleDateString()}`, type: 'event_booking_confirmed', data: { bookingId: booking.id, eventId: pkg.id } });
+  }
 
   return { eventPackage: confirmed, bookings: createdBookings };
 }

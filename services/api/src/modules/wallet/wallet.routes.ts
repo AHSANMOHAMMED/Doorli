@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '@doorli/db';
-import { authenticateToken } from '../../middleware/authenticateToken.js';
+import { authenticateToken, requireRole } from '../../middleware/authenticateToken.js';
 import { AppError } from '../../middleware/errorHandler.js';
 import { applyWalletTransaction, transferWalletFunds } from './wallet.service.js';
+import crypto from 'node:crypto';
 
 const walletRouter = Router();
 walletRouter.use(authenticateToken);
@@ -52,24 +53,61 @@ walletRouter.delete('/auto-topup/rules/:id', async (req, res, next) => {
 walletRouter.post('/payout', async (req, res, next) => {
   try {
     const { amount, method, destination } = z.object({ amount: z.number().positive(), method: z.enum(['bank', 'upi']), destination: z.string().min(5) }).parse(req.body);
-    const ledger = await applyWalletTransaction({ userId: req.user!.id, amount: -amount, type: 'payout', idempotencyKey: String(req.headers['idempotency-key'] || ''), description: `Wallet payout via ${method}`, metadata: { destination } });
-    const payout = await prisma.walletPayout.create({ data: { userId: req.user!.id, amount, method, destination, status: 'pending', reference: ledger.transaction.id } });
+    const kyc = await prisma.kycCase.findUnique({ where: { userId: req.user!.id } });
+    if (!kyc || kyc.status !== 'approved' || kyc.level < 1) throw new AppError(403, 'Approved KYC is required before requesting a payout');
+    const idempotencyKey = String(req.headers['idempotency-key'] || '');
+    if (!idempotencyKey) throw new AppError(400, 'A valid Idempotency-Key header is required');
+    const existing = await prisma.walletPayout.findUnique({ where: { userId_idempotencyKey: { userId: req.user!.id, idempotencyKey } } });
+    if (existing) return res.status(202).json({ success: true, data: { ...existing, amount: Number(existing.amount), replayed: true } });
+    const ledger = await applyWalletTransaction({ userId: req.user!.id, amount: -amount, type: 'payout', idempotencyKey: `payout:${idempotencyKey}`, description: `Wallet payout via ${method}`, metadata: { destination } });
+    const payout = await prisma.walletPayout.create({ data: { userId: req.user!.id, amount, method, destination, status: 'pending', reference: ledger.transaction.id, idempotencyKey } });
     res.status(202).json({ success: true, data: { payout, balanceAfter: Number(ledger.transaction.balanceAfter), message: 'Payout queued for gateway processing.' } });
   } catch (err) { next(err); }
 });
 
+walletRouter.get('/payouts', async (req, res, next) => {
+  try { const payouts = await prisma.walletPayout.findMany({ where: { userId: req.user!.id }, orderBy: { createdAt: 'desc' }, take: 50 }); res.json({ success: true, data: payouts.map((p) => ({ ...p, amount: Number(p.amount) })) }); } catch (err) { next(err); }
+});
+
+walletRouter.get('/payouts/review-queue', requireRole('admin'), async (_req, res, next) => {
+  try { res.json({ success: true, data: await prisma.walletPayout.findMany({ where: { status: { in: ['pending', 'processing'] } }, orderBy: { createdAt: 'asc' }, take: 100 }) }); } catch (err) { next(err); }
+});
+
+walletRouter.patch('/payouts/:id/settle', requireRole('admin'), async (req, res, next) => {
+  try {
+    const { status, providerReference, failureReason } = z.object({ status: z.enum(['processing', 'paid', 'failed', 'cancelled']), providerReference: z.string().max(150).optional(), failureReason: z.string().max(500).optional() }).parse(req.body);
+    const payout = await prisma.walletPayout.findUnique({ where: { id: String(req.params.id) } });
+    if (!payout) throw new AppError(404, 'Payout not found');
+    if (!['pending', 'processing'].includes(payout.status)) throw new AppError(409, `Payout is already ${payout.status}`);
+    if (['failed', 'cancelled'].includes(status)) {
+      await applyWalletTransaction({ userId: payout.userId, amount: Number(payout.amount), type: 'payout_refund', idempotencyKey: `payout-refund:${payout.id}`, reference: payout.id, description: 'Refund for failed wallet payout' });
+    }
+    const updated = await prisma.walletPayout.update({ where: { id: payout.id }, data: { status, providerReference, failureReason: ['failed', 'cancelled'].includes(status) ? failureReason || 'Payout was not settled' : null, processedAt: ['paid', 'failed', 'cancelled'].includes(status) ? new Date() : null } });
+    res.json({ success: true, data: { ...updated, amount: Number(updated.amount) } });
+  } catch (err) { next(err); }
+});
+
 /** POST /wallet/topup — add funds (Stripe/UPI/bank) */
-walletRouter.post('/topup', async (req, res, next) => {
+  walletRouter.post('/topup', async (req, res, next) => {
   try {
     const { amount, method = 'stripe' } = z.object({
       amount: z.number().positive().max(500000),
       method: z.enum(['stripe', 'upi', 'bank']).default('stripe'),
     }).parse(req.body);
 
-    const result = await applyWalletTransaction({ userId: req.user!.id, amount, type: 'topup', idempotencyKey: String(req.headers['idempotency-key'] || ''), description: `Wallet top-up via ${method}` });
-    const updated = result.transaction;
-
-    res.json({ success: true, data: { balance: Number(updated.balanceAfter), topupAmount: amount, method, transactionId: updated.id, replayed: result.replayed } });
+    if (method !== 'stripe' || !process.env.STRIPE_SECRET_KEY) {
+      throw new AppError(503, 'A configured payment provider is required before wallet top-up');
+    }
+    const idempotencyKey = String(req.headers['idempotency-key'] || '');
+    if (!idempotencyKey) throw new AppError(400, 'A valid Idempotency-Key header is required');
+    const existing = await prisma.walletTopupIntent.findUnique({ where: { userId_idempotencyKey: { userId: req.user!.id, idempotencyKey } } });
+    if (existing) return res.status(202).json({ success: true, data: { ...existing, amount: Number(existing.amount), replayed: true } });
+    const stripe = (await import('stripe')).default;
+    const stripeClient = new stripe(process.env.STRIPE_SECRET_KEY);
+    const intent = await prisma.walletTopupIntent.create({ data: { userId: req.user!.id, amount, method, idempotencyKey } });
+    const paymentIntent = await stripeClient.paymentIntents.create({ amount: Math.round(amount * 100), currency: 'lkr', metadata: { walletTopupId: intent.id, userId: req.user!.id } });
+    const updated = await prisma.walletTopupIntent.update({ where: { id: intent.id }, data: { providerTransactionId: paymentIntent.id } });
+    res.status(202).json({ success: true, data: { ...updated, amount, clientSecret: paymentIntent.client_secret, paymentIntentId: paymentIntent.id, replayed: false } });
   } catch (err) { next(err); }
 });
 
@@ -105,36 +143,37 @@ walletRouter.post('/transfer', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-/** POST /wallet/kyc/basic — level 1 verification */
+walletRouter.get('/kyc', async (req, res, next) => {
+  try { res.json({ success: true, data: await prisma.kycCase.findUnique({ where: { userId: req.user!.id } }) }); } catch (err) { next(err); }
+});
+
+/** POST /wallet/kyc/basic — submit level 1 verification */
 walletRouter.post('/kyc/basic', async (req, res, next) => {
   try {
-    // In production: validate ID number + phone. Here we just record it.
-    z.object({ idNumber: z.string().min(5) }).parse(req.body);
-    await prisma.notification.create({
-      data: {
-        userId: req.user!.id,
-        title: 'KYC Level 1 Approved',
-        body: 'Your basic KYC is complete. Daily limit: LKR 10,000.',
-        type: 'kyc',
-      },
-    });
-    res.json({ success: true, data: { kycLevel: 1, dailyLimit: 10000 } });
+    const { idNumber } = z.object({ idNumber: z.string().min(5).max(80) }).parse(req.body);
+    const kyc = await prisma.kycCase.upsert({ where: { userId: req.user!.id }, create: { userId: req.user!.id, level: 1, status: 'pending', idNumberHash: crypto.createHash('sha256').update(idNumber).digest('hex') }, update: { level: 1, status: 'pending', idNumberHash: crypto.createHash('sha256').update(idNumber).digest('hex'), rejectionReason: null, reviewedAt: null } });
+    res.status(202).json({ success: true, data: { ...kyc, message: 'KYC submitted for review.' } });
   } catch (err) { next(err); }
 });
 
-/** POST /wallet/kyc/full — level 2 verification */
+/** POST /wallet/kyc/full — submit level 2 verification */
 walletRouter.post('/kyc/full', async (req, res, next) => {
   try {
-    z.object({ documentUrl: z.string().url() }).parse(req.body);
-    await prisma.notification.create({
-      data: {
-        userId: req.user!.id,
-        title: 'KYC Level 2 Approved',
-        body: 'Full KYC complete. Daily limit: LKR 100,000.',
-        type: 'kyc',
-      },
-    });
-    res.json({ success: true, data: { kycLevel: 2, dailyLimit: 100000 } });
+    const { documentUrl } = z.object({ documentUrl: z.string().url() }).parse(req.body);
+    const kyc = await prisma.kycCase.upsert({ where: { userId: req.user!.id }, create: { userId: req.user!.id, level: 2, status: 'pending', documentUrl }, update: { level: 2, status: 'pending', documentUrl, rejectionReason: null, reviewedAt: null } });
+    res.status(202).json({ success: true, data: { ...kyc, message: 'Full KYC submitted for review.' } });
+  } catch (err) { next(err); }
+});
+
+walletRouter.get('/kyc/review-queue', requireRole('admin'), async (_req, res, next) => {
+  try { res.json({ success: true, data: await prisma.kycCase.findMany({ where: { status: 'pending' }, orderBy: { submittedAt: 'asc' }, take: 100 }) }); } catch (err) { next(err); }
+});
+
+walletRouter.patch('/kyc/:id/review', requireRole('admin'), async (req, res, next) => {
+  try {
+    const { status, rejectionReason } = z.object({ status: z.enum(['approved', 'rejected']), rejectionReason: z.string().max(500).optional() }).parse(req.body);
+    const kyc = await prisma.kycCase.update({ where: { id: String(req.params.id) }, data: { status, rejectionReason: status === 'rejected' ? rejectionReason : null, reviewedBy: req.user!.id, reviewedAt: new Date() } });
+    res.json({ success: true, data: kyc });
   } catch (err) { next(err); }
 });
 

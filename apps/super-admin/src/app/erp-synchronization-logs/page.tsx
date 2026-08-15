@@ -21,25 +21,24 @@ export default function ERPSynchronizationLogsPage() {
 
   const fetchLogs = async () => {
     try {
-      const res = await superAdminFetch('/admin/diagnostics');
+      const res = await superAdminFetch('/admin/erp/sync-logs');
       if (res.success) {
-        const rawLogs = res.data?.logs || res.data?.syncLogs || [];
+        const rawLogs = Array.isArray(res.data) ? res.data : [];
         setLogs(rawLogs.map((l: any, i: number) => ({
           id: l.id || `log-${i}`,
-          timestamp: l.timestamp || l.createdAt || new Date().toISOString(),
-          status: l.status || (l.error ? 'failed' : 'success'),
-          entityType: l.entityType || l.type || 'System',
-          objectCount: l.objectCount || l.count || 0,
-          region: l.region || l.hub || 'Global',
-          error: l.error || l.message,
+          timestamp: l.createdAt || l.erpSyncedAt || l.updatedAt || new Date().toISOString(),
+          status: l.erpSyncStatus === 'synced' ? 'success' : l.erpSyncStatus === 'failed' ? 'failed' : 'in_progress',
+          entityType: l.vendor?.businessName || 'System',
+          objectCount: Number(l.totalAmount || 0),
+          region: l.vendor?.erpProvider || 'Global',
+          error: l.erpSyncError || undefined,
         })));
-        if (res.data?.stats) {
-          setStats({
-            lastSync: res.data.stats.lastSync || 'N/A',
-            totalObjects: res.data.stats.totalObjects || 0,
-            activeQueue: res.data.stats.activeQueue || 0,
-          });
-        }
+        const successful = rawLogs.filter((l: any) => l.erpSyncStatus === 'synced');
+        setStats({
+          lastSync: successful[0]?.erpSyncedAt || successful[0]?.createdAt || 'N/A',
+          totalObjects: rawLogs.reduce((sum: number, l: any) => sum + Number(l.totalAmount || 0), 0),
+          activeQueue: rawLogs.filter((l: any) => ['pending', 'in_progress'].includes(l.erpSyncStatus)).length,
+        });
       }
       setLoading(false);
     } catch (err: any) {

@@ -2,6 +2,7 @@ import http from 'http';
 import { createApp } from './app.js';
 import { env } from './config/env.js';
 import { createProxyMiddleware } from 'http-proxy-middleware';
+import { renewPremiumSubscriptions } from './lib/premiumRenewal.js';
 
 const app = createApp();
 const server = http.createServer(app);
@@ -102,4 +103,7 @@ server.listen(env.API_PORT, () => {
   console.log(`Doorli API running on http://localhost:${env.API_PORT}`);
   console.log(`Swagger docs at http://localhost:${env.API_PORT}/api/docs`);
   console.log(`WebSocket proxy ready at ws://localhost:${env.API_PORT}/socket.io -> port 4007`);
+  const runRenewals = () => void renewPremiumSubscriptions().catch((error) => console.error('[premium-renewal]', error));
+  runRenewals();
+  setInterval(runRenewals, 24 * 60 * 60 * 1000).unref();
 });

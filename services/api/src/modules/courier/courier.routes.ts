@@ -37,34 +37,55 @@ courierRouter.post('/jobs', async (req, res, next) => {
 
     const jobRef = `CJB${Date.now().toString().slice(-8)}`;
 
-    await prisma.notification.create({
-      data: {
-        userId: req.user!.id,
-        title: `${body.type === 'document' ? 'Document' : 'Package'} Pickup Scheduled`,
-        body: `Runner assigned. Pickup from: ${body.pickupAddress}. Est. fare: LKR ${fareEstimate}`,
-        type: 'courier_job',
-        data: { ...body, jobRef, fareEstimate, distKm: Number(distKm.toFixed(2)), status: 'pending' },
-      },
-    });
+    const job = await prisma.courierJob.create({ data: {
+      customerId: req.user!.id,
+      type: body.type,
+      pickupAddress: body.pickupAddress,
+      pickupLatitude: body.pickupLat,
+      pickupLongitude: body.pickupLng,
+      dropoffAddress: body.dropoffAddress,
+      dropoffLatitude: body.dropoffLat,
+      dropoffLongitude: body.dropoffLng,
+      fareEstimate,
+      metadata: { ...body, jobRef, distKm: Number(distKm.toFixed(2)) },
+    } });
 
     // Emit WebSocket event to notify available runners
     try {
       getSocketServer()?.emit('courier:new_job', { jobRef, type: body.type, pickupLat: body.pickupLat, pickupLng: body.pickupLng, fareEstimate });
     } catch { /* socket optional */ }
 
-    res.status(201).json({ success: true, data: { jobRef, fareEstimate, distKm: Number(distKm.toFixed(2)), status: 'pending' } });
+    res.status(201).json({ success: true, data: { id: job.id, jobRef, fareEstimate, distKm: Number(distKm.toFixed(2)), status: job.status } });
   } catch (err) { next(err); }
 });
 
 /** GET /courier/jobs/my — user's courier jobs */
 courierRouter.get('/jobs/my', async (req, res, next) => {
   try {
-    const jobs = await prisma.notification.findMany({
-      where: { userId: req.user!.id, type: 'courier_job' },
-      orderBy: { sentAt: 'desc' },
+    const jobs = await prisma.courierJob.findMany({
+      where: { customerId: req.user!.id },
+      orderBy: { createdAt: 'desc' },
       take: 20,
     });
-    res.json({ success: true, data: jobs.map(j => ({ id: j.id, ...((j.data as Record<string, unknown>) ?? {}), title: j.title })) });
+    res.json({ success: true, data: jobs });
+  } catch (err) { next(err); }
+});
+
+courierRouter.get('/jobs/:id', async (req, res, next) => {
+  try {
+    const job = await prisma.courierJob.findFirst({ where: { id: req.params.id, customerId: req.user!.id } });
+    if (!job) return res.status(404).json({ success: false, error: 'Courier job not found' });
+    res.json({ success: true, data: job });
+  } catch (err) { next(err); }
+});
+
+courierRouter.patch('/jobs/:id/deliver', async (req, res, next) => {
+  try {
+    const { proofUrl } = z.object({ proofUrl: z.string().url() }).parse(req.body);
+    const job = await prisma.courierJob.findFirst({ where: { id: req.params.id, customerId: req.user!.id } });
+    if (!job) return res.status(404).json({ success: false, error: 'Courier job not found' });
+    const updated = await prisma.courierJob.update({ where: { id: job.id }, data: { proofUrl, status: 'delivered' } });
+    res.json({ success: true, data: updated });
   } catch (err) { next(err); }
 });
 
@@ -87,17 +108,9 @@ errandsRouter.post('/queue-pick', async (req, res, next) => {
     const fareEstimate = Math.round(200 + body.estimatedWaitMinutes * 3);
     const jobRef = `QPK${Date.now().toString().slice(-8)}`;
 
-    await prisma.notification.create({
-      data: {
-        userId: req.user!.id,
-        title: 'Queue Picker Assigned',
-        body: `Runner will queue at ${body.locationName}. Est. wait: ${body.estimatedWaitMinutes} min. Fee: LKR ${fareEstimate}`,
-        type: 'errand_queue_pick',
-        data: { ...body, jobRef, fareEstimate, status: 'pending' },
-      },
-    });
+    const job = await prisma.courierJob.create({ data: { customerId: req.user!.id, type: 'queue_pick', pickupAddress: body.locationName, pickupLatitude: body.lat, pickupLongitude: body.lng, dropoffAddress: body.locationName, fareEstimate, metadata: { ...body, jobRef } } });
 
-    res.status(201).json({ success: true, data: { jobRef, fareEstimate, status: 'pending' } });
+    res.status(201).json({ success: true, data: { id: job.id, jobRef, fareEstimate, status: job.status } });
   } catch (err) { next(err); }
 });
 
@@ -117,17 +130,9 @@ errandsRouter.post('/shifting', async (req, res, next) => {
     const fareEstimate = Math.round(2500 + body.inventoryItems.length * 200 + (body.pickupFloor + body.dropoffFloor) * 150);
     const jobRef = `SHF${Date.now().toString().slice(-8)}`;
 
-    await prisma.notification.create({
-      data: {
-        userId: req.user!.id,
-        title: 'Shifting Job Created',
-        body: `From: ${body.pickupAddress} → ${body.dropoffAddress}. Est. fee: LKR ${fareEstimate}`,
-        type: 'errand_shifting',
-        data: { ...body, jobRef, fareEstimate, status: 'pending' },
-      },
-    });
+    const job = await prisma.courierJob.create({ data: { customerId: req.user!.id, type: 'shifting', pickupAddress: body.pickupAddress, dropoffAddress: body.dropoffAddress, fareEstimate, metadata: { ...body, jobRef } } });
 
-    res.status(201).json({ success: true, data: { jobRef, fareEstimate, status: 'pending' } });
+    res.status(201).json({ success: true, data: { id: job.id, jobRef, fareEstimate, status: job.status } });
   } catch (err) { next(err); }
 });
 

@@ -30,7 +30,8 @@ serviceRequestsRouter.use(authenticateToken);
 serviceRequestsRouter.post('/', validate(createServiceRequestSchema), async (req, res, next) => {
   try {
     if (!req.user) throw new AppError(401, 'Authentication required');
-    const serviceRequest = await serviceRequestsService.createServiceRequest(req.user.id, req.body);
+    const body = { ...req.body, metadata: { ...(req.body.metadata ?? {}), idempotencyKey: String(req.headers['idempotency-key'] || req.body.metadata?.idempotencyKey || '') || undefined } };
+    const serviceRequest = await serviceRequestsService.createServiceRequest(req.user.id, body);
     res.json({ success: true, data: serviceRequest });
   } catch (err) {
     next(err);

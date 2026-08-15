@@ -23,6 +23,17 @@ export async function isFeatureEnabled(vendorId: string, featureKey: string): Pr
   return flag.isGlobal;
 }
 
+/** Resolve the complete feature catalog for client navigation and guards. */
+export async function getVendorFeatureMap(vendorId: string): Promise<Record<string, boolean>> {
+  const flags = await prisma.featureFlag.findMany({
+    include: { vendorFeatures: { where: { vendorId }, select: { isEnabled: true } } },
+  });
+  return Object.fromEntries(flags.map((flag) => [
+    flag.key,
+    flag.vendorFeatures[0]?.isEnabled ?? flag.isGlobal,
+  ]));
+}
+
 /** Drop the auth-service feature cache so toggles apply immediately (Req 11.7/18.4). */
 export async function invalidateFeatureCache(vendorId: string): Promise<void> {
   try {

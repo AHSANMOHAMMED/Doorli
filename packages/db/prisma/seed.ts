@@ -251,7 +251,7 @@ async function main() {
         isVerified: true,
       },
     });
-    await prisma.vendor.upsert({
+    const seededVendor = await prisma.vendor.upsert({
       where: { userId: u.id },
       update: {
         businessName: v.businessName,
@@ -273,6 +273,44 @@ async function main() {
         deliveryRadiusKm: 8,
       },
     });
+    if (v.category === VendorCategory.hotel) {
+      for (const room of [
+        { roomType: 'Standard Room', capacity: 2, totalRooms: 6, price: 8500, amenities: ['WiFi', 'AC', 'TV'] },
+        { roomType: 'Deluxe Room', capacity: 2, totalRooms: 3, price: 12000, amenities: ['WiFi', 'AC', 'TV', 'City View'] },
+        { roomType: 'Family Suite', capacity: 4, totalRooms: 2, price: 18000, amenities: ['WiFi', 'AC', 'TV', 'Living Area'] },
+      ]) {
+        await prisma.hotelRoom.upsert({
+          where: { vendorId_roomType: { vendorId: seededVendor.id, roomType: room.roomType } },
+          update: room,
+          create: { vendorId: seededVendor.id, ...room },
+        });
+      }
+    }
+    if (v.category === VendorCategory.hall) {
+      for (const slot of [
+        { name: 'Morning Session', slotType: 'morning', capacity: 200, price: 150000, amenities: ['Chairs', 'Tables', 'Stage'] },
+        { name: 'Full Day Session', slotType: 'full_day', capacity: 350, price: 300000, amenities: ['Chairs', 'Tables', 'Stage', 'Parking'] },
+      ]) {
+        await prisma.hallSlot.upsert({
+          where: { vendorId_name: { vendorId: seededVendor.id, name: slot.name } },
+          update: slot,
+          create: { vendorId: seededVendor.id, ...slot },
+        });
+      }
+    }
+    if (v.category === VendorCategory.beauty) {
+      for (const service of [
+        { name: 'Haircut and Styling', durationMins: 60, price: 2500, description: 'Consultation, cut, and styling' },
+        { name: 'Facial Treatment', durationMins: 75, price: 4500, description: 'Deep cleanse and facial treatment' },
+        { name: 'Bridal Makeup', durationMins: 150, price: 18000, description: 'Professional bridal makeup session' },
+      ]) {
+        await prisma.beautyService.upsert({
+          where: { vendorId_name: { vendorId: seededVendor.id, name: service.name } },
+          update: service,
+          create: { vendorId: seededVendor.id, ...service },
+        });
+      }
+    }
   }
 
   // Link demo grocery vendor to ERP tenant id for inventory/order bridge demos

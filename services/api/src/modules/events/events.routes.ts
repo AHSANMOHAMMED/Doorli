@@ -73,7 +73,7 @@ eventsRouter.post('/', async (req, res, next) => {
   try {
     if (!req.user) throw new AppError(401, 'Authentication required');
     const input = parseBody(createEventSchema, req.body);
-    const pkg = await eventsService.createEventPackage(req.user.id, input);
+    const pkg = await eventsService.createEventPackage(req.user.id, input, String(req.headers['idempotency-key'] || '') || undefined);
     res.status(201).json({ success: true, data: pkg });
   } catch (err) {
     next(err);

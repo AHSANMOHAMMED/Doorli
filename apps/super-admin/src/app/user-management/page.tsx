@@ -5,12 +5,28 @@ import { superAdminFetch } from '@/lib/api';
 
 export default function UserManagementPage() {
   const [users, setUsers] = useState<any[]>([]);
+  const [updating, setUpdating] = useState<string | null>(null);
 
   useEffect(() => {
     superAdminFetch('/admin/users').then((res) => {
       if (res.success) setUsers(res.data);
     }).catch(console.error);
   }, []);
+
+  async function toggleActive(user: any) {
+    setUpdating(user.id);
+    try {
+      const res = await superAdminFetch(`/admin/users/${user.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ isActive: !user.isActive }),
+      });
+      if (res.success) {
+        setUsers((current) => current.map((item) => item.id === user.id ? { ...item, isActive: !user.isActive } : item));
+      }
+    } finally {
+      setUpdating(null);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-[#121212] text-[#e5e2e1]">
@@ -108,7 +124,12 @@ export default function UserManagementPage() {
 <span className="font-caption text-[10px] uppercase text-outline">Role</span>
 <span className="font-label-medium text-label-medium text-secondary">{user.role}</span>
 </div>
-<a href={`/user-detail?id=${user.id}`} className="material-symbols-outlined text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">more_vert</a>
+<div className="flex items-center gap-2">
+ <button type="button" disabled={updating === user.id} onClick={() => void toggleActive(user)} className="rounded-lg border border-outline-variant px-2 py-1 text-xs text-on-surface-variant disabled:opacity-50">
+  {updating === user.id ? 'Updating...' : user.isActive ? 'Deactivate' : 'Activate'}
+ </button>
+ <a href={`/user-detail?id=${user.id}`} className="material-symbols-outlined text-on-surface-variant">more_vert</a>
+</div>
 </div>
 </div>
 ))}

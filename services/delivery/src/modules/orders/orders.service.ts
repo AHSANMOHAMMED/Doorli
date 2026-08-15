@@ -183,12 +183,17 @@ export async function createOrder(data: {
   }
 
   const subtotal = pricedItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
-  const deliveryFee = calcDeliveryFee(
+  const calculatedDeliveryFee = calcDeliveryFee(
     vendor.latitude != null ? Number(vendor.latitude) : null,
     vendor.longitude != null ? Number(vendor.longitude) : null,
     deliveryAddress?.latitude != null ? Number(deliveryAddress.latitude) : null,
     deliveryAddress?.longitude != null ? Number(deliveryAddress.longitude) : null,
   );
+  const premium = await prisma.premiumSubscription.findFirst({
+    where: { userId: data.customerId, status: 'active', OR: [{ cancelAt: null }, { cancelAt: { gt: new Date() } }] },
+    select: { id: true },
+  });
+  const deliveryFee = premium ? 0 : calculatedDeliveryFee;
   const totalAmount = Math.max(0, subtotal + deliveryFee - discountAmount);
   const orderNumber = `ORD-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 1000)}`;
 

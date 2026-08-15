@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { DoorliColors } from '../../constants/colors';
 import {
   View,
@@ -34,6 +34,7 @@ import {
 } from 'lucide-react-native';
 import { fetchNearbyVendors, type Vendor, DEFAULT_LOCATION } from '../../lib/api';
 import { useCartStore } from '../../store/cart';
+import * as Location from 'expo-location';
 
 const PRIMARY = DoorliColors.primary;          // Doorli Blue #185fa5
 const ON_SURFACE = DoorliColors.text;           // #f4f7fb
@@ -43,14 +44,26 @@ export default function CustomerHome() {
   const router = useRouter();
   const [category, setCategory] = useState<VendorCategory | 'all'>('all');
   const [search, setSearch] = useState('');
+  const [location, setLocation] = useState(DEFAULT_LOCATION);
   const cartCount = useCartStore((s) => s.totalItems());
 
+  useEffect(() => {
+    let active = true;
+    Location.requestForegroundPermissionsAsync()
+      .then(({ status }) => status === 'granted' ? Location.getCurrentPositionAsync({}) : null)
+      .then((position) => {
+        if (active && position) setLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
+      })
+      .catch(() => undefined);
+    return () => { active = false; };
+  }, []);
+
   const { data, isLoading, refetch, isRefetching } = useQuery({
-    queryKey: ['vendors-nearby', category],
+    queryKey: ['vendors-nearby', category, location.lat, location.lng],
     queryFn: async () =>
       fetchNearbyVendors({
-        lat: DEFAULT_LOCATION.lat,
-        lng: DEFAULT_LOCATION.lng,
+        lat: location.lat,
+        lng: location.lng,
         radius: 10,
         category,
       }),

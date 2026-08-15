@@ -1,10 +1,18 @@
 import { prisma, ServiceRequestStatus } from '@doorli/db';
+import type { Prisma } from '@doorli/db';
 import { AppError } from '../../middleware/errorHandler.js';
 import { getSocketServer } from '../../lib/socket.js';
 import { enqueueNotification } from '../../lib/notifications.js';
 import type { CreateServiceRequestInput } from './service-requests.schema.js';
 
 export async function createServiceRequest(userId: string, input: CreateServiceRequestInput) {
+  const idempotencyKey = input.metadata && typeof input.metadata.idempotencyKey === 'string'
+    ? input.metadata.idempotencyKey
+    : undefined;
+  if (idempotencyKey) {
+    const existing = await prisma.serviceRequest.findFirst({ where: { customerId: userId, idempotencyKey } });
+    if (existing) return existing;
+  }
   const serviceRequest = await prisma.serviceRequest.create({
     data: {
       customerId: userId,
@@ -17,6 +25,8 @@ export async function createServiceRequest(userId: string, input: CreateServiceR
       isUrgent: input.isUrgent,
       offeredRate: input.offeredRate,
       scheduledAt: input.scheduledAt ? new Date(input.scheduledAt) : null,
+      idempotencyKey,
+      metadata: input.metadata as Prisma.InputJsonValue | undefined,
       status: ServiceRequestStatus.open,
     },
     include: {

@@ -314,6 +314,10 @@ export async function createBooking(params: {
   bookingType: 'hotel' | 'hall' | 'beauty' | 'service' | string;
   checkInDate?: string;
   checkOutDate?: string;
+  roomId?: string;
+  roomType?: string;
+  hallSlotId?: string;
+  beautyServiceId?: string;
   eventDate?: string;
   startTime?: string;
   endTime?: string;
@@ -362,6 +366,10 @@ export async function createBooking(params: {
     bookingType,
     checkInDate: params.checkInDate ?? (bookingType === 'hotel' ? eventDate : undefined),
     checkOutDate: params.checkOutDate,
+    roomId: params.roomId,
+    roomType: params.roomType,
+    hallSlotId: params.hallSlotId,
+    beautyServiceId: params.beautyServiceId,
     eventDate: bookingType !== 'hotel' ? eventDate : undefined,
     startTime: params.startTime,
     endTime: params.endTime,

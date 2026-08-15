@@ -115,6 +115,7 @@ services:
       - AUTH_SERVICE_URL=http://auth:4001
       - NOTIFICATIONS_SERVICE_URL=http://notifications:4007
       - DELIVERY_SERVICE_URL=http://delivery:8086
+      - INVENTORY_SERVICE_URL=http://inventory:4010
       - SEARCH_SERVICE_URL=http://search:4004
       - AI_SERVICE_URL=http://ai:4008
       - FORUM_SERVICE_URL=http://forum:8087
@@ -177,6 +178,21 @@ services:
       db:
         condition: service_healthy
       redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  inventory:
+    build:
+      context: .
+      dockerfile: services/inventory/Dockerfile
+    ports:
+      - "4010:4010"
+    environment:
+      - NODE_ENV=production
+      - PORT=4010
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-doorli}:${POSTGRES_PASSWORD:-doorli_secret}@db:5432/${POSTGRES_DB:-doorli}?schema=public
+    depends_on:
+      db:
         condition: service_healthy
     restart: unless-stopped
 

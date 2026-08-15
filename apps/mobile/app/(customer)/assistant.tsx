@@ -1,0 +1,13 @@
+import { useState } from 'react';
+import { Alert, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { apiClient } from '../../lib/axios';
+
+export default function AssistantScreen() {
+  const [message, setMessage] = useState('');
+  const [plan, setPlan] = useState<any>(null);
+  const [busy, setBusy] = useState(false);
+  async function parse() { if (!message.trim()) return; setBusy(true); try { const res = await apiClient.post('/assistant/parse', { message }); setPlan(res.data?.data); } catch { Alert.alert('Assistant', 'Unable to understand that request.'); } finally { setBusy(false); } }
+  async function confirm() { if (!plan?.sessionId) return; try { await apiClient.post('/assistant/execute', { sessionId: plan.sessionId, confirm: true }); Alert.alert('Confirmed', 'Open the suggested Doorli service to complete the details.'); } catch { Alert.alert('Assistant', 'Confirmation failed.'); } }
+  return <SafeAreaView style={styles.screen}><Text style={styles.title}>Doorli Assistant</Text><Text style={styles.muted}>Ask for a ride, bills, groceries, or a home service.</Text><TextInput style={styles.input} multiline placeholder="What do you need?" placeholderTextColor="#94a3b8" value={message} onChangeText={setMessage} /><TouchableOpacity style={styles.button} onPress={parse} disabled={busy}><Text style={styles.buttonText}>{busy ? 'Thinking...' : 'Create plan'}</Text></TouchableOpacity>{plan && <View style={styles.card}><Text style={styles.text}>{plan.clarification || `${plan.actions?.length || 0} action(s) ready`}</Text>{plan.actions?.map((action: any) => <Text key={action.module} style={styles.muted}>• {action.description}</Text>)}{plan.actions?.length > 0 && <TouchableOpacity style={styles.confirm} onPress={confirm}><Text style={styles.buttonText}>Confirm plan</Text></TouchableOpacity>}</View>}</SafeAreaView>;
+}
+const styles = StyleSheet.create({ screen: { flex: 1, backgroundColor: '#060b1c', padding: 16 }, title: { color: '#fff', fontSize: 28, fontWeight: '800' }, muted: { color: '#94a3b8', marginTop: 8 }, input: { minHeight: 110, backgroundColor: '#101c35', color: '#fff', padding: 15, borderRadius: 12, marginTop: 20, textAlignVertical: 'top' }, button: { backgroundColor: '#185fa5', padding: 15, borderRadius: 12, alignItems: 'center', marginTop: 12 }, confirm: { backgroundColor: '#1d9e75', padding: 14, borderRadius: 12, alignItems: 'center', marginTop: 15 }, buttonText: { color: '#fff', fontWeight: '800' }, card: { backgroundColor: '#101c35', padding: 16, borderRadius: 14, marginTop: 20 }, text: { color: '#fff', fontWeight: '700' } });

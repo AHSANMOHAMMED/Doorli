@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -14,6 +15,7 @@ import {
   TrendingUp,
 } from 'lucide-react-native';
 import { useAuthStore } from '../../store/auth';
+import { apiClient } from '../../lib/axios';
 
 const TILES = [
   { href: '/(vendor)/cashier', label: 'Cashier / Scan', blurb: 'Scan barcode & bill', icon: ScanBarcode, color: '#00B241' },
@@ -30,6 +32,23 @@ export default function VendorHub() {
   const router = useRouter();
   const signOut = useAuthStore((s) => s.signOut);
   const user = useAuthStore((s) => s.user);
+  const [features, setFeatures] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    let active = true;
+    apiClient.get('/vendors/me/features')
+      .then((res) => {
+        if (active) setFeatures(res.data?.data?.features || {});
+      })
+      .catch(() => undefined);
+    return () => { active = false; };
+  }, []);
+
+  const visibleTiles = TILES.filter((tile) => {
+    if (tile.href === '/(vendor)/cashier') return features.pos !== false;
+    if (tile.href === '/(vendor)/orders') return features.doorli_delivery !== false;
+    return true;
+  });
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -58,7 +77,7 @@ export default function VendorHub() {
 
         <Text style={styles.sectionTitle}>Quick Access</Text>
         <View style={styles.grid}>
-          {TILES.map((t) => (
+          {visibleTiles.map((t) => (
             <TouchableOpacity
               key={t.href}
               style={styles.tile}

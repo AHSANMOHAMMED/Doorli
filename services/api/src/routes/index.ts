@@ -33,12 +33,14 @@ import groupOrdersRouter from '../modules/group-orders/group-orders.routes.js';
 import corporateRouter from '../modules/corporate/corporate.routes.js';
 import walletRouter from '../modules/wallet/wallet.routes.js';
 import billsRouter from '../modules/bills/bills.routes.js';
+import familyRouter from '../modules/family/family.routes.js';
 import transitRouter from '../modules/transit/transit.routes.js';
 import healthRouter from '../modules/health/health.routes.js';
 import courierRouter, { errandsRouter } from '../modules/courier/courier.routes.js';
 import communityRouter from '../modules/community/community.routes.js';
 import membershipRouter from '../modules/membership/membership.routes.js';
 import assistantRouter from '../modules/assistant/assistant.routes.js';
+import createHotelRouter from './hotels/create-hotel.js';
 
 const router = Router();
 
@@ -102,6 +104,12 @@ router.use('/api/v1/users', usersRouter);
 router.use('/api/v1/vendors', vendorsRouter);
 router.use('/api/v1/products', productsRouter);
 router.use('/api/v1/bookings', bookingsRouter);
+router.use('/api/v1/hotels', createHotelRouter);
+router.use('/api/v1/inventory', createProxyMiddleware({
+  target: env.INVENTORY_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: (path) => `/api/v1/inventory${path}`,
+}));
 router.use('/api/v1/service-requests', serviceRequestsRouter);
 router.use('/api/v1/reviews', reviewsRouter);
 router.use('/api/v1/promos', promosRouter);
@@ -124,6 +132,7 @@ router.use('/api/v1/corporate', corporateRouter);
 router.use('/api/v1/wallet', walletRouter);
 router.use('/api/v1/billers', billsRouter);
 router.use('/api/v1/bills', billsRouter);
+router.use('/api/v1/family-profiles', familyRouter);
 router.use('/api/v1/transit', transitRouter);
 router.use('/api/v1/health', healthRouter);
 router.use('/api/v1/courier', courierRouter);

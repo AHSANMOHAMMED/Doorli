@@ -3,7 +3,6 @@ import { z } from 'zod';
 import { prisma } from '@doorli/db';
 import { authenticateToken } from '../../middleware/authenticateToken.js';
 import { AppError } from '../../middleware/errorHandler.js';
-import { applyWalletTransaction } from '../wallet/wallet.service.js';
 
 const billsRouter = Router();
 
@@ -23,6 +22,20 @@ const BILLERS = [
   { id: 'dialog-tv', name: 'Dialog TV', type: 'dth', logo: '📺' },
   { id: 'fastag', name: 'FASTag', type: 'fastag', logo: '🛣️' },
 ];
+
+async function ensureBiller(biller: typeof BILLERS[number]) {
+  return prisma.biller.upsert({
+    where: { id: biller.id },
+    create: biller,
+    update: { name: biller.name, type: biller.type, logo: biller.logo, isActive: true },
+  });
+}
+
+function idempotencyKey(req: { headers: Record<string, unknown> }) {
+  const value = req.headers['idempotency-key'];
+  if (typeof value !== 'string' || !value.trim()) throw new AppError(400, 'A valid Idempotency-Key header is required');
+  return value;
+}
 
 /** GET /billers/search?q= */
 billsRouter.get('/billers/search', async (req, res, next) => {
@@ -57,19 +70,24 @@ billsRouter.post('/bills/recharge', authenticateToken, async (req, res, next) =>
     if (!['mobile', 'dth', 'fastag'].includes(biller.type))
       throw new AppError(400, 'Use /bills/pay for utility bills');
 
-    const txnRef = `TXN${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    const ledger = await applyWalletTransaction({ userId: req.user!.id, amount: -amount, type: 'recharge', idempotencyKey: String(req.headers['idempotency-key'] || ''), reference: txnRef, description: `${biller.name} recharge`, metadata: { billerId, accountRef } });
+    const key = idempotencyKey(req);
+    const existing = await prisma.billPayment.findUnique({ where: { userId_idempotencyKey: { userId: req.user!.id, idempotencyKey: key } } });
+    if (existing) return res.json({ success: true, data: { ...existing, amount: Number(existing.amount), replayed: true } });
+    const persistedBiller = await ensureBiller(biller);
+    const txnRef = `TXN-${req.user!.id.slice(0, 8)}-${Date.now()}`;
+    // Debit only after a real biller provider confirms settlement.
+    const payment = await prisma.billPayment.create({ data: { userId: req.user!.id, billerId: persistedBiller.id, accountRef, amount, type: biller.type, status: 'pending', reference: txnRef, idempotencyKey: key } });
 
     await prisma.notification.create({
       data: {
         userId: req.user!.id,
-        title: `${biller.name} Recharge Successful`,
-        body: `LKR ${amount} recharge to ${accountRef}. Ref: ${txnRef}`,
+        title: `${biller.name} Recharge Pending`,
+        body: `LKR ${amount} recharge to ${accountRef} is queued. Ref: ${txnRef}`,
         type: 'bill_payment',
       },
     });
 
-    res.json({ success: true, data: { txnRef, biller: biller.name, accountRef, amount, status: 'success', transactionId: ledger.transaction.id, replayed: ledger.replayed } });
+    res.status(202).json({ success: true, data: { ...payment, amount: Number(payment.amount), replayed: false } });
   } catch (err) { next(err); }
 });
 
@@ -85,19 +103,24 @@ billsRouter.post('/bills/pay', authenticateToken, async (req, res, next) => {
     const biller = BILLERS.find(b => b.id === billerId);
     if (!biller) throw new AppError(404, 'Biller not found');
 
-    const txnRef = `BILL${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    const ledger = await applyWalletTransaction({ userId: req.user!.id, amount: -amount, type: 'bill_payment', idempotencyKey: String(req.headers['idempotency-key'] || ''), reference: txnRef, description: `${biller.name} bill payment`, metadata: { billerId, accountRef } });
+    const key = idempotencyKey(req);
+    const existing = await prisma.billPayment.findUnique({ where: { userId_idempotencyKey: { userId: req.user!.id, idempotencyKey: key } } });
+    if (existing) return res.json({ success: true, data: { ...existing, amount: Number(existing.amount), replayed: true } });
+    const persistedBiller = await ensureBiller(biller);
+    const txnRef = `BILL-${req.user!.id.slice(0, 8)}-${Date.now()}`;
+    // Debit only after a real biller provider confirms settlement.
+    const payment = await prisma.billPayment.create({ data: { userId: req.user!.id, billerId: persistedBiller.id, accountRef, amount, type: biller.type, status: 'pending', reference: txnRef, idempotencyKey: key } });
 
     await prisma.notification.create({
       data: {
         userId: req.user!.id,
-        title: `${biller.name} Payment Successful`,
-        body: `LKR ${amount} paid for account ${accountRef}. Ref: ${txnRef}`,
+        title: `${biller.name} Payment Pending`,
+        body: `LKR ${amount} payment for account ${accountRef} is queued. Ref: ${txnRef}`,
         type: 'bill_payment',
       },
     });
 
-    res.json({ success: true, data: { txnRef, biller: biller.name, accountRef, amount, status: 'success', transactionId: ledger.transaction.id, replayed: ledger.replayed } });
+    res.status(202).json({ success: true, data: { ...payment, amount: Number(payment.amount), replayed: false } });
   } catch (err) { next(err); }
 });
 

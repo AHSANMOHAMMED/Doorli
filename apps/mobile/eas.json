@@ -21,7 +21,8 @@
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api.doorli.me"
+        "EXPO_PUBLIC_API_URL": "https://doorli.me/api/v1",
+        "EXPO_PUBLIC_AUTH_URL": "https://doorli.me"
       },
       "ios": {
         "resourceClasses": ["2x", "3x"],
