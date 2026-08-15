@@ -47,7 +47,7 @@ pkill -f "node dist/index.js" 2>/dev/null || true
 pkill -f "node dist/cli.js" 2>/dev/null || true
 pkill -f "next start" 2>/dev/null || true
 pkill -f "next dev" 2>/dev/null || true
-pkill -f "next-server" 2>/dev/null || true
+pkill -9 -f "next-server" 2>/dev/null || true
 pkill -f "apps/erp/server.js" 2>/dev/null || true
 sleep 1
 
