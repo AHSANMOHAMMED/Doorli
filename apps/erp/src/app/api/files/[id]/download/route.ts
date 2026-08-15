@@ -10,6 +10,9 @@ import { logFileAudit, getRequestMeta } from '@/lib/files'
 import { validateParams } from '@/lib/validation/helpers'
 import { idParamSchema } from '@/lib/validation/schemas/common'
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 // GET download/stream a file (handles private files with auth)
 export async function GET(
   request: NextRequest,
