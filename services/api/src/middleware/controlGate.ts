@@ -49,7 +49,7 @@ function scopeMatches(scope: string, path: string): boolean {
   if (scope === 'ride_hailing') return path.startsWith('/api/v1/rides');
   if (scope === 'storage') return path.startsWith('/api/v1/storage');
   if (scope === 'ai') return path.startsWith('/api/v1/ai');
-  if (scope === 'erp') return path.startsWith('/api/v1/erp');
+   if (scope === 'erp') return path.startsWith('/api/v1/erp') || path.startsWith('/api/v1/erp-webhooks');
   return false;
 }
 
@@ -69,6 +69,7 @@ const SERVICE_PATH_MAP: Record<string, ServiceKey> = {
   '/api/v1/ride_hailing': 'ride_hailing',
   '/api/v1/storage': 'storage',
   '/api/v1/ai': 'ai',
+  '/api/v1/erp-webhooks': 'erp',
 };
 
 function serviceForPath(path: string): ServiceKey | null {

@@ -153,13 +153,8 @@ yellow "POSTing stock-update from ERP…"
 
 STOCK_PAYLOAD=$(cat <<EOF
 {
-  "vendorId": "test-vendor-id",
-  "erpOrderId": "$ERP_ORDER_ID",
-  "items": [
-    { "sku": "TEST-SKU-001", "productId": "test-product-id", "newStockQuantity": 42 },
-    { "sku": "TEST-SKU-002", "productId": "test-product-id-2", "newStockQuantity": 0 }
-  ],
-  "updatedAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  "productId": "test-product-id",
+  "newStockQuantity": 42
 }
 EOF
 )
@@ -190,19 +185,16 @@ yellow "POSTing dispatch-delivery request (ERP-only vendor POS order)…"
 
 DISPATCH_PAYLOAD=$(cat <<EOF
 {
-  "erpOrderId": "$ERP_ORDER_ID",
-  "vendorId": "test-vendor-id",
-  "customerAddress": {
-    "street": "42 Galle Road",
-    "city": "Colombo",
-    "lat": 6.9271,
-    "lng": 79.8612
+  "erp_order_id": "$ERP_ORDER_ID",
+  "vendor_id": "test-vendor-id",
+  "dropoff": {
+    "address_line": "42 Galle Road",
+    "latitude": 6.9271,
+    "longitude": 79.8612
   },
-  "items": [
-    { "name": "Test Item", "qty": 2, "price": 350 }
-  ],
-  "totalAmount": 700,
-  "notes": "ERP callback test — dispatch delivery"
+  "customer": { "name": "ERP Callback Test", "phone": "0770000000" },
+  "total_amount": 700,
+  "delivery_fee": 100
 }
 EOF
 )

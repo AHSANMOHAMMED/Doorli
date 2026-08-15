@@ -344,8 +344,8 @@ async function erpControlCall<T = unknown>(
       error: provider === 'enterprise' ? 'ERP_ENTERPRISE_URL is not configured' : 'ERP_SERVICE_URL is not configured',
     };
   }
-  const action = path.replace(/^\//, '');
-  const url = `${base}${erpControlPath(provider, action)}`;
+  const [rawAction, query = ''] = path.replace(/^\//, '').split('?');
+  const url = `${base}${erpControlPath(provider, rawAction)}${query ? `?${query}` : ''}`;
   try {
     const isEnterprise = provider === 'enterprise';
     const res = await fetch(url, {
@@ -427,7 +427,7 @@ export function erpControlStatus(tenantId?: string, provider: ErpProvider = 'sim
     settings: Array<{ key: string; value: unknown }>;
     globalModuleToggles: Record<string, { isEnabled: boolean }>;
     tenants: unknown[];
-  }>(`/status${q}`, undefined, provider);
+    }>(`/status${q}`, undefined, provider);
 }
 
 // ============================= BROADCASTS =============================

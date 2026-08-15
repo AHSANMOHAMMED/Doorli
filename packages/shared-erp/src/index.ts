@@ -327,26 +327,20 @@ async function getInventoryFromEnterprise(
     throw new Error('ERP_ENTERPRISE_URL is not configured');
   }
 
-  const erpUrl = enterpriseUrl.replace(/\/api\/method\/create_order$/, '');
-
-  const filters: Array<[string, string, string]> = [
-    ['item_code', '=', productId],
-  ];
-  if (warehouseId) {
-    filters.push(['warehouse', '=', warehouseId]);
-  }
+  const erpUrl = new URL(enterpriseUrl).origin;
 
   const params = new URLSearchParams({
-    filters: JSON.stringify(filters),
-    fields: JSON.stringify(['actual_qty', 'warehouse']),
+    company: erpTenantId,
+    item_code: productId,
+    ...(warehouseId ? { warehouse: warehouseId } : {}),
   });
 
   const response = await axios.get(
-    `${erpUrl}/api/resource/Stock%20Ledger%20Entry?${params.toString()}`,
+    `${erpUrl}/api/method/doorli_core.api.get_inventory?${params.toString()}`,
     {
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${erpSecret()}`,
+        'X-Doorli-Secret': erpSecret(),
       },
       timeout: REQUEST_TIMEOUT_MS,
       validateStatus: () => true,
@@ -358,7 +352,10 @@ async function getInventoryFromEnterprise(
     throw new Error(`Enterprise ERP inventory lookup failed (${response.status})`);
   }
 
-  const entries = response.data?.data || [];
+  if (response.data?.message?.status === 'error') {
+    throw new Error(response.data.message.message || 'Enterprise inventory lookup failed');
+  }
+  const entries = response.data?.message?.data || response.data?.data || [];
   const totalQty = entries.reduce(
     (sum: number, entry: { actual_qty?: number }) => sum + Number(entry.actual_qty || 0),
     0,

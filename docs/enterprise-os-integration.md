@@ -27,9 +27,14 @@ Doorli sends the shared secret in the `X-Doorli-Secret` header. The Enterprise a
 | `provision_vendor` | Idempotently creates an isolated ERPNext Company and optional vendor user permission |
 | `create_order` | Idempotently creates and submits an ERPNext Sales Order |
 | `update_order_status` | Accepts marketplace status callbacks for an existing Sales Order |
-| `api/resource/Stock Ledger Entry` | Inventory lookup used by the Doorli shared ERP client |
+| `doorli_core.api.get_inventory` | Authenticated, company-scoped inventory lookup |
+| `doorli_core.api.control_status` | Reads global maintenance/module state and tenant controls |
+| `doorli_core.api.control_tenant` | Updates tenant status, plan, expiry, AI and quota |
+| `doorli_core.api.control_quota` | Updates tenant plan/user quota |
+| `doorli_core.api.control_module` | Updates global or tenant module flags |
+| `doorli_core.api.control_settings` | Updates Enterprise maintenance settings |
 
-The Enterprise status callback accepts `confirmed`, `processing`, `delivered`, `completed`, and `cancelled`. Repeated updates are safe; each accepted update is recorded as an ERPNext comment, and cancellation invokes the ERPNext cancellation workflow.
+The Enterprise status callback accepts `confirmed`, `processing`, `delivered`, `completed`, and `cancelled`. Repeated updates are safe; each accepted update is recorded as an ERPNext comment, and cancellation invokes the ERPNext cancellation workflow. Inventory requests use `X-Doorli-Secret` and require `company` plus `item_code`; stock is filtered by Company before aggregation.
 
 ## Deployment rule
 

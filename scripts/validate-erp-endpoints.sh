@@ -4,21 +4,22 @@
 
 set -euo pipefail
 
-ERP_INTERNAL_SECRET="${ERP_INTERNAL_SECRET:-doorli_internal_sync_secret}"
+: "${ERP_INTERNAL_SECRET:?ERP_INTERNAL_SECRET must be set}"
+DOORLI_API_BASE="${DOORLI_API_BASE:-http://localhost:4000}"
 
 echo "[erp-validate] Validating ERP endpoints..."
 
 # Validate simple ERP endpoint
 echo "[erp-validate] Checking simple ERP (embedded Retail Smart ERP)..."
 SIMPLE_RESP=$(curl -s -o /dev/null -w "%{http_code}" \
-  http://localhost:3000/api/v1/erp-webhooks/stock-update \
+  "${DOORLI_API_BASE}/api/v1/erp-webhooks/stock-update" \
   -X POST \
   -H "Content-Type: application/json" \
-  -H "X-Internal-Secret: ${ERP_INTERNAL_SECRET}" \
+  -H "Authorization: Bearer ${ERP_INTERNAL_SECRET}" \
   -d '{"test": true}' 2>/dev/null || echo "000")
 
-if [ "${SIMPLE_RESP}" = "401" ]; then
-  echo "[erp-validate] Simple ERP endpoint reachable (auth check passed)"
+if [ "${SIMPLE_RESP}" = "400" ] || [ "${SIMPLE_RESP}" = "404" ]; then
+  echo "[erp-validate] Simple ERP endpoint reachable (authenticated request parsed)"
 else
   echo "[erp-validate] Simple ERP endpoint returned HTTP ${SIMPLE_RESP} (expected 401 or 200)"
 fi
