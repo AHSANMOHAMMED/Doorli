@@ -11,6 +11,9 @@ import { requirePermission } from '@/lib/auth/roles'
 import { validateParams } from '@/lib/validation/helpers'
 import { z } from 'zod'
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 const MAX_PHOTOS_PER_INSPECTION = 20
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 

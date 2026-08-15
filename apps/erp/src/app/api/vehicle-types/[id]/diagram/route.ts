@@ -11,6 +11,9 @@ import { requirePermission } from '@/lib/auth/roles'
 import { validateParams } from '@/lib/validation/helpers'
 import { idParamSchema } from '@/lib/validation/schemas/common'
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 // GET diagram for a vehicle type
 export async function GET(
   request: NextRequest,

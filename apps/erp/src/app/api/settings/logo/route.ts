@@ -9,6 +9,9 @@ import { requireQuota, adjustFileStorage } from '@/lib/db/storage-quota'
 import { logAndBroadcast } from '@/lib/websocket/broadcast'
 import { requirePermission } from '@/lib/auth/roles'
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
