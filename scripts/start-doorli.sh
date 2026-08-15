@@ -83,7 +83,7 @@ else
   start_ws customer npm run dev --workspace=@doorli/customer-web -- -p 3000
 fi
 if [ -f apps/vendor-web/.next/BUILD_ID ]; then
-  start_ws vendor npm run start --workspace=@doorli/vendor-web -- -p 3002
+  start_ws vendor npm run start --workspace=@doorli/vendor-web
 else
   start_ws vendor npm run dev --workspace=@doorli/vendor-web -- -p 3002
 fi
