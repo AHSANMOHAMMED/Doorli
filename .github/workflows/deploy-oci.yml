@@ -71,7 +71,7 @@ jobs:
           RELEASE_SHA: ${{ inputs.ref || github.sha }}
           REPOSITORY: ${{ github.server_url }}/${{ github.repository }}.git
         run: |
-          ssh -i ~/.ssh/doorli_oci.key "$OCI_USER@$OCI_HOST" \
+          ssh -o IdentitiesOnly=yes -i ~/.ssh/doorli_oci.key "$OCI_USER@$OCI_HOST" \
             "REPOSITORY='$REPOSITORY' RELEASE_SHA='$RELEASE_SHA' bash -s" <<'REMOTE'
           set -euo pipefail
           RELEASE_ROOT="/home/opc/releases/${RELEASE_SHA}"
