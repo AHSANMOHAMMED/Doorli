@@ -108,7 +108,7 @@ router.use('/api/v1/hotels', createHotelRouter);
 router.use('/api/v1/inventory', createProxyMiddleware({
   target: env.INVENTORY_SERVICE_URL,
   changeOrigin: true,
-  pathRewrite: (path) => `/api/v1/inventory${path}`,
+  pathRewrite: (path) => path.startsWith('/api/v1/inventory') ? path : `/api/v1/inventory${path}`,
 }));
 router.use('/api/v1/service-requests', serviceRequestsRouter);
 router.use('/api/v1/reviews', reviewsRouter);
