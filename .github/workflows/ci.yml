@@ -73,5 +73,8 @@ jobs:
       - name: Run forum tests
         run: npm test --workspace=@doorli/forum
 
+      - name: Typecheck mobile app
+        run: npm run typecheck --workspace=@doorli/mobile
+
       - name: Check formatting whitespace
         run: git diff --check
