@@ -19,9 +19,28 @@ permissions:
   contents: read
 
 jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+    steps:
+      - id: check
+        env:
+          OCI_HOST: ${{ secrets.OCI_HOST }}
+          OCI_SSH_KEY: ${{ secrets.OCI_SSH_KEY }}
+        run: |
+          if [ -n "$OCI_HOST" ] && [ -n "$OCI_SSH_KEY" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::OCI_HOST and OCI_SSH_KEY are not configured; deployment is skipped."
+          fi
+
   deploy:
     runs-on: ubuntu-latest
     environment: production
+    needs: preflight
+    if: needs.preflight.outputs.enabled == 'true'
     timeout-minutes: 35
     steps:
       - name: Checkout deployment ref
