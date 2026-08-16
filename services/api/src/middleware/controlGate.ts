@@ -111,9 +111,14 @@ export async function controlGate(req: Request, res: Response, next: NextFunctio
     }
 
     next();
-  } catch {
-    // Fail open when control data cannot be read
-    next();
+  } catch (error) {
+    // A missing control decision must not silently bypass tenant/service locks.
+    console.error('[control-gate] control state unavailable:', error instanceof Error ? error.message : error);
+    res.status(503).json({
+      success: false,
+      error: 'control_unavailable',
+      message: 'Doorli control services are temporarily unavailable. Please try again shortly.',
+    });
   }
 }
 

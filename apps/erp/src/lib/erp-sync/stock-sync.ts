@@ -115,6 +115,7 @@ async function doPush(tenantId: string, itemIds: string[]): Promise<void> {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${erpSecret()}`,
+          'x-erp-secret': erpSecret(),
         },
         body: JSON.stringify({
           erp_tenant_id: tenantId,

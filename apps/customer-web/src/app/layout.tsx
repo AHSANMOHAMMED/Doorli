@@ -33,7 +33,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   viewportFit: "cover",
-  themeColor: "#0a0f2e",
+  themeColor: "#f7fafc",
 };
 
 export default function RootLayout({
@@ -43,7 +43,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${syne.variable} ${manrope.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-[var(--doorli-navy)] text-[var(--doorli-text)] pb-tab-bar">
+      <body className="min-h-full flex flex-col bg-[#f7fafc] text-[#10213f] pb-tab-bar">
         <CartProvider>
           <div className="flex-1 flex flex-col min-h-0">{children}</div>
           <MobileTabBar />

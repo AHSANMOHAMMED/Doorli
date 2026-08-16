@@ -309,7 +309,10 @@ router.post(
     try {
       if (!req.user) throw new AppError(401, 'Unauthorized');
 
-      const vendor = await prisma.vendor.findUnique({ where: { id: String(req.params.id) } });
+      const vendor = await prisma.vendor.findUnique({
+        where: { id: String(req.params.id) },
+        include: { user: { select: { email: true } } },
+      });
       if (!vendor) throw new AppError(404, 'Vendor not found');
 
       // Only the vendor's own user or an admin may provision
@@ -381,6 +384,9 @@ router.post(
         }
       } else if (vendor.erpProvider === 'enterprise') {
         // ── Enterprise ERP: async via BullMQ ────────────────────────────────
+        if (!vendor.user.email) {
+          throw new AppError(400, 'Vendor account needs an email address before Enterprise ERP provisioning');
+        }
         await prisma.vendor.update({
           where: { id: vendor.id },
           data: { erpProvisionStatus: 'pending', erpProvisionError: null },
@@ -391,7 +397,7 @@ router.post(
           {
             vendorId: vendor.id,
             businessName: vendor.businessName,
-            adminEmail: vendor.phone ?? undefined,
+            adminEmail: vendor.user.email,
             phone: vendor.phone ?? undefined,
           },
           {

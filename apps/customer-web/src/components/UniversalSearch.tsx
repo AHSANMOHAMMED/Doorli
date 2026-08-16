@@ -88,15 +88,14 @@ export function UniversalSearch() {
 
   return (
     <div className="relative group w-full">
-      <div className="absolute inset-0 bg-gradient-to-r from-[#185FA5] to-[#1D9E75] rounded-2xl blur opacity-30 transition duration-500" />
-      <div className="relative flex flex-col doorli-glass rounded-2xl shadow-2xl z-50">
+      <div className="relative flex flex-col rounded-xl border border-[#d5e1ed] bg-white shadow-[0_8px_24px_rgba(25,68,112,.08)] z-50">
         <form onSubmit={handleSearch} className="flex items-center p-2">
           <div className="flex-1 flex items-center px-4">
-            <Search className="w-5 h-5 text-white/50" />
+            <Search className="w-5 h-5 text-[#71839a]" />
             <input
               type="text"
               placeholder="Search vendors or products…"
-              className="w-full bg-transparent border-none text-white placeholder:text-white/40 focus:outline-none px-4 py-3 text-lg"
+              className="w-full bg-transparent border-none text-[#10213f] placeholder:text-[#71839a] focus:outline-none px-4 py-3 text-base"
               value={query}
               onChange={(e) => {
                 setQuery(e.target.value);
@@ -106,9 +105,9 @@ export function UniversalSearch() {
             />
             {isSearching && <Loader2 className="w-5 h-5 animate-spin text-[var(--doorli-mint)]" />}
           </div>
-          <div className="hidden sm:flex items-center gap-2 px-4 border-l border-white/10">
-            <MapPin className="w-4 h-4 text-white/45" />
-            <span className="text-sm text-white/70">Colombo</span>
+          <div className="hidden sm:flex items-center gap-2 px-4 border-l border-[#dce7f2]">
+            <MapPin className="w-4 h-4 text-[#16805b]" />
+            <span className="text-sm text-[#526783]">Colombo</span>
           </div>
           <button
             type="submit"
@@ -124,7 +123,7 @@ export function UniversalSearch() {
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="absolute top-full left-0 w-full mt-2 doorli-glass rounded-2xl shadow-2xl overflow-hidden"
+              className="absolute top-full left-0 w-full mt-2 rounded-xl border border-[#d5e1ed] bg-white shadow-xl overflow-hidden"
             >
               {results.length > 0 ? (
                 <ul className="max-h-96 overflow-y-auto p-2">
@@ -137,7 +136,7 @@ export function UniversalSearch() {
                         else if (item.vendorId) router.push(`/shop/${item.vendorId}`);
                         else router.push(`/search?q=${encodeURIComponent(item.name)}`);
                       }}
-                      className="p-3 hover:bg-white/5 rounded-xl cursor-pointer flex items-start gap-4"
+                      className="p-3 hover:bg-[#eef7ff] rounded-xl cursor-pointer flex items-start gap-4"
                     >
                       <div
                         className={cn(
@@ -155,7 +154,7 @@ export function UniversalSearch() {
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
-                          <h4 className="font-medium text-white">{item.name}</h4>
+                          <h4 className="font-medium text-[#10213f]">{item.name}</h4>
                           <span className="text-xs text-neutral-400">{item.price}</span>
                         </div>
                         <p className="text-sm text-neutral-400 truncate">{item.description}</p>

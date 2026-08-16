@@ -73,15 +73,30 @@ function mapErpStatusToMarketplace(status: string): MarketplaceStatus | null {
 }
 
 router.post('/stock-update', requireErpSecret, async (req: Request, res: Response) => {
-  const { productId, newStockQuantity } = req.body;
+  const { productId, erp_tenant_id, sku, barcode, newStockQuantity } = req.body;
 
-  if (!productId || typeof newStockQuantity !== 'number') {
+  if (typeof newStockQuantity !== 'number' || !Number.isFinite(newStockQuantity) || newStockQuantity < 0) {
     return res.status(400).json({ error: 'Invalid payload' });
   }
 
   try {
+    let resolvedProductId = productId ? String(productId) : null;
+    if (!resolvedProductId && erp_tenant_id && (sku || barcode)) {
+      const vendor = await prisma.vendor.findFirst({ where: { erpTenantId: String(erp_tenant_id) }, select: { id: true } });
+      if (vendor) {
+        const matched = sku
+          ? await prisma.product.findFirst({ where: { vendorId: vendor.id, sku: String(sku) }, select: { id: true } })
+          : await prisma.product.findFirst({ where: { vendorId: vendor.id, barcode: String(barcode) }, select: { id: true } });
+        resolvedProductId = matched?.id ?? null;
+      }
+    }
+    if (!resolvedProductId) {
+      if (!productId && !(erp_tenant_id && (sku || barcode))) return res.status(400).json({ error: 'Invalid payload' });
+      return res.status(404).json({ error: 'Product not found for ERP stock update' });
+    }
+
     const updated = await prisma.product.update({
-      where: { id: productId },
+      where: { id: resolvedProductId },
       data: { stockQuantity: newStockQuantity },
     });
     console.log(`[ERP Webhook] Updated stock for product ${productId} to ${newStockQuantity}`);
@@ -327,20 +342,27 @@ router.post('/customer-sync', requireErpSecret, async (req: Request, res: Respon
           continue;
         }
 
-        // Try to find existing user by phone or email
+        // The ERP customer link is authoritative and scoped to this vendor.
         let user = null;
+        const existingLink = await prisma.erpCustomerLink.findUnique({
+          where: { vendorId_erpCustomerId: { vendorId: vendor.id, erpCustomerId: String(erp_customer_id) } },
+          include: { user: true },
+        });
+        if (existingLink) user = existingLink.user;
         if (phone) {
-          user = await prisma.user.findUnique({ where: { phone: String(phone).slice(0, 20) } });
+          user ??= await prisma.user.findUnique({ where: { phone: String(phone).slice(0, 20) } });
         }
         if (!user && email) {
           user = await prisma.user.findUnique({ where: { email: String(email).slice(0, 150) } });
         }
 
         if (user) {
-          // Update existing user with ERP customer ID if not already set
-          // Note: we store erp_customer_id as a custom field — for now we just ensure the user exists
-          // The linking can be done via a separate field or a join table in the future
-          console.log(`[ERP Webhook] customer-sync: user ${user.id} matched for ERP customer ${erp_customer_id}`);
+          await prisma.erpCustomerLink.upsert({
+            where: { vendorId_erpCustomerId: { vendorId: vendor.id, erpCustomerId: String(erp_customer_id) } },
+            update: { userId: user.id },
+            create: { vendorId: vendor.id, userId: user.id, erpCustomerId: String(erp_customer_id) },
+          });
+          console.log(`[ERP Webhook] customer-sync: user ${user.id} linked to ERP customer ${erp_customer_id}`);
         } else {
           // Create new user
           user = await prisma.user.create({
@@ -351,7 +373,10 @@ router.post('/customer-sync', requireErpSecret, async (req: Request, res: Respon
               role: 'customer',
             },
           });
-          console.log(`[ERP Webhook] customer-sync: created user ${user.id} for ERP customer ${erp_customer_id}`);
+          await prisma.erpCustomerLink.create({
+            data: { vendorId: vendor.id, userId: user.id, erpCustomerId: String(erp_customer_id) },
+          });
+          console.log(`[ERP Webhook] customer-sync: created and linked user ${user.id} for ERP customer ${erp_customer_id}`);
         }
 
         synced++;
