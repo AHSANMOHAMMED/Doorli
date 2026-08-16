@@ -339,7 +339,7 @@ const alertVariantMap: Record<string, DialogVariant> = {
   info: 'info',
 }
 
-const alertIconMap: Record<string, React.ComponentType<{ size: number }>> = {
+const alertIconMap: Record<string, React.ComponentType<{ size?: number | string }>> = {
   error: XCircle,
   success: CheckCircle,
   warning: AlertTriangle,

@@ -14,12 +14,12 @@
     "@doorli/design-tokens": "*",
     "@doorli/types": "*",
     "date-fns": "^4.4.0",
-    "lucide-react": "^1.23.0",
+    "lucide-react": "0.469.0",
     "next": "14.2.35",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "styled-jsx": "5.1.1",
-    "recharts": "^3.9.2"
+    "recharts": "^3.9.2",
+    "styled-jsx": "5.1.1"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

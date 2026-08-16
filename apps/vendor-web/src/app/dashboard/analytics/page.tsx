@@ -1,9 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import { TrendingUp, Loader as Loader2 } from 'lucide-react';
+import { TrendingUp as TrendingUpRaw, Loader as Loader2Raw } from 'lucide-react';
+
+const TrendingUp = TrendingUpRaw as unknown as React.ComponentType<{ className?: string }>;
+const Loader2 = Loader2Raw as unknown as React.ComponentType<{ className?: string }>;
 
 type Order = {
   id: string;

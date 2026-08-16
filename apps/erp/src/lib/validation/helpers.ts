@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import type { ZodType, ZodError } from 'zod'
+import type { ZodType, ZodTypeDef, ZodError } from 'zod'
 
 type ValidationSuccess<T> = { success: true; data: T }
 type ValidationFailure = { success: false; response: NextResponse }
@@ -23,7 +23,7 @@ type ValidationResult<T> = ValidationSuccess<T> | ValidationFailure
  */
 export async function validateBody<T>(
   request: Request,
-  schema: ZodType<T>
+  schema: ZodType<T, ZodTypeDef, any>
 ): Promise<ValidationResult<T>> {
   let rawBody: unknown
   try {
@@ -69,7 +69,7 @@ export async function validateBody<T>(
  */
 export function validateSearchParams<T>(
   request: Request,
-  schema: ZodType<T>
+  schema: ZodType<T, ZodTypeDef, any>
 ): ValidationResult<T> {
   const url = new URL(request.url)
   const params: Record<string, string> = {}
@@ -104,7 +104,7 @@ export function validateSearchParams<T>(
  */
 export function validateParams<T>(
   params: Record<string, string>,
-  schema: ZodType<T>
+  schema: ZodType<T, ZodTypeDef, any>
 ): ValidationResult<T> {
   const result = schema.safeParse(params)
   if (!result.success) {

@@ -9,6 +9,7 @@ interface ExchangeRates {
   date: string
   rates: Record<string, number>
   source?: string
+  fallback?: boolean
 }
 
 interface CachedRates {
@@ -210,11 +211,11 @@ export async function fetchExchangeRates(): Promise<ExchangeRates | null> {
 
   // Cache the rates
   ratesCache = {
-    rates,
+    rates: rates as ExchangeRates,
     timestamp: Date.now(),
   }
 
-  return rates
+  return rates as ExchangeRates
 }
 
 /**

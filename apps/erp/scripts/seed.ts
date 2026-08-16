@@ -14,7 +14,7 @@ async function main() {
       name: 'Doorli Demo Tenant',
       slug: 'doorli-demo-tenant',
       email: 'demo@doorli.com',
-      industry: 'retail',
+       businessType: 'retail',
       country: 'LK',
       currency: 'LKR',
       timezone: 'Asia/Colombo',

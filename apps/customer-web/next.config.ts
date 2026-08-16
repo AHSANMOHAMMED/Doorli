@@ -4,7 +4,6 @@ import type { NextConfig } from 'next';
 const apiOrigin = process.env.API_INTERNAL_URL || "http://127.0.0.1:4000";
 
 const nextConfig: NextConfig = {
-  typescript: { ignoreBuildErrors: true },
   allowedDevOrigins: ['140.245.207.93', 'http://140.245.207.93'],
   output: 'standalone',
   async rewrites() {

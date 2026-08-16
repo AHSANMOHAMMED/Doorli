@@ -55,6 +55,7 @@ interface Sale {
   paymentMethod: string
   status: string
   createdAt: string
+  notes?: string | null
   customer: {
     id: string
     name: string

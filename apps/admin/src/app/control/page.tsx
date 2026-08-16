@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import type { ComponentType } from "react";
 import { useRouter } from "next/navigation";
 import {
   Wrench,
@@ -14,6 +15,8 @@ import {
 } from "lucide-react";
 import { adminFetch } from "@/lib/api";
 import { PageHeader, Panel, Badge, Skeleton } from "@/components/ui";
+
+const SafeRefreshCw = RefreshCw as unknown as ComponentType<{ size?: number }>;
 
 type MaintenanceWindow = {
   active: boolean;
@@ -101,7 +104,7 @@ export default function ControlCenter() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const overview = await adminFetch("/admin/control/overview");
+      const overview = await adminFetch<ControlOverview>("/admin/control/overview");
       setData({
         maintenance: overview.maintenance || null,
         services: overview.services || {},
@@ -226,7 +229,7 @@ export default function ControlCenter() {
               {maintenance.active ? "MAINTENANCE ACTIVE" : "ALL SYSTEMS NORMAL"}
             </Badge>
             <button type="button" className="btn btn-ghost" onClick={() => load()}>
-              <RefreshCw size={15} />
+              <SafeRefreshCw size={15} />
               Refresh
             </button>
           </div>

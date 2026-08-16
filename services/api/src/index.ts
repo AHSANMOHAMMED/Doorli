@@ -3,6 +3,7 @@ import { createApp } from './app.js';
 import { env } from './config/env.js';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import { renewPremiumSubscriptions } from './lib/premiumRenewal.js';
+import { reconcileIntegrationFailures } from './lib/integrationReconciliation.js';
 
 const app = createApp();
 const server = http.createServer(app);
@@ -106,4 +107,9 @@ server.listen(env.API_PORT, () => {
   const runRenewals = () => void renewPremiumSubscriptions().catch((error) => console.error('[premium-renewal]', error));
   runRenewals();
   setInterval(runRenewals, 24 * 60 * 60 * 1000).unref();
+  const runIntegrationReconciliation = () => void reconcileIntegrationFailures()
+    .then((result) => { if (result.attempted) console.log('[integration-reconciliation]', result); })
+    .catch((error) => console.error('[integration-reconciliation]', error));
+  runIntegrationReconciliation();
+  setInterval(runIntegrationReconciliation, Number(process.env.INTEGRATION_RECONCILIATION_INTERVAL_MS || 60_000)).unref();
 });

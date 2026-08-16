@@ -158,13 +158,13 @@ export async function listTenantsForControl() {
     },
   })
 
-  const subs = await db.query.subscriptions.findMany()
+  const subs = await db.query.subscriptions.findMany({ with: { tier: true } })
   const byTenant = new Map(subs.map((s) => [s.tenantId, s]))
 
   return rows.map((t) => {
     const sub = byTenant.get(t.id)
     const limits = sub
-      ? effectiveLimits({ ...sub, tier: (sub as unknown as { tier?: unknown }).tier })
+      ? effectiveLimits(sub)
       : { maxUsers: null, maxSalesMonthly: null, maxDatabaseBytes: null, maxFileStorageBytes: null, tierName: null, tierDisplayName: null }
     return {
       ...t,

@@ -45,12 +45,6 @@ const nextConfig: NextConfig = {
     ],
     qualities: [75, 85, 90],
   },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   // Security headers
   async headers() {
     return [

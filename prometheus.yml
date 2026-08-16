@@ -8,60 +8,8 @@ global:
 rule_files:
   - 'alerts.yml'
 
-alerting:
-  alertmanagers:
-    - static_configs:
-        - targets: ['alertmanager:9093']
-
 scrape_configs:
   - job_name: 'api-gateway'
     static_configs:
-      - targets: ['api:4000']
+       - targets: ['api:3001']
     metrics_path: /metrics
-
-  - job_name: 'auth'
-    static_configs:
-      - targets: ['auth:4001']
-    metrics_path: /metrics
-
-  - job_name: 'delivery'
-    static_configs:
-      - targets: ['delivery:8086']
-    metrics_path: /metrics
-
-  - job_name: 'notifications'
-    static_configs:
-      - targets: ['notifications:4007']
-    metrics_path: /metrics
-
-  - job_name: 'search'
-    static_configs:
-      - targets: ['search:4004']
-    metrics_path: /metrics
-
-  - job_name: 'ride-hailing'
-    static_configs:
-      - targets: ['ride-hailing:8085']
-    metrics_path: /metrics
-
-  - job_name: 'ai-service'
-    static_configs:
-      - targets: ['ai-service:4006']
-    metrics_path: /metrics
-
-  - job_name: 'storage'
-    static_configs:
-      - targets: ['storage:4005']
-    metrics_path: /metrics
-
-  - job_name: 'node-exporter'
-    static_configs:
-      - targets: ['node-exporter:9100']
-
-  - job_name: 'postgres-exporter'
-    static_configs:
-      - targets: ['postgres-exporter:9187']
-
-  - job_name: 'redis-exporter'
-    static_configs:
-      - targets: ['redis-exporter:9121']

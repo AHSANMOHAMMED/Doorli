@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { timingSafeEqual } from 'node:crypto';
 import { prisma } from '@doorli/db';
 import { isFeatureEnabled, DOORLI_DELIVERY_KEY } from '../../lib/featureFlags.js';
+import { recordIntegrationFailure } from '../../lib/integrationFailures.js';
 
 const router = Router();
 
@@ -132,6 +133,12 @@ router.post('/stock-update', requireErpSecret, async (req: Request, res: Respons
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Internal server error';
     console.error('[ERP Webhook] Stock update error:', message);
+    await recordIntegrationFailure({
+      kind: 'stock-update',
+      dedupeKey: `stock:${req.body.erp_tenant_id || 'unknown'}:${req.body.sku || req.body.barcode || req.body.productId || 'unknown'}`,
+      payload: req.body,
+      error,
+    }).catch((recordError) => console.error('[ERP Webhook] failed to record stock dead letter:', recordError));
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -189,6 +196,12 @@ router.post('/order-status', requireErpSecret, async (req: Request, res: Respons
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Internal server error';
     console.error('[ERP Webhook] Order status update error:', message);
+    await recordIntegrationFailure({
+      kind: 'order-status',
+      dedupeKey: `order-status:${req.body.marketplace_order_id || req.body.erp_order_id || 'unknown'}:${req.body.status || 'unknown'}`,
+      payload: req.body,
+      error,
+    }).catch((recordError) => console.error('[ERP Webhook] failed to record order dead letter:', recordError));
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -284,6 +297,12 @@ router.post('/product-sync', requireErpSecret, async (req: Request, res: Respons
       } catch (prodErr) {
         failed++;
         errors.push(`Product ${product?.erp_item_id || 'unknown'}: ${prodErr instanceof Error ? prodErr.message : 'error'}`);
+        await recordIntegrationFailure({
+          kind: 'product-sync',
+          dedupeKey: `product:${product?.erp_tenant_id || 'unknown'}:${product?.erp_item_id || product?.sku || product?.barcode || 'unknown'}`,
+          payload: { products: [product] },
+          error: prodErr,
+        }).catch((recordError) => console.error('[ERP Webhook] failed to record product dead letter:', recordError));
       }
     }
 
@@ -383,6 +402,13 @@ router.post('/customer-sync', requireErpSecret, async (req: Request, res: Respon
       } catch (custErr) {
         failed++;
         errors.push(`Customer ${customer?.erp_customer_id || 'unknown'}: ${custErr instanceof Error ? custErr.message : 'error'}`);
+        await recordIntegrationFailure({
+          kind: 'customer-sync',
+          dedupeKey: `customer:${erp_tenant_id}:${customer?.erp_customer_id || 'unknown'}`,
+          vendorId: vendor.id,
+          payload: { erp_tenant_id, customers: [customer] },
+          error: custErr,
+        }).catch((recordError) => console.error('[ERP Webhook] failed to record customer dead letter:', recordError));
       }
     }
 

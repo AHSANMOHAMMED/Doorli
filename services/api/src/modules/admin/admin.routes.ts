@@ -12,6 +12,7 @@ import {
   POS_KEY,
 } from '../../lib/featureFlags.js';
 import { ErpIntegrationService } from '../../lib/erpIntegration.js';
+import { retryIntegrationFailure } from '../../lib/integrationReconciliation.js';
 import { setMaintenance, getMaintenanceAware, erpModuleToggle } from '../../lib/control.js';
 import { randomUUID } from 'crypto';
 import os from 'os';
@@ -610,6 +611,49 @@ adminRouter.post('/vendors/:id/reprovision', async (req, res, next) => {
     res.json({ success: true, data: provisioned });
   } catch (err) {
     next(err);
+  }
+});
+
+adminRouter.post('/vendors/:id/catalog-sync', async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    const vendor = await prisma.vendor.findUnique({ where: { id: req.params.id } });
+    if (!vendor) throw new AppError(404, 'Vendor not found');
+    if (vendor.erpProvider !== 'enterprise' || !vendor.erpTenantId) {
+      throw new AppError(400, 'Vendor is not connected to Enterprise ERP');
+    }
+    const result = await ErpIntegrationService.syncEnterpriseCatalog({ erpTenantId: vendor.erpTenantId });
+    if (!result.success) return res.status(result.status && result.status >= 400 ? result.status : 502).json({ success: false, error: result.message });
+    return res.json({ success: true, data: result });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+adminRouter.get('/integration-failures', async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    const status = typeof req.query.status === 'string' ? req.query.status : 'pending';
+    const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 200);
+    const failures = await prisma.integrationFailure.findMany({
+      where: { status },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
+    return res.json({ success: true, data: failures });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+adminRouter.post('/integration-failures/:id/retry', async (req, res, next) => {
+  try {
+    requireAdmin(req);
+    const result = await retryIntegrationFailure(req.params.id);
+    if (!result.ok) return res.status(result.status).json({ success: false, error: result.error, data: 'data' in result ? result.data : undefined });
+    return res.json({ success: true, data: result.data, retry: result.retry });
+  } catch (err) {
+    return next(err);
   }
 });
 

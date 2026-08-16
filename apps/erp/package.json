@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "node scripts/build-server.mjs && node scripts/dev-server.mjs",
     "dev:next": "next dev",
-    "build": "NEXT_IGNORE_INCORRECT_LOCKFILE=1 next build",
+    "build": "NODE_OPTIONS=--max-old-space-size=4096 NEXT_IGNORE_INCORRECT_LOCKFILE=1 next build",
     "prebuild": "npm run validate:migrations",
     "postbuild": "node scripts/build-server.mjs",
     "build:server": "node scripts/build-server.mjs",

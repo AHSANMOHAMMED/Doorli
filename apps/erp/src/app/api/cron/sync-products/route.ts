@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     const tenantList = await db
       .select({ id: tenants.id })
       .from(tenants)
-      .where(eq(tenants.isActive, true))
+      .where(eq(tenants.status, 'active'))
 
     let totalSynced = 0
     let totalFailed = 0

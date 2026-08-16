@@ -21,13 +21,14 @@ const envSchema = z.object({
     .default('postgresql://doorli:doorli@localhost:5432/doorli'),
   REDIS_URL: z.string().default('redis://localhost:6379'),
   JWT_SECRET: optionalEmpty(
-    z.string().min(16).default('doorli-dev-access-secret-change-in-prod'),
+    z.string().min(16).default('local-development-only-access-secret'),
   ),
   JWT_REFRESH_SECRET: optionalEmpty(
-    z.string().min(16).default('doorli-dev-refresh-secret-change-in-prod'),
+    z.string().min(16).default('local-development-only-refresh-secret'),
   ),
   JWT_ACCESS_EXPIRES_IN: z.string().default('15m'),
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
+  CORS_ORIGINS: z.string().default('http://localhost:3000,http://localhost:3001'),
   MSG91_API_KEY: z.string().optional(),
   OTP_TTL_SECONDS: z.coerce.number().default(300),
   AUTH_SERVICE_URL: z.string().url().default('http://localhost:4001'),
@@ -38,7 +39,7 @@ const envSchema = z.object({
   FORUM_SERVICE_URL: z.string().url().default('http://localhost:8087'),
   EMERGENCY_SERVICE_URL: z.string().url().default('http://localhost:8088'),
   GOV_SERVICE_URL: z.string().url().default('http://localhost:8089'),
-  ERP_INTERNAL_SECRET: z.string().default('doorli_internal_sync_secret'),
+  ERP_INTERNAL_SECRET: z.string().default(''),
   ERP_SERVICE_URL: z.string().default('http://localhost:3010'),
   // Embedded Retail Smart ERP internal base (simple vendors). Falls back to ERP_SERVICE_URL.
   ERP_EMBEDDED_URL: optionalEmpty(z.string()).optional(),
@@ -56,7 +57,16 @@ function loadEnv(): Env {
   if (!result.success) {
     throw new Error(`Invalid environment variables: ${JSON.stringify(result.error.flatten().fieldErrors)}`);
   }
-  return result.data;
+  const data = result.data;
+  if (data.NODE_ENV === 'production') {
+    const missing = ['JWT_SECRET', 'JWT_REFRESH_SECRET', 'ERP_INTERNAL_SECRET'].filter((key) => {
+      const value = data[key as keyof Env];
+      return !value || (typeof value === 'string' && value.startsWith('local-development-only-'));
+    });
+    if (data.DATABASE_URL.includes('localhost') || data.DATABASE_URL.includes('127.0.0.1')) missing.push('DATABASE_URL(non-local)');
+    if (missing.length) throw new Error(`Production secrets/configuration missing: ${missing.join(', ')}`);
+  }
+  return data;
 }
 
 export const env = loadEnv();

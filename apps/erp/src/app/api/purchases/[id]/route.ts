@@ -413,7 +413,7 @@ export async function PUT(
         .returning()
 
       // Collect affected item IDs for stock push (outside conditional)
-      const cancelledItemIds = purchaseItemsList.filter((i: { itemId: string | null }) => i.itemId).map((i: { itemId: string }) => i.itemId)
+      const cancelledItemIds = purchaseItemsList.filter((i): i is typeof i & { itemId: string } => i.itemId !== null).map((i) => i.itemId)
       return { data: updated, tenantId: session.user.tenantId, userId: session.user.id, supplierId: currentPurchase.supplierId, purchaseOrderId, cancelledItemIds }
     })
 
@@ -745,7 +745,7 @@ export async function PUT(
         costCenterId: currentPurchase.costCenterId || null,
       })
 
-      const affectedItemIds = purchaseItemsList.filter((i: { itemId: string | null }) => i.itemId).map((i: { itemId: string }) => i.itemId)
+      const affectedItemIds = purchaseItemsList.filter((i): i is typeof i & { itemId: string } => i.itemId !== null).map((i) => i.itemId)
       return { data: updated, tenantId: session.user.tenantId, userId: session.user.id, supplierId: currentPurchase.supplierId, affectedItemIds }
     })
     } catch (err: unknown) {
@@ -1020,7 +1020,7 @@ export async function DELETE(
     await tx.delete(purchases)
       .where(eq(purchases.id, id))
 
-    const affectedItemIds = purchaseItemsList.filter((i: { itemId: string | null }) => i.itemId).map((i: { itemId: string }) => i.itemId)
+    const affectedItemIds = purchaseItemsList.filter((i): i is typeof i & { itemId: string } => i.itemId !== null).map((i) => i.itemId)
     return { data: { success: true }, tenantId: session.user.tenantId, supplierId: currentPurchase.supplierId, affectedItemIds }
   })
 

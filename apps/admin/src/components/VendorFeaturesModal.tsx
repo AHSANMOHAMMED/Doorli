@@ -34,8 +34,7 @@ export default function VendorFeaturesModal({ vendorId, vendorName, onClose }: P
       try {
         const res = await adminFetch<{ allFeatures: FeatureFlag[], vendorFeatures: VendorFeature[] }>(`/admin/vendors/${vendorId}/features`);
         
-        // Handle wrapper correctly depending on how adminFetch unwraps
-        const data = (res as { data?: typeof res } | typeof res).data || res;
+        const data = res;
         
         setFeatures(data.allFeatures || []);
         

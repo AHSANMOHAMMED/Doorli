@@ -1,4 +1,4 @@
-import './config/env.js';
+import { env } from './config/env.js';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -8,6 +8,7 @@ import routes from './routes/index.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { requestLogger } from './middleware/requestLogger.js';
 import { controlGate } from './middleware/controlGate.js';
+import { renderMetrics } from './lib/metrics.js';
 
 const openApiSpec = {
   openapi: '3.0.0',
@@ -66,6 +67,7 @@ const limiter = rateLimit({
 
 export function createApp() {
   const app = express();
+  const allowedOrigins = new Set(env.CORS_ORIGINS.split(',').map((origin) => origin.trim()).filter(Boolean));
 
   app.set('trust proxy', 1); // Trust first proxy if behind reverse proxy
   
@@ -75,7 +77,13 @@ export function createApp() {
       crossOriginResourcePolicy: { policy: 'cross-origin' },
     }),
   );
-  app.use(cors({ origin: true, credentials: true }));
+  app.use(cors({
+    credentials: true,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.has(origin)) return callback(null, true);
+      return callback(new Error('Origin is not allowed by Doorli CORS policy'));
+    },
+  }));
   app.use(limiter); // Apply rate limiter to all requests globally
 
   // Stripe needs the raw body for signature verification
@@ -110,6 +118,9 @@ export function createApp() {
     return jsonParser(req, _res, next);
   });
   app.use(requestLogger);
+  app.get('/metrics', (_req, res) => {
+    res.type('text/plain; version=0.0.4').send(renderMetrics());
+  });
   app.use(controlGate);
 
   app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));

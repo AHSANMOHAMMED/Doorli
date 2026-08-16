@@ -10,7 +10,10 @@ export function getApiBase(): string {
   );
 }
 
-export async function adminFetch(path: string, options: RequestInit = {}) {
+// Legacy admin screens call this helper with heterogeneous response shapes;
+// callers progressively opt into the generic response type.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function adminFetch<T = any>(path: string, options: RequestInit = {}): Promise<T> {
   const token = typeof window !== 'undefined' ? localStorage.getItem('doorli_admin_token') : null;
   const res = await fetch(`${getApiBase()}/api/v1${path}`, {
     ...options,
@@ -24,5 +27,5 @@ export async function adminFetch(path: string, options: RequestInit = {}) {
   if (!res.ok || json.success === false) {
     throw new Error(json.error || json.message || `Request failed (${res.status})`);
   }
-  return json.data;
+  return json.data as T;
 }

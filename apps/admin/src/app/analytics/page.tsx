@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { 
-  TrendingUp, TrendingDown, DollarSign, ShoppingCart, Users, Store, 
-  BarChart3, PieChart, Activity 
+  TrendingUp as TrendingUpRaw, TrendingDown as TrendingDownRaw, DollarSign as DollarSignRaw, ShoppingCart as ShoppingCartRaw, Users as UsersRaw, Store as StoreRaw,
+  BarChart3 as BarChart3Raw, PieChart as PieChartRaw, Activity as ActivityRaw
 } from 'lucide-react';
 import { adminFetch } from '@/lib/api';
 import { PageHeader, Panel, StatCard, Skeleton } from '@/components/ui';
@@ -48,13 +48,24 @@ type AnalyticsData = {
   recentActivity: Array<{ type: string; description: string; timestamp: string; amount?: number }>;
 };
 
+type SafeIconProps = { className?: string; size?: number };
+const TrendingUp = TrendingUpRaw as unknown as React.ComponentType<SafeIconProps>;
+const TrendingDown = TrendingDownRaw as unknown as React.ComponentType<SafeIconProps>;
+const DollarSign = DollarSignRaw as unknown as React.ComponentType<SafeIconProps>;
+const ShoppingCart = ShoppingCartRaw as unknown as React.ComponentType<SafeIconProps>;
+const Users = UsersRaw as unknown as React.ComponentType<SafeIconProps>;
+const Store = StoreRaw as unknown as React.ComponentType<SafeIconProps>;
+const SafeBarChart3 = BarChart3Raw as unknown as React.ComponentType<SafeIconProps>;
+const PieChart = PieChartRaw as unknown as React.ComponentType<SafeIconProps>;
+const Activity = ActivityRaw as unknown as React.ComponentType<SafeIconProps>;
+
 export default function AnalyticsPage() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<'today' | 'week' | 'month'>('today');
 
   useEffect(() => {
-    adminFetch('/admin/analytics')
+    adminFetch<AnalyticsData>('/admin/analytics')
       .then(setData)
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -72,9 +83,8 @@ export default function AnalyticsPage() {
   };
 
   const getGrowthIcon = (growth: number) => {
-    if (growth > 0) return <TrendingUp className="w-4 h-4" />;
-    if (growth < 0) return <TrendingDown className="w-4 h-4" />;
-    return <Activity className="w-4 h-4" />;
+    const Icon = (growth > 0 ? TrendingUp : growth < 0 ? TrendingDown : Activity) as unknown as React.ComponentType<{ className?: string }>;
+    return <Icon className="w-4 h-4" />;
   };
 
   if (loading) {
@@ -99,7 +109,7 @@ export default function AnalyticsPage() {
       <>
         <PageHeader title="Analytics" subtitle="Platform performance metrics and insights" />
         <div className="text-center py-12">
-          <BarChart3 className="w-12 h-12 text-[#5a6a80] mx-auto mb-4" />
+          <SafeBarChart3 className="w-12 h-12 text-[#5a6a80] mx-auto mb-4" />
           <p className="text-[#7b8ba3]">Failed to load analytics data</p>
         </div>
       </>

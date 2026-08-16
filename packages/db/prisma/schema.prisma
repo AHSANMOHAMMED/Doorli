@@ -437,6 +437,7 @@ model Vendor {
   features       VendorFeature[]
   groupOrders    GroupOrder[]
   erpCustomerLinks ErpCustomerLink[] @relation("ErpCustomerVendor")
+  integrationFailures IntegrationFailure[]
 
   @@index([category])
   @@index([latitude, longitude])
@@ -458,6 +459,27 @@ model ErpCustomerLink {
   @@unique([vendorId, erpCustomerId])
   @@index([userId])
   @@map("erp_customer_links")
+}
+
+model IntegrationFailure {
+  id         String    @id @default(uuid()) @db.Uuid
+  kind       String    @db.VarChar(40)
+  dedupeKey  String    @unique @map("dedupe_key") @db.VarChar(255)
+  vendorId   String?   @map("vendor_id") @db.Uuid
+  payload    Json
+  status     String    @default("pending") @db.VarChar(20)
+  attempts   Int       @default(0)
+  nextRetryAt DateTime? @map("next_retry_at")
+  lastError  String?   @map("last_error") @db.Text
+  resolvedAt DateTime? @map("resolved_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  vendor Vendor? @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+
+  @@index([status, nextRetryAt])
+  @@index([kind, createdAt])
+  @@map("integration_failures")
 }
 
 model Product {

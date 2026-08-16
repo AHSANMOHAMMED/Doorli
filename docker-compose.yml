@@ -3,13 +3,13 @@ services:
   db:
     image: postgis/postgis:15-3.4-alpine
     environment:
-      - POSTGRES_USER=${POSTGRES_USER:-doorli}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-doorli_secret}
-      - POSTGRES_DB=${POSTGRES_DB:-doorli}
+      - POSTGRES_USER=${POSTGRES_USER:?POSTGRES_USER must be set}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+      - POSTGRES_DB=${POSTGRES_DB:?POSTGRES_DB must be set}
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-doorli} -d ${POSTGRES_DB:-doorli}"]
       interval: 5s
@@ -21,7 +21,7 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -36,7 +36,7 @@ services:
       - xpack.security.enabled=false
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     ports:
-      - "9200:9200"
+      - "127.0.0.1:9200:9200"
     volumes:
       - esdata:/usr/share/elasticsearch/data
     healthcheck:
@@ -49,11 +49,11 @@ services:
     image: minio/minio:latest
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?MINIO_ROOT_USER must be set}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD must be set}
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
     volumes:
       - miniodata:/data
     healthcheck:
@@ -65,7 +65,7 @@ services:
   kafka:
     image: bitnami/kafka:3.7
     ports:
-      - "9092:9092"
+      - "127.0.0.1:9092:9092"
     environment:
       - KAFKA_CFG_NODE_ID=1
       - KAFKA_CFG_PROCESS_ROLES=broker,controller
@@ -105,13 +105,14 @@ services:
       context: .
       dockerfile: services/api/Dockerfile
     ports:
-      - "3001:3001"
+      - "127.0.0.1:3001:3001"
     environment:
       - NODE_ENV=production
       - API_PORT=3001
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-doorli}:${POSTGRES_PASSWORD:-doorli_secret}@db:5432/${POSTGRES_DB:-doorli}?schema=public
+      - DATABASE_URL=postgresql://${POSTGRES_USER:?POSTGRES_USER must be set}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@db:5432/${POSTGRES_DB:?POSTGRES_DB must be set}?schema=public
       - REDIS_URL=redis://redis:6379
-      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set}
+       - ERP_INTERNAL_SECRET=${ERP_INTERNAL_SECRET:?ERP_INTERNAL_SECRET must be set}
       - AUTH_SERVICE_URL=http://auth:4001
       - NOTIFICATIONS_SERVICE_URL=http://notifications:4007
       - DELIVERY_SERVICE_URL=http://delivery:8086
@@ -134,13 +135,13 @@ services:
       context: .
       dockerfile: services/auth/Dockerfile
     ports:
-      - "4001:4001"
+      - "127.0.0.1:4001:4001"
     environment:
       - NODE_ENV=production
       - PORT=4001
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-doorli}:${POSTGRES_PASSWORD:-doorli_secret}@db:5432/${POSTGRES_DB:-doorli}?schema=public
+      - DATABASE_URL=postgresql://${POSTGRES_USER:?POSTGRES_USER must be set}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@db:5432/${POSTGRES_DB:?POSTGRES_DB must be set}?schema=public
       - REDIS_URL=redis://redis:6379
-      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set}
       - MSG91_API_KEY=${MSG91_API_KEY:-}
       - MSG91_FLOW_ID=${MSG91_FLOW_ID:-}
       - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID:-}
@@ -158,13 +159,13 @@ services:
       context: .
       dockerfile: services/delivery/Dockerfile
     ports:
-      - "${DELIVERY_HOST_PORT:-18086}:8086"
+      - "127.0.0.1:${DELIVERY_HOST_PORT:-18086}:8086"
     environment:
       - NODE_ENV=production
       - PORT=8086
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-doorli}:${POSTGRES_PASSWORD:-doorli_secret}@db:5432/${POSTGRES_DB:-doorli}?schema=public
+      - DATABASE_URL=postgresql://${POSTGRES_USER:?POSTGRES_USER must be set}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@db:5432/${POSTGRES_DB:?POSTGRES_DB must be set}?schema=public
       - REDIS_URL=redis://redis:6379
-      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set}
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}
       - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY:-}
       - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET:-}
@@ -186,11 +187,11 @@ services:
       context: .
       dockerfile: services/inventory/Dockerfile
     ports:
-      - "4010:4010"
+      - "127.0.0.1:4010:4010"
     environment:
       - NODE_ENV=production
       - PORT=4010
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-doorli}:${POSTGRES_PASSWORD:-doorli_secret}@db:5432/${POSTGRES_DB:-doorli}?schema=public
+      - DATABASE_URL=postgresql://${POSTGRES_USER:?POSTGRES_USER must be set}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@db:5432/${POSTGRES_DB:?POSTGRES_DB must be set}?schema=public
     depends_on:
       db:
         condition: service_healthy
@@ -201,13 +202,13 @@ services:
       context: .
       dockerfile: services/notifications/Dockerfile
     ports:
-      - "4007:4007"
+      - "127.0.0.1:4007:4007"
     environment:
       - NODE_ENV=production
       - NOTIFICATIONS_HEALTH_PORT=4007
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-doorli}:${POSTGRES_PASSWORD:-doorli_secret}@db:5432/${POSTGRES_DB:-doorli}?schema=public
+      - DATABASE_URL=postgresql://${POSTGRES_USER:?POSTGRES_USER must be set}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@db:5432/${POSTGRES_DB:?POSTGRES_DB must be set}?schema=public
       - REDIS_URL=redis://redis:6379
-      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set}
       - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID:-}
       - FIREBASE_PRIVATE_KEY=${FIREBASE_PRIVATE_KEY:-}
       - FIREBASE_CLIENT_EMAIL=${FIREBASE_CLIENT_EMAIL:-}
@@ -225,11 +226,11 @@ services:
       context: .
       dockerfile: services/search/Dockerfile
     ports:
-      - "4004:4004"
+      - "127.0.0.1:4004:4004"
     environment:
       - NODE_ENV=production
       - PORT=4004
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-doorli}:${POSTGRES_PASSWORD:-doorli_secret}@db:5432/${POSTGRES_DB:-doorli}?schema=public
+      - DATABASE_URL=postgresql://${POSTGRES_USER:?POSTGRES_USER must be set}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@db:5432/${POSTGRES_DB:?POSTGRES_DB must be set}?schema=public
       - REDIS_URL=redis://redis:6379
       - ELASTICSEARCH_URL=http://elasticsearch:9200
       - KAFKA_BROKER=kafka:9092
@@ -251,7 +252,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=4008
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-doorli}:${POSTGRES_PASSWORD:-doorli_secret}@db:5432/${POSTGRES_DB:-doorli}?schema=public
+      - DATABASE_URL=postgresql://${POSTGRES_USER:?POSTGRES_USER must be set}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@db:5432/${POSTGRES_DB:?POSTGRES_DB must be set}?schema=public
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
     depends_on:
       db:
@@ -263,10 +264,10 @@ services:
       context: .
       dockerfile: services/ai/Dockerfile
     ports:
-      - "3012:3012"
+      - "127.0.0.1:3012:3012"
     environment:
       - PORT=3012
-      - DATABASE_URL=postgresql://doorli:doorli_secret@db:5432/doorli
+      - DATABASE_URL=postgresql://${POSTGRES_USER:?POSTGRES_USER must be set}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@db:5432/${POSTGRES_DB:?POSTGRES_DB must be set}
       - JWT_SECRET=${JWT_SECRET}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
     depends_on:
@@ -279,13 +280,13 @@ services:
       context: .
       dockerfile: services/forum-service/Dockerfile
     ports:
-      - "8087:8087"
+      - "127.0.0.1:8087:8087"
     environment:
       - NODE_ENV=production
       - PORT=8087
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-doorli}:${POSTGRES_PASSWORD:-doorli_secret}@db:5432/${POSTGRES_DB:-doorli}?schema=public
+      - DATABASE_URL=postgresql://${POSTGRES_USER:?POSTGRES_USER must be set}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@db:5432/${POSTGRES_DB:?POSTGRES_DB must be set}?schema=public
       - REDIS_URL=redis://redis:6379
-      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set}
     depends_on:
       db:
         condition: service_healthy
@@ -298,13 +299,13 @@ services:
       context: .
       dockerfile: services/emergency-service/Dockerfile
     ports:
-      - "8088:8088"
+      - "127.0.0.1:8088:8088"
     environment:
       - NODE_ENV=production
       - PORT=8088
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-doorli}:${POSTGRES_PASSWORD:-doorli_secret}@db:5432/${POSTGRES_DB:-doorli}?schema=public
+      - DATABASE_URL=postgresql://${POSTGRES_USER:?POSTGRES_USER must be set}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@db:5432/${POSTGRES_DB:?POSTGRES_DB must be set}?schema=public
       - REDIS_URL=redis://redis:6379
-      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set}
     depends_on:
       db:
         condition: service_healthy
@@ -317,11 +318,11 @@ services:
       context: .
       dockerfile: services/gov-service/Dockerfile
     ports:
-      - "8089:8089"
+      - "127.0.0.1:8089:8089"
     environment:
       - NODE_ENV=production
       - PORT=8089
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-doorli}:${POSTGRES_PASSWORD:-doorli_secret}@db:5432/${POSTGRES_DB:-doorli}?schema=public
+      - DATABASE_URL=postgresql://${POSTGRES_USER:?POSTGRES_USER must be set}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@db:5432/${POSTGRES_DB:?POSTGRES_DB must be set}?schema=public
       - REDIS_URL=redis://redis:6379
     depends_on:
       db:
@@ -335,13 +336,13 @@ services:
       context: .
       dockerfile: services/ride-hailing/Dockerfile
     ports:
-      - "8085:8085"
+      - "127.0.0.1:8085:8085"
     environment:
       - NODE_ENV=production
       - PORT=8085
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-doorli}:${POSTGRES_PASSWORD:-doorli_secret}@db:5432/${POSTGRES_DB:-doorli}?schema=public
+      - DATABASE_URL=postgresql://${POSTGRES_USER:?POSTGRES_USER must be set}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@db:5432/${POSTGRES_DB:?POSTGRES_DB must be set}?schema=public
       - REDIS_URL=redis://redis:6379
-      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set}
     depends_on:
       db:
         condition: service_healthy
@@ -354,13 +355,13 @@ services:
       context: .
       dockerfile: services/storage/Dockerfile
     ports:
-      - "3011:3011"
+      - "127.0.0.1:3011:3011"
     environment:
       - PORT=3011
       - MINIO_ENDPOINT=minio
       - MINIO_PORT=9000
-      - MINIO_ACCESS_KEY=minioadmin
-      - MINIO_SECRET_KEY=minioadmin
+      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:?MINIO_ROOT_USER must be set}
+      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD must be set}
       - MINIO_BUCKET=doorli-files
     depends_on:
       minio:
@@ -372,9 +373,9 @@ services:
       context: ./services/chat
       dockerfile: Dockerfile
     ports:
-      - "3013:3013"
+      - "127.0.0.1:3013:3013"
     environment:
-      DATABASE_URL: postgresql://doorli:doorli_password@db:5432/doorli
+      DATABASE_URL: postgresql://${POSTGRES_USER:?POSTGRES_USER must be set}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@db:5432/${POSTGRES_DB:?POSTGRES_DB must be set}
       JWT_SECRET: ${JWT_SECRET}
       REDIS_URL: redis://redis:6379
     depends_on:
@@ -396,7 +397,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD must be set}
     volumes:
       - grafdata:/var/lib/grafana
     depends_on:

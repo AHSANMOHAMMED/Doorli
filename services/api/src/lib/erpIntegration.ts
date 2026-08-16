@@ -103,6 +103,14 @@ function enterpriseProvisionUrl(): string | null {
   return create.replace(/create_order$/, 'provision_vendor');
 }
 
+function enterpriseProductSyncUrl(): string | null {
+  if (process.env.ERP_ENTERPRISE_PRODUCT_SYNC_URL) {
+    return process.env.ERP_ENTERPRISE_PRODUCT_SYNC_URL.replace(/\/$/, '');
+  }
+  const create = enterpriseCreateOrderUrl();
+  return create ? create.replace(/create_order$/, 'sync_products') : null;
+}
+
 /** Stable product identity across systems: vendor-scoped SKU (fallback productId). */
 function productRef(vendorId: string, item: ErpOrderItem): string {
   return `${vendorId}:${item.sku || item.productId}`;
@@ -178,6 +186,32 @@ export class ErpIntegrationService {
       const message = error instanceof Error ? error.message : 'ERP unreachable';
       console.error('[ERP] provision error:', message);
       return { success: false, message: 'Enterprise ERP unreachable' };
+    }
+  }
+
+  static async syncEnterpriseCatalog(input: { erpTenantId: string }): Promise<SyncOrderResult> {
+    const url = enterpriseProductSyncUrl();
+    if (!url) return { success: false, message: 'Enterprise product sync URL is not configured' };
+    try {
+      const response = await axios.post(
+        url,
+        { company: input.erpTenantId },
+        {
+          timeout: REQUEST_TIMEOUT_MS,
+          headers: { 'X-Doorli-Secret': erpSecret(), 'Content-Type': 'application/json' },
+        },
+      );
+      const payload = response.data;
+      return {
+        success: payload?.status === 'success',
+        message: payload?.status === 'success' ? `Exported ${payload.exported ?? 0} products` : payload?.message,
+        status: response.status,
+      };
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        return { success: false, status: error.response?.status, message: error.response?.data?.message || 'Enterprise catalog sync failed' };
+      }
+      return { success: false, message: error instanceof Error ? error.message : 'Enterprise catalog sync failed' };
     }
   }
 

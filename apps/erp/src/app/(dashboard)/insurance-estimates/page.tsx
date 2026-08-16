@@ -55,7 +55,7 @@ interface InsuranceEstimate {
 
 interface StatusConfig {
   color: string;
-  icon: React.ComponentType<{ size?: number }>;
+  icon: React.ComponentType<{ size?: number | string }>;
   label: string;
 }
 

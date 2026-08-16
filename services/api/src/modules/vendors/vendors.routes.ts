@@ -320,6 +320,21 @@ router.post(
         throw new AppError(403, 'Access denied');
       }
 
+      // Provisioning is an external mutation. Retries must return the existing
+      // lifecycle state instead of creating a second tenant or queue job.
+      if (vendor.erpProvisionStatus === 'provisioned' && vendor.erpTenantId) {
+        return res.json({
+          success: true,
+          data: { erpTenantId: vendor.erpTenantId, erpProvisionStatus: vendor.erpProvisionStatus, replayed: true },
+        });
+      }
+      if (vendor.erpProvisionStatus === 'pending') {
+        return res.json({
+          success: true,
+          data: { erpTenantId: vendor.erpTenantId, erpProvisionStatus: vendor.erpProvisionStatus, replayed: true },
+        });
+      }
+
       if (vendor.erpProvider === 'simple') {
         // ── Embedded ERP: synchronous provision ─────────────────────────────
         const embeddedUrl = (

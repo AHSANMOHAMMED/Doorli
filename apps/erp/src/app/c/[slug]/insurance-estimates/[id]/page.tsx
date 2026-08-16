@@ -155,7 +155,7 @@ interface InsuranceEstimate {
   revisions: Revision[]
 }
 
-const statusConfig: Record<string, { color: string; bgColor: string; icon: React.ComponentType<{ size?: number }>; label: string }> = {
+const statusConfig: Record<string, { color: string; bgColor: string; icon: React.ComponentType<{ size?: number | string }>; label: string }> = {
   draft: { color: 'text-gray-800', bgColor: 'bg-gray-100', icon: FileText, label: 'Draft' },
   submitted: { color: 'text-blue-800', bgColor: 'bg-blue-100', icon: Clock, label: 'Submitted' },
   under_review: { color: 'text-yellow-800', bgColor: 'bg-yellow-100', icon: AlertCircle, label: 'Under Review' },

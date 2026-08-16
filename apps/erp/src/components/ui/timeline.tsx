@@ -54,7 +54,7 @@ export interface TimelineItemData {
 // TIMELINE ITEM ICONS
 // ============================================
 
-const typeIcons: Record<TimelineItemType, React.ComponentType<{ size: number; className?: string }>> = {
+const typeIcons: Record<TimelineItemType, React.ComponentType<{ size?: number | string; className?: string }>> = {
   default: Circle,
   created: Plus,
   updated: Edit,

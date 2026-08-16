@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { apiFetch, getToken } from '@/lib/api';
@@ -10,7 +10,12 @@ import {
   updateExploreCartQty,
   type ExploreCartItem,
 } from '@/lib/explore-cart';
-import { Minus, Plus, Trash2, Loader as Loader2 } from 'lucide-react';
+import { Minus as MinusRaw, Plus as PlusRaw, Trash2 as Trash2Raw, Loader as Loader2Raw } from 'lucide-react';
+
+const Minus = MinusRaw as unknown as React.ComponentType<{ className?: string }>;
+const Plus = PlusRaw as unknown as React.ComponentType<{ className?: string }>;
+const Trash2 = Trash2Raw as unknown as React.ComponentType<{ className?: string }>;
+const Loader2 = Loader2Raw as unknown as React.ComponentType<{ className?: string }>;
 
 export default function CartPage() {
   const router = useRouter();

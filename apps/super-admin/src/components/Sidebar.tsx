@@ -42,7 +42,10 @@ export default function Sidebar() {
                 active ? 'bg-slate-800 text-white' : 'hover:bg-slate-800 hover:text-white'
               }`}
             >
-              <Icon size={20} />
+              {(() => {
+                const SafeIcon = Icon as unknown as React.ComponentType<{ size?: number }>;
+                return <SafeIcon size={20} />;
+              })()}
               <span className="font-medium">{label}</span>
             </Link>
           );
@@ -55,7 +58,10 @@ export default function Sidebar() {
           onClick={logout}
           className="flex w-full items-center space-x-3 px-3 py-2 rounded-lg hover:bg-slate-800 hover:text-white transition"
         >
-          <LogOut size={20} />
+          {(() => {
+            const SafeLogOut = LogOut as unknown as React.ComponentType<{ size?: number }>;
+            return <SafeLogOut size={20} />;
+          })()}
           <span className="font-medium">Log out</span>
         </button>
       </div>
