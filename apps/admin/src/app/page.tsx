@@ -14,6 +14,7 @@ import {
   Building2,
   Boxes,
   Server,
+  RefreshCw,
 } from 'lucide-react';
 import { adminFetch } from '@/lib/api';
 import { PageHeader, Panel, StatCard, Badge, EmptyState, Skeleton } from '@/components/ui';
@@ -73,10 +74,16 @@ export default function AdminDashboard() {
         title="Super Admin Overview"
         subtitle="One control plane for the Doorli marketplace and both ERP backends."
         actions={
-          <Link href="/vendors" className="btn btn-primary">
-            Create vendor
-            <ArrowUpRight size={16} />
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" className="btn btn-ghost" onClick={() => window.location.reload()} title="Refresh live dashboard data">
+              <RefreshCw size={15} />
+              Refresh
+            </button>
+            <Link href="/vendors" className="btn btn-primary">
+              Create vendor
+              <ArrowUpRight size={16} />
+            </Link>
+          </div>
         }
       />
 

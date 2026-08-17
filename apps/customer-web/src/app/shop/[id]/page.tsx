@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { motion } from "framer-motion";
 import { Plus, ShoppingBag, Check, MapPin, CalendarDays, Wrench } from "lucide-react";
 import { useCart } from "@/lib/cart-context";
 import { apiFetch } from "@/lib/api";
@@ -37,13 +38,16 @@ export default function VendorStorefront() {
   const id = String(params.id);
   const [vendor, setVendor] = useState<Vendor | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string>("All");
   const { addItem, totalItems, totalPrice } = useCart();
   const [addedItems, setAddedItems] = useState<Record<string, boolean>>({});
 
-  useEffect(() => {
-    apiFetch<Vendor | { success: boolean; data: Vendor }>(`/vendors/${id}`)
-      .then((res) => {
+  async function loadVendor() {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await apiFetch<Vendor | { success: boolean; data: Vendor }>(`/vendors/${id}`);
         let v: Vendor;
         if ("success" in res && "data" in res) {
           if (!res.success || !res.data) throw new Error("Vendor not found");
@@ -55,8 +59,16 @@ export default function VendorStorefront() {
         setVendor(v);
         const cats = Array.from(new Set((v.products || []).map((p: Product) => p.category || "Other")));
         setActiveCategory(cats[0] || "All");
-      })
-      .catch((e) => setError(e.message));
+
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "We could not load this store.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadVendor();
   }, [id]);
 
   const categories = useMemo(() => {
@@ -81,17 +93,14 @@ export default function VendorStorefront() {
 
   if (error) {
     return (
-      <main className="min-h-screen doorli-hero-plane text-white p-10">
-        <p className="text-amber-200">{error}</p>
-        <Link href="/" className="underline mt-4 inline-block">
-          Home
-        </Link>
+        <main className="storefront-page min-h-screen p-6 sm:p-10">
+        <div className="storefront-error"><p>{error}</p><div className="mt-5 flex flex-wrap gap-3"><button type="button" className="storefront-button" onClick={() => void loadVendor()}>Try again</button><Link href="/" className="storefront-button storefront-button-secondary">Home</Link></div></div>
       </main>
     );
   }
 
-  if (!vendor) {
-    return <main className="min-h-screen doorli-hero-plane text-white p-10">Loading…</main>;
+  if (loading || !vendor) {
+    return <main className="storefront-page min-h-screen p-6 sm:p-10"><div className="storefront-skeleton-cover" /><div className="storefront-skeleton-panel"><div /><div /><div /></div></main>;
   }
 
   const isBookable = BOOKABLE.has(vendor.category);
@@ -99,30 +108,32 @@ export default function VendorStorefront() {
   const isCommerce = COMMERCE.has(vendor.category) || (products.length > 0 && !isBookable && !isService);
 
   return (
-    <main className="min-h-screen doorli-hero-plane text-white pb-28 relative">
-      <div className="doorli-orb doorli-orb--a" aria-hidden />
+    <main className="storefront-page min-h-screen pb-28 relative">
       <div className="relative z-10">
-        <div className="h-40 w-full bg-gradient-to-br from-[#185FA5]/50 to-[#1D9E75]/30 relative">
+        <div className={`storefront-cover storefront-cover-${vendor.category}`}>
+          <div className="storefront-cover-noise" aria-hidden="true" />
           <Link
             href="/search"
-            className="absolute top-6 left-6 px-4 py-2 doorli-glass rounded-full text-sm"
+            className="storefront-back"
           >
-            ← Back
+            ← Back to discovery
           </Link>
+          <div className="storefront-cover-caption"><span>Doorli local partner</span><strong>{vendor.city || "Nearby"}</strong></div>
         </div>
 
         <div className="max-w-5xl mx-auto px-5 -mt-14">
-          <div className="doorli-glass rounded-3xl p-8">
-            <p className="text-xs uppercase tracking-wide text-[var(--doorli-mint)] mb-2">{vendor.category}</p>
-            <h1 className="font-display text-3xl sm:text-4xl font-bold mb-2">{vendor.businessName}</h1>
-            <p className="text-[#9bb4d0] mb-4">{vendor.description}</p>
-            <div className="flex flex-wrap items-center gap-3 text-sm text-white/70">
+          <div className="storefront-identity">
+            <div className="storefront-avatar"><StoreIcon category={vendor.category} /></div>
+            <p className="storefront-kicker">{vendor.category}</p>
+            <h1>{vendor.businessName}</h1>
+            <p className="storefront-description">{vendor.description || `A trusted ${vendor.category} partner on Doorli.`}</p>
+            <div className="storefront-meta">
               <span className="inline-flex items-center gap-2">
-                <MapPin className="w-4 h-4" />
+                  <MapPin className="w-4 h-4" />
                 {vendor.addressLine || vendor.city || "Local"}
               </span>
               {vendor.erpLinked && (
-                <span className="text-[11px] px-2 py-1 rounded-md bg-[var(--doorli-mint)]/15 text-[var(--doorli-mint)]">
+                  <span className="storefront-badge">
                   ERP linked
                 </span>
               )}
@@ -130,19 +141,19 @@ export default function VendorStorefront() {
 
             <div className="mt-6 flex flex-wrap gap-3">
               {isBookable && (
-                <Link href={`/shop/${vendor.id}/book`} className="doorli-cta-primary text-sm py-2.5 px-4">
+                <Link href={`/shop/${vendor.id}/book`} className="storefront-button text-sm">
                   <CalendarDays className="w-4 h-4" />
                   Book now
                 </Link>
               )}
               {isService && (
-                <Link href={`/shop/${vendor.id}/request`} className="doorli-cta-primary text-sm py-2.5 px-4">
+                <Link href={`/shop/${vendor.id}/request`} className="storefront-button text-sm">
                   <Wrench className="w-4 h-4" />
                   Request service
                 </Link>
               )}
               {isCommerce && (
-                <Link href="/checkout" className="doorli-cta-ghost text-sm py-2.5 px-4">
+                <Link href="/checkout" className="storefront-button storefront-button-secondary text-sm">
                   Go to cart
                 </Link>
               )}
@@ -158,8 +169,8 @@ export default function VendorStorefront() {
                     type="button"
                     onClick={() => setActiveCategory(cat)}
                     className={cn(
-                      "px-5 py-2 rounded-full whitespace-nowrap text-sm",
-                      activeCategory === cat ? "bg-white text-[#0a0f2e]" : "bg-white/5 text-white/60",
+                       "storefront-category",
+                       activeCategory === cat ? "is-active" : "",
                     )}
                   >
                     {cat}
@@ -169,43 +180,45 @@ export default function VendorStorefront() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 {products.map((item) => (
-                  <div
+                  <motion.div
                     key={item.id}
-                    className="p-5 rounded-2xl doorli-glass flex justify-between items-center"
+                    className="storefront-product"
+                    whileHover={{ y: -4 }}
+                    transition={{ duration: .2 }}
                   >
                     <div>
-                      <h3 className="text-lg font-semibold">{item.name}</h3>
-                      <p className="text-white/50 text-sm">{item.description}</p>
-                      <p className="text-[var(--doorli-mint)] mt-2">LKR {Number(item.price).toLocaleString()}</p>
+                      <h3>{item.name}</h3>
+                      <p>{item.description || "Freshly listed by this local partner."}</p>
+                      <strong>LKR {Number(item.price).toLocaleString()}</strong>
                     </div>
                     <button
                       type="button"
                       onClick={() => handleAdd(item)}
                       className={cn(
-                        "w-12 h-12 rounded-full flex items-center justify-center",
-                        addedItems[item.id] ? "bg-[var(--doorli-mint)]" : "bg-white/10 hover:bg-[#185FA5]",
+                        "storefront-add",
+                        addedItems[item.id] ? "is-added" : "",
                       )}
                     >
                       {addedItems[item.id] ? <Check className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
                     </button>
-                  </div>
+                  </motion.div>
                 ))}
                 {products.length === 0 && (
-                  <p className="text-white/45 col-span-full">No products listed yet.</p>
+                    <p className="storefront-empty">No products listed yet.</p>
                 )}
               </div>
             </>
           )}
 
           {(isBookable || isService) && !isCommerce && (
-            <p className="mt-10 text-sm text-white/50">
+            <p className="storefront-empty mt-10">
               Use the button above to {isBookable ? "book a slot" : "post a job request"}.
             </p>
           )}
 
           {/* AI Review Analyzer Section */}
-          <div className="mt-12 doorli-glass rounded-3xl p-8 border border-white/10">
-            <h3 className="font-display text-xl font-bold mb-4">Write a Review</h3>
+          <div className="storefront-review mt-12">
+            <h3>Write a Review</h3>
             <AIReviewAnalyzer vendorId={vendor.id} />
           </div>
         </div>
@@ -226,4 +239,10 @@ export default function VendorStorefront() {
       )}
     </main>
   );
+}
+
+function StoreIcon({ category }: { category: string }) {
+  if (category === "service") return <Wrench />;
+  if (category === "restaurant") return <CalendarDays />;
+  return <ShoppingBag />;
 }

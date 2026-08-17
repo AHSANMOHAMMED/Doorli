@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import Link from "next/link";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useScroll, useSpring } from "framer-motion";
 import {
   ArrowRight,
   BadgeCheck,
@@ -128,7 +128,10 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [intent, setIntent] = useState("all");
   const [darkMode, setDarkMode] = useState(false);
+  const [pointer, setPointer] = useState({ x: 50, y: 50 });
   const { totalItems } = useCart();
+  const { scrollYProgress } = useScroll();
+  const scrollProgress = useSpring(scrollYProgress, { stiffness: 100, damping: 24, mass: 0.2 });
 
   const visibleVendors = useMemo(() => {
     if (intent === "all") return vendors;
@@ -153,7 +156,14 @@ export default function Home() {
   }, []);
 
   return (
-    <main className={`doorli-marketplace min-h-screen bg-[#f7fafc] text-[#10213f] ${darkMode ? "is-dark" : ""}`}>
+    <main
+      className={`doorli-marketplace min-h-screen bg-[#f7fafc] text-[#10213f] ${darkMode ? "is-dark" : ""}`}
+      onPointerMove={(event) => {
+        const rect = event.currentTarget.getBoundingClientRect();
+        setPointer({ x: ((event.clientX - rect.left) / rect.width) * 100, y: ((event.clientY - rect.top) / rect.height) * 100 });
+      }}
+    >
+      <motion.div className="scroll-progress" style={{ scaleX: scrollProgress }} aria-hidden="true" />
       <header className="consumer-header">
         <div className="consumer-header-inner">
           <Link href="/" className="consumer-brand" aria-label="Doorli home">
@@ -176,15 +186,18 @@ export default function Home() {
       <section className="consumer-hero">
         <div className="consumer-hero-copy">
           <span className="eyebrow"><span className="eyebrow-dot" /> Local businesses, one simple place</span>
-          <h1>Everything local,<br /><span>delivered in minutes.</span></h1>
+          <motion.h1 initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .7, ease: [.16, 1, .3, 1] }}>Everything local,<br /><span>delivered in minutes.</span></motion.h1>
           <p>Discover trusted food, groceries, services, and rides near you. Doorli makes everyday life easier.</p>
           <div className="hero-actions"><Link href="/search?category=restaurant" className="primary-button"><motion.span whileTap={{ scale: .97 }}>Explore nearby <ArrowRight /></motion.span></Link><Link href="/ride" className="secondary-button">Book a ride</Link></div>
           <IntentSelector selected={intent} onChange={setIntent} />
         </div>
-        <motion.div className="hero-visual" aria-label="Doorli local services preview" animate={{ y: [0, -7, 0] }} transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}>
+        <motion.div className="hero-visual" aria-label="Doorli local services preview" style={{ "--pointer-x": `${pointer.x}%`, "--pointer-y": `${pointer.y}%` } as CSSProperties} initial={{ opacity: 0, scale: .96, y: 24 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: .9, delay: .15, ease: [.16, 1, .3, 1] }}>
           <div className="hero-map-grid" />
+          <div className="hero-visual-photo" aria-hidden="true" />
           <div className="hero-orbit hero-orbit-one" /><div className="hero-orbit hero-orbit-two" />
           <div className="hero-phone-card"><div className="hero-phone-top"><span>Good morning</span><MapPin /></div><strong>What do you need today?</strong><div className="hero-phone-list"><span className="bg-[#fff1ed] text-[#d65f45]"><Utensils /></span><span>Food & groceries</span><ArrowRight /></div><div className="hero-phone-list"><span className="bg-[#eaf8f2] text-[#16805b]"><Car /></span><span>Rides nearby</span><ArrowRight /></div><div className="hero-phone-list"><span className="bg-[#edf5ff] text-[#2674c5]"><Wrench /></span><span>Local services</span><ArrowRight /></div></div>
+          <motion.div className="hero-float-card hero-float-card--top" animate={{ y: [0, -8, 0] }} transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}><ShieldCheck /><span><strong>Verified nearby</strong><small>Trusted local partners</small></span></motion.div>
+          <motion.div className="hero-float-card hero-float-card--bottom" animate={{ y: [0, 7, 0] }} transition={{ duration: 5.2, repeat: Infinity, ease: "easeInOut", delay: .6 }}><Clock3 /><span><strong>Live ETA</strong><small>See what happens next</small></span></motion.div>
         </motion.div>
       </section>
 
