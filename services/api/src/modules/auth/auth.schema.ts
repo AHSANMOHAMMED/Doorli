@@ -10,10 +10,12 @@ export const sendOtpSchema = z.object({
 
 export const verifyOtpSchema = z.object({
   phone: phoneSchema,
-  code: z.string().length(6, 'OTP must be 6 digits'),
+  code: z.string().length(6, 'OTP must be 6 digits').optional(),
+  /** Legacy auth clients used `otp`; keep the backend contract compatible while the mobile UI stays password-only. */
+  otp: z.string().length(6, 'OTP must be 6 digits').optional(),
   fullName: z.string().min(2).max(100).optional(),
   role: z.enum(['customer', 'vendor', 'driver']).default('customer'),
-});
+}).refine((input) => Boolean(input.code || input.otp), { message: 'OTP code is required' });
 
 export const refreshTokenSchema = z.object({
   refreshToken: z.string().min(1),

@@ -84,7 +84,7 @@ export async function sendOtp(
 }
 
 export async function verifyOtpAndLogin(input: VerifyOtpInput) {
-  const valid = await verifyOtp(input.phone, input.code);
+  const valid = await verifyOtp(input.phone, input.code ?? input.otp!);
   if (!valid) {
     throw new AppError(401, 'Invalid or expired OTP');
   }
