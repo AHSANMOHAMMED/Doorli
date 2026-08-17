@@ -18,6 +18,7 @@ import {
   ShoppingBag,
   ToggleLeft,
   ShieldCheck,
+  RefreshCw,
 } from 'lucide-react';
 
 type NavItem = {
@@ -48,7 +49,10 @@ const groups: NavGroup[] = [
   },
   {
     label: 'ERP',
-    items: [{ href: '/tenants', label: 'Tenants & Sync', icon: Building2 }],
+    items: [
+      { href: '/tenants', label: 'Tenants & Sync', icon: Building2 },
+      { href: '/integration-failures', label: 'Sync Recovery', icon: RefreshCw },
+    ],
   },
   {
     label: 'System',

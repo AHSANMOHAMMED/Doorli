@@ -185,6 +185,14 @@ This is the authoritative implementation checklist. A task is complete only when
 - Enterprise Frappe ping: HTTP `200`, `pong`.
 - The latest uncommitted changes in this working tree still require an OCI release before they can be marked live.
 
+### OCI Verification Log — 2026-08-17
+
+- Marketplace smoke: `/health`, `/api/v1`, and `/` returned HTTP `200`; public web is missing the expected Nginx security headers because the active host configuration predates repository hardening.
+- Enterprise smoke: `/api/method/ping` returned HTTP `200`.
+- Local Marketplace CI-equivalent validation passed: strict web builds, ERP production build/server bundle, API build, 22 API tests, security audit, and diff checks.
+- Added production replay protection: first-party ERP webhooks use `X-Doorli-Timestamp` plus `X-Doorli-Signature`; signatures expire after five minutes.
+- Added admin Sync Recovery dashboard and CI workflow. OCI release/migration remains pending because the host release volume exhausted its available space.
+
 ### Phase 0 — Baseline and Safety
 
 - [x] Keep Marketplace, embedded Doorli ERP, and Enterprise OS responsibilities documented.
@@ -204,7 +212,7 @@ This is the authoritative implementation checklist. A task is complete only when
 - [x] Complete per-vendor ERP customer identity persistence.
 - [x] Add scheduled bounded reconciliation for persisted order, stock, product, and customer callback failures.
 - [x] Add durable integration-failure storage and authenticated operator retry endpoints.
-- [ ] Standardize webhook authentication and timestamp/replay protection.
+- [x] Standardize webhook authentication and timestamp/replay protection.
 - [ ] Add contract tests that run against both repositories in CI.
 
 ### Phase 2 — Application Reliability

@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { timingSafeEqual } from 'node:crypto';
+import { createHmac, timingSafeEqual } from 'node:crypto';
 import { prisma } from '@doorli/db';
 import { isFeatureEnabled, DOORLI_DELIVERY_KEY } from '../../lib/featureFlags.js';
 import { recordIntegrationFailure } from '../../lib/integrationFailures.js';
@@ -34,7 +34,26 @@ function safeEqual(a: string, b: string): boolean {
   return timingSafeEqual(bufA, bufB);
 }
 
+function hasValidWebhookSignature(req: Request): boolean {
+  const timestamp = Number(req.headers['x-doorli-timestamp']);
+  const provided = String(req.headers['x-doorli-signature'] || '').replace(/^sha256=/i, '').trim();
+  if (!Number.isFinite(timestamp) || !provided || Math.abs(Date.now() - timestamp * 1000) > 5 * 60 * 1000) {
+    return false;
+  }
+  const payload = `${timestamp}.${JSON.stringify(req.body ?? {})}`;
+  const expected = createHmac('sha256', erpSecretExpected()).update(payload).digest('hex');
+  return safeEqual(provided, expected);
+}
+
 function requireErpSecret(req: Request, res: Response, next: NextFunction) {
+  if (hasValidWebhookSignature(req)) return next();
+
+  // Legacy bearer auth remains available only for local/test callers. Production
+  // traffic must include a timestamped HMAC to prevent replay attacks.
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(req.headers.authorization ? 403 : 401).json({ error: 'Replay-safe webhook signature required' });
+  }
+
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Missing ERP Secret' });

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { createHmac } from 'node:crypto';
 
 /**
  * Marketplace → ERP bridge.
@@ -75,6 +76,19 @@ function erpSecret(): string {
     throw new Error('ERP_INTERNAL_SECRET environment variable is required');
   }
   return process.env.ERP_INTERNAL_SECRET.replace(/^Bearer\s+/i, '');
+}
+
+function signedHeaders(payload: unknown, extra: Record<string, string> = {}): Record<string, string> {
+  const timestamp = Math.floor(Date.now() / 1000).toString();
+  const signature = createHmac('sha256', erpSecret())
+    .update(`${timestamp}.${JSON.stringify(payload)}`)
+    .digest('hex');
+  return {
+    'Content-Type': 'application/json',
+    'X-Doorli-Timestamp': timestamp,
+    'X-Doorli-Signature': `sha256=${signature}`,
+    ...extra,
+  };
 }
 
 /** Embedded Retail Smart ERP internal base, e.g. http://host/erp/api/internal */
@@ -160,11 +174,13 @@ export class ErpIntegrationService {
           currency: input.currency || 'LKR',
         },
         {
-          headers: {
-            'Content-Type': 'application/json',
-            // Custom header: Frappe reserves Authorization for its own token/OAuth auth.
-            'X-Doorli-Secret': erpSecret(),
-          },
+          headers: signedHeaders({
+            vendor_id: input.vendorId,
+            business_name: input.businessName,
+            admin_email: input.adminEmail || '',
+            phone: input.phone || '',
+            currency: input.currency || 'LKR',
+          }, { 'X-Doorli-Secret': erpSecret() }),
           timeout: REQUEST_TIMEOUT_MS,
           validateStatus: () => true,
         },
@@ -198,7 +214,7 @@ export class ErpIntegrationService {
         { company: input.erpTenantId },
         {
           timeout: REQUEST_TIMEOUT_MS,
-          headers: { 'X-Doorli-Secret': erpSecret(), 'Content-Type': 'application/json' },
+          headers: signedHeaders({ company: input.erpTenantId }, { 'X-Doorli-Secret': erpSecret() }),
         },
       );
       const payload = response.data;
@@ -236,11 +252,13 @@ export class ErpIntegrationService {
             status: input.status,
           },
           {
-            headers: {
-              'Content-Type': 'application/json',
-              // Custom header: Frappe reserves Authorization for its own token/OAuth auth.
-              'X-Doorli-Secret': erpSecret(),
-            },
+            headers: signedHeaders({
+              company: input.erpTenantId,
+              vendor_company: input.erpTenantId,
+              erp_order_id: input.erpOrderId || undefined,
+              marketplace_order_id: input.marketplaceOrderId,
+              status: input.status,
+            }, { 'X-Doorli-Secret': erpSecret() }),
             timeout: REQUEST_TIMEOUT_MS,
             validateStatus: () => true,
           },
@@ -473,12 +491,10 @@ async function syncToEnterpriseOs(input: SyncOrderInput): Promise<SyncOrderResul
   };
 
   const response = await axios.post(url, frappePayload, {
-    headers: {
-      'Content-Type': 'application/json',
-      // Custom header: Frappe reserves Authorization for its own token/OAuth auth.
+    headers: signedHeaders(frappePayload, {
       'X-Doorli-Secret': erpSecret(),
       'Idempotency-Key': input.marketplaceOrderId,
-    },
+    }),
     timeout: REQUEST_TIMEOUT_MS,
     validateStatus: () => true,
   });

@@ -10,12 +10,23 @@
 
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
+import { createHmac } from 'node:crypto';
 import request from 'supertest';
 import { prisma } from '@doorli/db';
 import { createApp } from '../../app.js';
 
 const SECRET = 'doorli_internal_sync_secret';
-const bearer = `Bearer ${SECRET}`;
+  const bearer = `Bearer ${SECRET}`;
+
+  function signedHeaders(body: unknown, timestamp = Math.floor(Date.now() / 1000)) {
+    const signature = createHmac('sha256', SECRET)
+      .update(`${timestamp}.${JSON.stringify(body)}`)
+      .digest('hex');
+    return {
+      'X-Doorli-Timestamp': String(timestamp),
+      'X-Doorli-Signature': `sha256=${signature}`,
+    };
+  }
 
 describe('ERP webhooks', () => {
   const app = createApp();
@@ -43,6 +54,29 @@ describe('ERP webhooks', () => {
       .set('Authorization', 'Bearer wrong-secret')
       .send({ marketplace_order_id: 'x', status: 'confirmed' });
     assert.equal(res.status, 403);
+  });
+
+  it('requires a fresh HMAC signature in production', async () => {
+    const previous = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    const body = { marketplace_order_id: 'x', status: 'confirmed' };
+    try {
+      const missing = await request(app).post('/api/v1/erp-webhooks/order-status').send(body);
+      assert.equal(missing.status, 401);
+      const expired = await request(app)
+        .post('/api/v1/erp-webhooks/order-status')
+        .set(signedHeaders(body, Math.floor(Date.now() / 1000) - 301))
+        .send(body);
+      assert.equal(expired.status, 401);
+      const signed = await request(app)
+        .post('/api/v1/erp-webhooks/order-status')
+        .set(signedHeaders(body))
+        .send(body);
+      assert.ok([404, 500].includes(signed.status));
+    } finally {
+      if (previous === undefined) delete process.env.NODE_ENV;
+      else process.env.NODE_ENV = previous;
+    }
   });
 
   it('rejects a payload with neither order id (400)', async () => {
