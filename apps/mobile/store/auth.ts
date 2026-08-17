@@ -48,6 +48,18 @@ interface AuthState {
     expectedRole?: 'customer' | 'vendor' | 'driver' | 'admin' | 'super_admin',
     businessKey?: string,
   ) => Promise<{ error: string | null }>;
+  registerCustomer: (input: {
+    fullName: string;
+    email: string;
+    password: string;
+  }) => Promise<{ error: string | null }>;
+  registerVendor: (input: {
+    fullName: string;
+    email: string;
+    password: string;
+    businessName: string;
+    category: string;
+  }) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   loadSession: () => Promise<void>;
 }
@@ -121,12 +133,14 @@ export const useAuthStore = create<AuthState>()(
         try {
           const res = await apiClient.post('/auth/login', {
             identifier,
+            email: identifier,
             password,
             ...(expectedRole ? { expectedRole } : {}),
             ...(expectedRole === 'vendor' && businessKey ? { businessKey } : {}),
           });
-          if (res.data.success && res.data.data) {
-            const { user, accessToken, refreshToken } = res.data.data;
+          const data = res.data.data ?? res.data;
+          if (res.data.success && data?.user && data?.accessToken) {
+            const { user, accessToken, refreshToken } = data;
             set({
               user,
               accessToken,
@@ -137,6 +151,34 @@ export const useAuthStore = create<AuthState>()(
             return { error: null };
           }
           return { error: res.data.error || 'Login failed' };
+        } catch (err: any) {
+          return { error: err.response?.data?.error || err.response?.data?.message || err.message };
+        }
+      },
+
+      registerCustomer: async (input) => {
+        try {
+          const res = await apiClient.post('/auth/register', input);
+          const data = res.data.data ?? res.data;
+          if ((res.data.success ?? true) && data?.user && data?.accessToken) {
+            set({ user: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken, isAuthenticated: true });
+            return { error: null };
+          }
+          return { error: res.data.error || 'Customer registration failed' };
+        } catch (err: any) {
+          return { error: err.response?.data?.error || err.response?.data?.message || err.message };
+        }
+      },
+
+      registerVendor: async (input) => {
+        try {
+          const res = await apiClient.post('/auth/register-vendor', input);
+          const data = res.data.data ?? res.data;
+          if ((res.data.success ?? true) && data?.user && data?.accessToken) {
+            set({ user: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken, isAuthenticated: true });
+            return { error: null };
+          }
+          return { error: res.data.error || 'Vendor registration failed' };
         } catch (err: any) {
           return { error: err.response?.data?.error || err.response?.data?.message || err.message };
         }

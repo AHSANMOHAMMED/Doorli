@@ -24,7 +24,7 @@ WebBrowser.maybeCompleteAuthSession();
 
 type AuthTab = 'password' | 'otp';
 type AuthMode = 'signin' | 'signup';
-type Role = 'customer' | 'vendor' | 'driver';
+type Role = 'customer' | 'vendor' | 'driver' | 'admin';
 
 import { DoorliColors, DoorliGlass } from '../../constants/colors';
 
@@ -32,6 +32,8 @@ const PRIMARY = DoorliColors.primary;
 const PRIMARY_CONTAINER = DoorliColors.sky;
 const ON_SURFACE = DoorliColors.text;
 const ON_SURFACE_VARIANT = DoorliColors.textMuted;
+const INPUT_TEXT = '#0f172a';
+const INPUT_PLACEHOLDER = '#64748b';
 const SURFACE = DoorliColors.navyMid;
 const OUTLINE_VARIANT = DoorliGlass.borderStrong;
 
@@ -40,6 +42,8 @@ export default function LoginScreen() {
   const sendOtp = useAuthStore((s) => s.sendOtp);
   const verifyOtpAndLogin = useAuthStore((s) => s.verifyOtpAndLogin);
   const loginWithPassword = useAuthStore((s) => s.loginWithPassword);
+  const registerCustomer = useAuthStore((s) => s.registerCustomer);
+  const registerVendor = useAuthStore((s) => s.registerVendor);
   const { t } = useI18nStore();
 
   const [authTab, setAuthTab] = useState<AuthTab>('password');
@@ -48,6 +52,8 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('Doorli123!');
   const [expectedRole, setExpectedRole] = useState<Role>('customer');
   const [businessKey, setBusinessKey] = useState('Corner Grocery');
+  const [businessName, setBusinessName] = useState('');
+  const [category, setCategory] = useState('grocery');
   const [phone, setPhone] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [code, setCode] = useState('');
@@ -111,6 +117,35 @@ export default function LoginScreen() {
       else goHome(expectedRole);
     } catch (err: any) {
       alert(err.message || 'Login failed');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleRegistration() {
+    if (!fullName.trim() || !identifier.trim() || !password) {
+      return alert('Enter your full name, email, and password');
+    }
+    if (password.length < 6) return alert('Password must be at least 6 characters');
+    setLoading(true);
+    try {
+      const result = expectedRole === 'vendor'
+        ? await registerVendor({
+            fullName: fullName.trim(),
+            email: identifier.trim(),
+            password,
+            businessName: businessName.trim(),
+            category,
+          })
+        : await registerCustomer({
+            fullName: fullName.trim(),
+            email: identifier.trim(),
+            password,
+          });
+      if (result.error) alert(result.error);
+      else goHome(expectedRole);
+    } catch (err: any) {
+      alert(err.message || 'Registration failed');
     } finally {
       setLoading(false);
     }
@@ -203,152 +238,72 @@ export default function LoginScreen() {
           </View>
 
           <View style={styles.inputSection}>
+            <Text style={styles.label}>Account Type</Text>
             {renderSegmentedControl(
               [
-                { label: 'Password', value: 'password' },
-                { label: 'OTP', value: 'otp' },
+                { label: 'Sign In', value: 'signin' },
+                { label: 'Create Account', value: 'signup' },
               ],
-              authTab,
-              setAuthTab
+              mode,
+              setMode,
             )}
 
-            {authTab === 'password' ? (
+            <Text style={styles.label}>Continue as</Text>
+            {renderSegmentedControl(
+              [
+                { label: 'Customer', value: 'customer' },
+                { label: 'Vendor', value: 'vendor' },
+                { label: 'Driver', value: 'driver' },
+                { label: 'Admin', value: 'admin' },
+              ],
+              expectedRole,
+              setExpectedRole,
+            )}
+
+            {mode === 'signup' && (
               <>
-                <Text style={styles.label}>Log in as</Text>
+                <Text style={styles.label}>Full Name</Text>
+                <TextInput style={styles.input} placeholder="Your full name" placeholderTextColor={INPUT_PLACEHOLDER} value={fullName} onChangeText={setFullName} />
+              </>
+            )}
+
+            <Text style={styles.label}>Email Address</Text>
+            <TextInput style={styles.input} placeholder="name@example.com" placeholderTextColor={INPUT_PLACEHOLDER} autoCapitalize="none" keyboardType="email-address" value={identifier} onChangeText={setIdentifier} />
+
+            {mode === 'signup' && expectedRole === 'vendor' && (
+              <>
+                <Text style={styles.label}>Business Name</Text>
+                <TextInput style={styles.input} placeholder="Your business name" placeholderTextColor={INPUT_PLACEHOLDER} value={businessName} onChangeText={setBusinessName} />
+                <Text style={styles.label}>Business Category</Text>
                 {renderSegmentedControl(
-                  [
-                    { label: 'Customer', value: 'customer' },
-                    { label: 'Vendor', value: 'vendor' },
-                    { label: 'Driver', value: 'driver' },
-                  ],
-                  expectedRole,
-                  setExpectedRole
-                )}
-                
-                <Text style={styles.label}>Email Address</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="name@example.com"
-                  placeholderTextColor="#9ca3af"
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  value={identifier}
-                  onChangeText={setIdentifier}
-                />
-                
-                {expectedRole === 'vendor' && (
-                  <>
-                    <Text style={styles.label}>Business ID</Text>
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Your Business ID"
-                      placeholderTextColor="#9ca3af"
-                      value={businessKey}
-                      onChangeText={setBusinessKey}
-                    />
-                  </>
-                )}
-                
-                <Text style={styles.label}>Password</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="••••••••"
-                  placeholderTextColor="#9ca3af"
-                  secureTextEntry
-                  value={password}
-                  onChangeText={setPassword}
-                />
-                
-                <TouchableOpacity style={styles.primaryBtn} onPress={handlePasswordLogin} disabled={loading}>
-                  {loading ? <ActivityIndicator color="#003b10" /> : <Text style={styles.primaryBtnText}>Continue</Text>}
-                </TouchableOpacity>
-              </>
-            ) : (
-              <>
-                {!otpSent ? (
-                  <>
-                    <Text style={styles.sectionTitle}>Ready to get started?</Text>
-                    <Text style={styles.sectionSubtitle}>Enter your mobile number to join the community.</Text>
-
-                    {renderSegmentedControl(
-                      [
-                        { label: 'Sign In', value: 'signin' },
-                        { label: 'Sign Up', value: 'signup' },
-                      ],
-                      mode,
-                      setMode
-                    )}
-
-                    {mode === 'signup' && (
-                      <>
-                        <Text style={styles.label}>Full Name</Text>
-                        <TextInput
-                          style={styles.input}
-                          placeholder="John Doe"
-                          placeholderTextColor="#9ca3af"
-                          value={fullName}
-                          onChangeText={setFullName}
-                        />
-                        <Text style={styles.label}>Register as</Text>
-                        {renderSegmentedControl(
-                          [
-                            { label: 'Customer', value: 'customer' },
-                            { label: 'Vendor', value: 'vendor' },
-                            { label: 'Driver', value: 'driver' },
-                          ],
-                          role,
-                          setRole
-                        )}
-                      </>
-                    )}
-                    
-                    <View style={styles.phoneInputContainer}>
-                      <View style={styles.phonePrefixBox}>
-                        <View style={styles.flagPlaceholder}>
-                          <View style={styles.flagLine} />
-                        </View>
-                        <Text style={styles.phonePrefixText}>+971</Text>
-                      </View>
-                      <TextInput
-                        style={styles.phoneInput}
-                        placeholder="50 000 0000"
-                        placeholderTextColor="#6d7b6a"
-                        keyboardType="phone-pad"
-                        autoCapitalize="none"
-                        value={phone}
-                        onChangeText={setPhone}
-                        maxLength={9}
-                      />
-                    </View>
-                    
-                    <TouchableOpacity style={styles.primaryBtn} onPress={handleSendOtp} disabled={loading}>
-                      {loading ? <ActivityIndicator color="#003b10" /> : <Text style={styles.primaryBtnText}>Continue</Text>}
-                    </TouchableOpacity>
-                  </>
-                ) : (
-                  <>
-                    <Text style={styles.sectionTitle}>Check your phone</Text>
-                    <Text style={styles.sectionSubtitle}>We sent a 6-digit code to +971 {phone}</Text>
-
-                    <TextInput
-                      style={[styles.input, { textAlign: 'center', fontSize: 24, letterSpacing: 8 }]}
-                      placeholder="123456"
-                      placeholderTextColor="#9ca3af"
-                      keyboardType="number-pad"
-                      value={code}
-                      onChangeText={setCode}
-                      maxLength={6}
-                    />
-                    <TouchableOpacity style={styles.primaryBtn} onPress={handleVerifyOtp} disabled={loading}>
-                      {loading ? <ActivityIndicator color="#003b10" /> : <Text style={styles.primaryBtnText}>Verify & Login</Text>}
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.ghostBtn} onPress={() => setOtpSent(false)}>
-                      <Text style={styles.ghostBtnText}>Change Phone Number</Text>
-                    </TouchableOpacity>
-                  </>
+                  [{ label: 'Grocery', value: 'grocery' }, { label: 'Restaurant', value: 'restaurant' }, { label: 'Service', value: 'service' }],
+                  category,
+                  setCategory,
                 )}
               </>
             )}
+
+            {mode === 'signin' && expectedRole === 'vendor' && (
+              <>
+                <Text style={styles.label}>Business ID or Name</Text>
+                <TextInput style={styles.input} placeholder="Corner Grocery" placeholderTextColor={INPUT_PLACEHOLDER} value={businessKey} onChangeText={setBusinessKey} />
+              </>
+            )}
+
+            <Text style={styles.label}>Password</Text>
+            <TextInput style={styles.input} placeholder="At least 6 characters" placeholderTextColor={INPUT_PLACEHOLDER} secureTextEntry value={password} onChangeText={setPassword} />
+
+            {mode === 'signup' && (expectedRole === 'driver' || expectedRole === 'admin') && (
+              <Text style={styles.helperText}>
+                {expectedRole === 'driver'
+                  ? 'Driver accounts are created by Doorli after vehicle and identity verification. Use Sign In after your account is issued.'
+                  : 'Admin accounts are created by Doorli operations. Use Sign In with the account provided to you.'}
+              </Text>
+            )}
+
+            <TouchableOpacity style={styles.primaryBtn} onPress={mode === 'signup' && expectedRole === 'customer' || mode === 'signup' && expectedRole === 'vendor' ? handleRegistration : handlePasswordLogin} disabled={loading || (mode === 'signup' && expectedRole !== 'customer' && expectedRole !== 'vendor')}>
+              {loading ? <ActivityIndicator color="#003b10" /> : <Text style={styles.primaryBtnText}>{mode === 'signup' ? 'Create Account' : 'Continue'}</Text>}
+            </TouchableOpacity>
           </View>
 
           {/* ── Google OAuth ──────────────────────────── */}
@@ -438,6 +393,12 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     paddingHorizontal: 16,
   },
+  helperText: {
+    fontSize: 13,
+    lineHeight: 19,
+    color: ON_SURFACE_VARIANT,
+    marginBottom: 16,
+  },
   segmentContainer: {
     flexDirection: 'row',
     backgroundColor: '#edeeef',
@@ -465,10 +426,10 @@ const styles = StyleSheet.create({
   segmentText: {
     fontSize: 14,
     fontWeight: '600',
-    color: ON_SURFACE_VARIANT,
+    color: '#334155',
   },
   segmentTextActive: {
-    color: ON_SURFACE,
+    color: '#0f172a',
   },
   label: {
     fontSize: 12,
@@ -485,7 +446,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     fontSize: 16,
-    color: ON_SURFACE,
+    color: INPUT_TEXT,
     marginBottom: 20,
     backgroundColor: '#ffffff',
   },
@@ -524,14 +485,14 @@ const styles = StyleSheet.create({
   phonePrefixText: {
     fontSize: 16,
     fontWeight: '600',
-    color: ON_SURFACE,
+    color: INPUT_TEXT,
   },
   phoneInput: {
     flex: 1,
     paddingVertical: 12,
     paddingHorizontal: 16,
     fontSize: 16,
-    color: ON_SURFACE,
+    color: INPUT_TEXT,
   },
   primaryBtn: {
     width: '100%',
