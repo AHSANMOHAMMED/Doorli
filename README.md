@@ -183,7 +183,7 @@ This is the authoritative implementation checklist. A task is complete only when
 - Marketplace API version: HTTP `200`.
 - Marketplace web root: HTTP `200`.
 - Enterprise Frappe ping: HTTP `200`, `pong`.
-- The latest uncommitted changes in this working tree still require an OCI release before they can be marked live.
+- Marketplace release `decfba4` is live on OCI from `/home/opc/releases/decfba403984daf20279faaffbead69e8863099a`.
 
 ### OCI Verification Log — 2026-08-17
 
@@ -191,7 +191,8 @@ This is the authoritative implementation checklist. A task is complete only when
 - Enterprise smoke: `/api/method/ping` returned HTTP `200`.
 - Local Marketplace CI-equivalent validation passed: strict web builds, ERP production build/server bundle, API build, 22 API tests, security audit, and diff checks.
 - Added production replay protection: first-party ERP webhooks use `X-Doorli-Timestamp` plus `X-Doorli-Signature`; signatures expire after five minutes.
-- Added admin Sync Recovery dashboard and CI workflow. OCI release/migration remains pending because the host release volume exhausted its available space.
+- Added admin Sync Recovery dashboard and CI workflow. OCI migration reported no pending migrations after the release switch.
+- Production backup `doorli-20260817T060708Z.sql.gz` completed with checksum verification; destructive restore correctly remains confirmation-gated (`restore-guard=77`).
 
 ### Phase 0 — Baseline and Safety
 

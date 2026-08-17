@@ -17,8 +17,19 @@ set +a
 : "${DATABASE_URL:?DATABASE_URL must be set}"
 
 # DATABASE_URL already contains the host, port, database, and credentials used
-# by the API. Using it avoids assuming container-local Postgres role names.
-pg_dump "$DATABASE_URL" | gzip -c > "$OUTPUT"
+# by the API. Prefer the host client, but support OCI where pg_dump is provided
+# by the managed Postgres container rather than installed on the host.
+if command -v pg_dump >/dev/null 2>&1; then
+  pg_dump "$DATABASE_URL" | gzip -c > "$OUTPUT"
+elif command -v docker >/dev/null 2>&1 && docker inspect "${DOORLI_PG_DUMP_CONTAINER:-erp-db}" >/dev/null 2>&1; then
+  container="${DOORLI_PG_DUMP_CONTAINER:-erp-db}"
+  container_url="$(printf '%s' "$DATABASE_URL" | sed -E 's#@[^/:]+:[0-9]+/#@127.0.0.1:5432/#')"
+  container_url="${container_url%%\?*}"
+  docker exec "$container" pg_dump "$container_url" | gzip -c > "$OUTPUT"
+else
+  echo 'pg_dump is required (install PostgreSQL client or set DOORLI_PG_DUMP_CONTAINER)' >&2
+  exit 127
+fi
 
 test -s "$OUTPUT"
 sha256sum "$OUTPUT" > "$CHECKSUM"
