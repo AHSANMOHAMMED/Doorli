@@ -41,6 +41,7 @@ import communityRouter from '../modules/community/community.routes.js';
 import membershipRouter from '../modules/membership/membership.routes.js';
 import assistantRouter from '../modules/assistant/assistant.routes.js';
 import createHotelRouter from './hotels/create-hotel.js';
+import authRouter from '../modules/auth/auth.routes.js';
 
 const router = Router();
 
@@ -77,13 +78,9 @@ router.get('/api/v1', (_req: Request, res: Response) => {
 // Express strips the mount prefix (e.g. `/api/v1/auth`) from req.url before the
 // proxy middleware runs, so pathRewrite sees only the remainder (e.g. `/login`).
 // The rewrite must therefore PREPEND the backend's expected prefix.
-// Auth Microservice Proxy (Port 4001)
-router.use('/api/v1/auth', express.json(), createProxyMiddleware({
-  target: env.AUTH_SERVICE_URL,
-  changeOrigin: true,
-  pathRewrite: (path) => `/auth${path}`,
-  on: { proxyReq: fixRequestBody },
-}));
+// Password and role registration run against the marketplace database so the
+// mobile app, customer web, and vendor onboarding share one auth contract.
+router.use('/api/v1/auth', express.json(), authRouter);
 
 // Delivery Microservice Proxy
 const deliveryProxy = (prefix: string) => createProxyMiddleware({
