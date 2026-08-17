@@ -2,9 +2,7 @@
 
 ## EAS preview
 
-`eas.json` preview/production profiles point at the OCI demo API over **HTTP** (`https://api.doorli.me`).
-
-**Follow-up:** terminate TLS (HTTPS) on nginx / load balancer before App Store / Play production builds; then flip `EXPO_PUBLIC_API_URL` / `extra.apiUrl` to `https://…`.
+`eas.json` preview/production profiles point at the HTTPS Marketplace API root (`https://doorli.me`). The mobile client appends `/api/v1` for API calls.
 
 ```bash
 cd apps/mobile
