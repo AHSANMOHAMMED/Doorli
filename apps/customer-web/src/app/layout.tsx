@@ -1,20 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { Syne, Manrope } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/lib/cart-context";
 import { MobileTabBar } from "@/components/MobileTabBar";
-
-const syne = Syne({
-  subsets: ["latin"],
-  variable: "--font-doorli-display",
-  display: "swap",
-});
-
-const manrope = Manrope({
-  subsets: ["latin"],
-  variable: "--font-doorli-body",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "Doorli | Everything local. Delivered.",
@@ -42,7 +29,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${syne.variable} ${manrope.variable} h-full antialiased`}>
+    <html lang="en" className="h-full antialiased">
       <body className="min-h-full flex flex-col bg-[#f7fafc] text-[#10213f] pb-tab-bar">
         <CartProvider>
           <div className="flex-1 flex flex-col min-h-0">{children}</div>

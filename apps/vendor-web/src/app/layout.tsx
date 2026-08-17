@@ -1,19 +1,6 @@
 import type { Metadata } from 'next';
-import { Syne, Manrope } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/lib/auth-context';
-
-const syne = Syne({
-  subsets: ['latin'],
-  variable: '--font-doorli-display',
-  display: 'swap',
-});
-
-const manrope = Manrope({
-  subsets: ['latin'],
-  variable: '--font-doorli-body',
-  display: 'swap',
-});
 
 export const metadata: Metadata = {
   title: 'Doorli Vendor — Sell next door',
@@ -22,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${syne.variable} ${manrope.variable}`}>
+    <html lang="en">
       <body className="antialiased">
         <AuthProvider>{children}</AuthProvider>
       </body>

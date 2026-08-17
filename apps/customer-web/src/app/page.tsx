@@ -12,11 +12,13 @@ import {
   ChevronDown,
   Clock3,
   ConciergeBell,
+  HeartHandshake,
   MapPin,
   Moon,
   Search,
   ShoppingBag,
   Sparkles,
+  ShieldCheck,
   Store,
   Truck,
   UserRound,
@@ -186,6 +188,19 @@ export default function Home() {
         </motion.div>
       </section>
 
+      <section className="trust-proof page-width" aria-labelledby="trust-proof-title">
+        <div className="trust-proof-lead">
+          <span className="section-kicker">A calmer way to get things done</span>
+          <h2 id="trust-proof-title">The local standard, made visible.</h2>
+          <p>Doorli keeps the important details in view: who you are buying from, when it will arrive, and what happens next.</p>
+        </div>
+        <div className="trust-proof-grid">
+          <div className="trust-proof-card"><ShieldCheck /><strong>Verified partners</strong><span>Businesses are reviewed before they join the marketplace.</span></div>
+          <div className="trust-proof-card"><Clock3 /><strong>Clear expectations</strong><span>Simple ETAs, visible status, and no hidden handoffs.</span></div>
+          <div className="trust-proof-card"><HeartHandshake /><strong>Human support</strong><span>One Doorli account and a real path to help when you need it.</span></div>
+        </div>
+      </section>
+
       <section className="pillar-section page-width"><div className="section-heading"><div><span className="section-kicker">Start with what you need</span><h2>One app for your everyday</h2></div><Link href="/search" className="section-link">See everything <ArrowRight /></Link></div><div className="pillar-grid">{PILLARS.map(({ label, detail, href, icon: Icon, tone }) => <Link key={label} href={href} className="pillar-card"><span className={`pillar-icon ${toneClass(tone)}`}><Icon /></span><span><strong>{label}</strong><small>{detail}</small></span><ArrowRight className="pillar-arrow" /></Link>)}</div></section>
 
       <section className="quick-section page-width"><div className="section-heading"><div><span className="section-kicker">Quick access</span><h2>What are you looking for?</h2></div></div><div className="quick-grid">{QUICK_ACTIONS.map(({ label, href, icon: Icon, tone }) => <Link href={href} key={label} className="quick-action"><span className={`quick-icon ${toneClass(tone)}`}><Icon /></span><span>{label}</span></Link>)}</div></section>
@@ -194,7 +209,7 @@ export default function Home() {
 
       <section className="trust-strip"><div className="page-width trust-grid"><div><BadgeCheck /><strong>Verified local partners</strong><span>Businesses you can trust</span></div><div><Clock3 /><strong>Clear delivery times</strong><span>Know before you order</span></div><div><Truck /><strong>Live order updates</strong><span>From door to doorstep</span></div><div><Sparkles /><strong>One simple experience</strong><span>Less searching, more doing</span></div></div></section>
 
-      <footer className="consumer-footer"><div className="page-width footer-inner"><div><Link href="/" className="consumer-brand"><img src={MARK} alt="" className="consumer-brand-mark" /><span>Doorli</span></Link><p>Everything local, close to home.</p></div><div className="footer-links"><Link href="/about">About Doorli</Link><Link href="/help">Help centre</Link><Link href="/vendor/login">Partner / Business</Link><Link href="/super-admin/login">Operations portal</Link></div><span className="footer-copy">© 2026 Doorli</span></div></footer>
+      <footer className="consumer-footer"><div className="page-width footer-inner"><div><Link href="/" className="consumer-brand"><img src={MARK} alt="" className="consumer-brand-mark" /><span>Doorli</span></Link><p>Everything local, close to home.</p></div><div className="footer-links"><Link href="/community">Community</Link><Link href="/login">Customer access</Link><Link href="/vendor/login">Partner / Business</Link><Link href="/super-admin/login">Operations portal</Link></div><span className="footer-copy">© 2026 Doorli</span></div></footer>
     </main>
   );
 }

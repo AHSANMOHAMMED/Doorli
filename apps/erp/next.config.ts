@@ -13,6 +13,12 @@ const nextConfig: NextConfig = {
     root: monorepoRoot,
   },
   outputFileTracingRoot: monorepoRoot,
+  // OCI builds are disk constrained. Persistent webpack packs are not useful
+  // between isolated releases and can consume the remaining volume space.
+  webpack(config, { dev }) {
+    if (!dev) config.cache = false;
+    return config;
+  },
   // Allow local hosts in Next.js 16+ dev (HMR / assets). Hosts missing from this
   // list cannot fetch dev-only resources, which leaves client routes that suspend
   // (e.g. useSearchParams on /login) stuck on their fallback forever. Deployed
@@ -87,8 +93,8 @@ const nextConfig: NextConfig = {
               process.env.NODE_ENV === 'production'
                 ? "script-src 'self' 'unsafe-inline' https://www.payhere.lk https://sandbox.payhere.lk https://static.cloudflareinsights.com https://www.googletagmanager.com"
                 : "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.payhere.lk https://sandbox.payhere.lk https://static.cloudflareinsights.com https://www.googletagmanager.com",
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "font-src 'self' https://fonts.gstatic.com",
+              "style-src 'self' 'unsafe-inline'",
+              "font-src 'self' data:",
               "img-src 'self' data: blob: https://*.r2.cloudflarestorage.com https://cdn.erp.doorli.me https://lh3.googleusercontent.com https://images.unsplash.com https://www.google-analytics.com https://www.googletagmanager.com",
               "media-src 'self' blob: https://cdn.erp.doorli.me https://*.r2.cloudflarestorage.com",
               "connect-src 'self' http://127.0.0.1:* http://localhost:* ws://127.0.0.1:* ws://localhost:* https://*.erp.doorli.me wss://*.erp.doorli.me https://api.resend.com https://www.payhere.lk https://sandbox.payhere.lk https://generativelanguage.googleapis.com https://api.deepseek.com https://*.cloudflareinsights.com https://www.google-analytics.com https://www.googletagmanager.com https://analytics.google.com https://*.google-analytics.com https://stats.g.doubleclick.net",
