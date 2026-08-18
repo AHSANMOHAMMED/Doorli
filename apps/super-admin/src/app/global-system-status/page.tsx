@@ -41,6 +41,20 @@ export default function GlobalSystemStatusPage() {
   const [incidents, setIncidents] = useState<AuditEntry[]>([]);
   const [health, setHealth] = useState<HealthData | null>(null);
   const [overallStatus, setOverallStatus] = useState('healthy');
+  const [running, setRunning] = useState(false);
+
+  const runDiagnostics = async () => {
+    setRunning(true);
+    try {
+      const result = await superAdminFetch('/admin/diagnostics');
+      if (result.success) {
+        setDiagnostics(result.data.checks || []);
+        setOverallStatus(result.data.overallStatus || 'healthy');
+      }
+    } finally {
+      setRunning(false);
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -117,27 +131,27 @@ export default function GlobalSystemStatusPage() {
 
 <aside className="hidden md:flex fixed left-0 top-16 h-[calc(100vh-64px)] w-64 bg-surface-container-low border-r border-outline-variant flex-col p-sm space-y-base z-40">
 <nav className="space-y-1">
-<a className="flex items-center gap-md p-md bg-secondary-container text-on-secondary-container font-bold rounded-lg transition-all duration-200" href="#">
+<a className="flex items-center gap-md p-md bg-secondary-container text-on-secondary-container font-bold rounded-lg transition-all duration-200" href="/dashboard">
 <span className="material-symbols-outlined">terminal</span>
 <span className="font-body-main text-body-main">Command Center</span>
 </a>
-<a className="flex items-center gap-md p-md text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200" href="#">
+<a className="flex items-center gap-md p-md text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200" href="/erp-synchronization-logs">
 <span className="material-symbols-outlined">sync_alt</span>
 <span className="font-body-main text-body-main">ERP Integration</span>
 </a>
-<a className="flex items-center gap-md p-md text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200" href="#">
+<a className="flex items-center gap-md p-md text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200" href="/user-management">
 <span className="material-symbols-outlined">group</span>
 <span className="font-body-main text-body-main">User Management</span>
 </a>
-<a className="flex items-center gap-md p-md text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200" href="#">
+<a className="flex items-center gap-md p-md text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200" href="/system-broadcasts">
 <span className="material-symbols-outlined">campaign</span>
 <span className="font-body-main text-body-main">Broadcasts</span>
 </a>
-<a className="flex items-center gap-md p-md text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200" href="#">
+<a className="flex items-center gap-md p-md text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200" href="/erp-synchronization-logs">
 <span className="material-symbols-outlined">terminal</span>
 <span className="font-body-main text-body-main">System Logs</span>
 </a>
-<a className="flex items-center gap-md p-md text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200" href="#">
+<a className="flex items-center gap-md p-md text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200" href="/system-settings-profile">
 <span className="material-symbols-outlined">help_outline</span>
 <span className="font-body-main text-body-main">Support</span>
 </a>
@@ -319,29 +333,29 @@ export default function GlobalSystemStatusPage() {
 )}
 </main>
 
-<button className="fixed bottom-24 right-margin-mobile md:bottom-12 md:right-12 bg-primary-container text-on-primary-fixed hover:bg-primary transition-all duration-300 flex items-center gap-md px-lg py-md rounded-xl shadow-xl z-50 group" onClick={() => {}}>
+<button type="button" disabled={running} className="fixed bottom-24 right-margin-mobile md:bottom-12 md:right-12 bg-primary-container text-on-primary-fixed hover:bg-primary transition-all duration-300 flex items-center gap-md px-lg py-md rounded-xl shadow-xl z-50 group disabled:opacity-60" onClick={() => void runDiagnostics()}>
 <span className="material-symbols-outlined group-hover:rotate-180 transition-transform duration-500">settings_backup_restore</span>
-<span className="font-label-medium text-label-medium font-bold uppercase tracking-widest">Run Diagnostics</span>
+<span className="font-label-medium text-label-medium font-bold uppercase tracking-widest">{running ? 'Running…' : 'Run Diagnostics'}</span>
 </button>
 
 <nav className="md:hidden fixed bottom-0 left-0 w-full flex justify-around items-center py-2 bg-surface-container border-t border-outline-variant z-50">
-<a className="flex flex-col items-center justify-center bg-primary-container text-on-primary-fixed rounded-xl px-3 py-1 scale-95 active:scale-90 transition-transform" href="#">
+<a className="flex flex-col items-center justify-center bg-primary-container text-on-primary-fixed rounded-xl px-3 py-1 scale-95 active:scale-90 transition-transform" href="/dashboard">
 <span className="material-symbols-outlined">dashboard</span>
 <span className="font-label-medium text-label-medium">Command</span>
 </a>
-<a className="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1 scale-95 active:scale-90 transition-transform" href="#">
+<a className="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1 scale-95 active:scale-90 transition-transform" href="/vendors-management">
 <span className="material-symbols-outlined">storefront</span>
 <span className="font-label-medium text-label-medium">Vendors</span>
 </a>
-<a className="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1 scale-95 active:scale-90 transition-transform" href="#">
+<a className="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1 scale-95 active:scale-90 transition-transform" href="/global-orders-finalized">
 <span className="material-symbols-outlined">receipt_long</span>
 <span className="font-label-medium text-label-medium">Orders</span>
 </a>
-<a className="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1 scale-95 active:scale-90 transition-transform" href="#">
+<a className="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1 scale-95 active:scale-90 transition-transform" href="/global-system-status">
 <span className="material-symbols-outlined">health_metrics</span>
 <span className="font-label-medium text-label-medium">Health</span>
 </a>
-<a className="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1 scale-95 active:scale-90 transition-transform" href="#">
+<a className="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1 scale-95 active:scale-90 transition-transform" href="/system-settings-profile">
 <span className="material-symbols-outlined">settings</span>
 <span className="font-label-medium text-label-medium">System</span>
 </a>

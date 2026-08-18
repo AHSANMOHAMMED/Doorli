@@ -26,6 +26,9 @@ export default function ProductsPage() {
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [category, setCategory] = useState('general');
+  const [unit, setUnit] = useState('piece');
+  const [stockQuantity, setStockQuantity] = useState('0');
+  const [isAvailable, setIsAvailable] = useState(true);
   const [saving, setSaving] = useState(false);
   const [query, setQuery] = useState('');
 
@@ -66,14 +69,15 @@ export default function ProductsPage() {
           name,
           price: Number(price),
           category,
-          unit: 'piece',
-          stockQuantity: 100,
-          isAvailable: true,
+          unit,
+          stockQuantity: Number(stockQuantity),
+          isAvailable,
         }),
       });
       if (!res.success) throw new Error(res.error || 'Create failed');
       setName('');
       setPrice('');
+      setStockQuantity('0');
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Create failed');
@@ -103,10 +107,10 @@ export default function ProductsPage() {
         actions={<Badge tone="info">{products.length} items</Badge>}
       />
 
-      {error && <ErrorNote>{error}</ErrorNote>}
+      {error && <div className="flex flex-wrap items-center gap-3"><ErrorNote>{error}</ErrorNote><button type="button" className="btn btn-ghost" onClick={() => void load()}>Retry</button></div>}
 
       <Panel title="Add a product" icon={<Plus size={17} />}>
-        <form onSubmit={addProduct} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_auto]">
+        <form onSubmit={addProduct} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr_auto]">
           <label className="block text-sm">
             <span className="mb-1.5 block font-medium text-doorli-muted">Name</span>
             <input
@@ -116,6 +120,19 @@ export default function ProductsPage() {
               placeholder="Chicken kottu"
               required
             />
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1.5 block font-medium text-doorli-muted">Unit</span>
+            <select className="w-full px-3 py-2.5 text-sm" value={unit} onChange={(e) => setUnit(e.target.value)}>
+              <option value="piece">Piece</option><option value="kg">Kilogram</option><option value="litre">Litre</option><option value="box">Box</option>
+            </select>
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1.5 block font-medium text-doorli-muted">Opening stock</span>
+            <input className="w-full px-3 py-2.5 text-sm" value={stockQuantity} onChange={(e) => setStockQuantity(e.target.value)} inputMode="numeric" min="0" type="number" />
+          </label>
+          <label className="flex items-center gap-2 self-end pb-3 text-sm text-doorli-muted">
+            <input type="checkbox" checked={isAvailable} onChange={(e) => setIsAvailable(e.target.checked)} /> Available now
           </label>
           <label className="block text-sm">
             <span className="mb-1.5 block font-medium text-doorli-muted">Price (LKR)</span>

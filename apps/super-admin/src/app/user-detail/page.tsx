@@ -226,50 +226,50 @@ export default function UserDetailPage() {
 </div>
 </main>
 <nav className="fixed bottom-0 w-full z-50 bg-surface-container dark:bg-surface-container border-t border-surface-variant dark:border-surface-variant shadow-md flex justify-around items-center h-16 w-full px-2 pb-safe md:hidden">
-<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1 hover:bg-surface-variant dark:hover:bg-surface-variant active:scale-95 transition-transform duration-150" href="#">
+<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1 hover:bg-surface-variant dark:hover:bg-surface-variant active:scale-95 transition-transform duration-150" href="/dashboard">
 <span className="material-symbols-outlined" data-icon="dashboard">dashboard</span>
 <span className="font-label-medium text-label-medium">Dashboard</span>
 </a>
-<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1 hover:bg-surface-variant dark:hover:bg-surface-variant active:scale-95 transition-transform duration-150" href="#">
+<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1 hover:bg-surface-variant dark:hover:bg-surface-variant active:scale-95 transition-transform duration-150" href="/vendors-management">
 <span className="material-symbols-outlined" data-icon="store">store</span>
 <span className="font-label-medium text-label-medium">Vendors</span>
 </a>
-<a className="flex flex-col items-center justify-center bg-primary-container dark:bg-primary-container text-on-primary-container dark:text-on-primary-container rounded-xl px-3 py-1 active:scale-95 transition-transform duration-150" href="#">
+<a className="flex flex-col items-center justify-center bg-primary-container dark:bg-primary-container text-on-primary-container dark:text-on-primary-container rounded-xl px-3 py-1 active:scale-95 transition-transform duration-150" href="/user-management">
 <span className="material-symbols-outlined" data-icon="group">group</span>
 <span className="font-label-medium text-label-medium">Users</span>
 </a>
-<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1 hover:bg-surface-variant dark:hover:bg-surface-variant active:scale-95 transition-transform duration-150" href="#">
+<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1 hover:bg-surface-variant dark:hover:bg-surface-variant active:scale-95 transition-transform duration-150" href="/global-orders-finalized">
 <span className="material-symbols-outlined" data-icon="shopping_cart">shopping_cart</span>
 <span className="font-label-medium text-label-medium">Orders</span>
 </a>
-<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1 hover:bg-surface-variant dark:hover:bg-surface-variant active:scale-95 transition-transform duration-150" href="#">
+<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1 hover:bg-surface-variant dark:hover:bg-surface-variant active:scale-95 transition-transform duration-150" href="/system-settings-profile">
 <span className="material-symbols-outlined" data-icon="more_horiz">more_horiz</span>
 <span className="font-label-medium text-label-medium">More</span>
 </a>
 </nav>
 <div className="hidden md:flex fixed left-0 top-16 bottom-0 w-[240px] bg-surface-container border-r border-outline-variant p-md flex-col gap-sm">
-<a className="flex items-center gap-md p-md rounded-xl text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<a className="flex items-center gap-md p-md rounded-xl text-on-surface-variant hover:bg-surface-container-high transition-colors" href="/user-management">
 <span className="material-symbols-outlined" data-icon="dashboard">dashboard</span>
 <span className="font-label-medium text-label-medium">Dashboard</span>
 </a>
-<a className="flex items-center gap-md p-md rounded-xl text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<a className="flex items-center gap-md p-md rounded-xl text-on-surface-variant hover:bg-surface-container-high transition-colors" href="/vendors-management">
 <span className="material-symbols-outlined" data-icon="store">store</span>
 <span className="font-label-medium text-label-medium">Vendors</span>
 </a>
-<a className="flex items-center gap-md p-md rounded-xl bg-primary-container text-on-primary-container" href="#">
+<a className="flex items-center gap-md p-md rounded-xl bg-primary-container text-on-primary-container" href="/user-detail">
 <span className="material-symbols-outlined" data-icon="group">group</span>
 <span className="font-label-medium text-label-medium">Users</span>
 </a>
-<a className="flex items-center gap-md p-md rounded-xl text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<a className="flex items-center gap-md p-md rounded-xl text-on-surface-variant hover:bg-surface-container-high transition-colors" href="/global-orders-finalized">
 <span className="material-symbols-outlined" data-icon="shopping_cart">shopping_cart</span>
 <span className="font-label-medium text-label-medium">Orders</span>
 </a>
 <div className="mt-auto pt-md border-t border-outline-variant">
-<a className="flex items-center gap-md p-md rounded-xl text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<a className="flex items-center gap-md p-md rounded-xl text-on-surface-variant hover:bg-surface-container-high transition-colors" href="/system-settings-profile">
 <span className="material-symbols-outlined" data-icon="settings">settings</span>
 <span className="font-label-medium text-label-medium">System Settings</span>
 </a>
-<a className="flex items-center gap-md p-md rounded-xl text-error/80 hover:bg-error-container/10 transition-colors" href="#">
+<a className="flex items-center gap-md p-md rounded-xl text-error/80 hover:bg-error-container/10 transition-colors" href="/user-management">
 <span className="material-symbols-outlined" data-icon="logout">logout</span>
 <span className="font-label-medium text-label-medium">Sign Out</span>
 </a>

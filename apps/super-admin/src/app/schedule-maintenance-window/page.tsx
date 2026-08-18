@@ -49,10 +49,10 @@ export default function ScheduleMaintenanceWindowPage() {
 </div>
 <div className="flex items-center gap-6">
 <div className="hidden md:flex items-center gap-8">
-<a className="font-label-medium text-on-surface-variant hover:bg-surface-container-high px-3 py-2 rounded-lg transition-colors" href="#">Command</a>
-<a className="font-label-medium text-on-surface-variant hover:bg-surface-container-high px-3 py-2 rounded-lg transition-colors" href="#">Vendors</a>
-<a className="font-label-medium text-on-surface-variant hover:bg-surface-container-high px-3 py-2 rounded-lg transition-colors" href="#">Orders</a>
-<a className="font-label-medium text-primary font-bold px-3 py-2 rounded-lg transition-colors" href="#">System</a>
+<a className="font-label-medium text-on-surface-variant hover:bg-surface-container-high px-3 py-2 rounded-lg transition-colors" href="/dashboard">Command</a>
+<a className="font-label-medium text-on-surface-variant hover:bg-surface-container-high px-3 py-2 rounded-lg transition-colors" href="/vendors-management">Vendors</a>
+<a className="font-label-medium text-on-surface-variant hover:bg-surface-container-high px-3 py-2 rounded-lg transition-colors" href="/global-orders-finalized">Orders</a>
+<a className="font-label-medium text-primary font-bold px-3 py-2 rounded-lg transition-colors" href="/system-settings-profile">System</a>
 </div>
 <div className="flex items-center gap-4">
 <span className="material-symbols-outlined text-on-surface-variant cursor-pointer hover:bg-surface-container-high p-2 rounded-full transition-colors">settings</span>
@@ -243,19 +243,19 @@ export default function ScheduleMaintenanceWindowPage() {
 </main>
 {/*  BottomNavBar (Visible on Mobile)  */}
 <nav className="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-16 bg-surface-container border-t border-outline-variant shadow-sm">
-<a className="flex flex-col items-center justify-center text-on-surface-variant scale-95 active:scale-90 transition-transform" href="#">
+<a className="flex flex-col items-center justify-center text-on-surface-variant scale-95 active:scale-90 transition-transform" href="/dashboard">
 <span className="material-symbols-outlined">dashboard</span>
 <span className="font-label-medium">Command</span>
 </a>
-<a className="flex flex-col items-center justify-center text-on-surface-variant scale-95 active:scale-90 transition-transform" href="#">
+<a className="flex flex-col items-center justify-center text-on-surface-variant scale-95 active:scale-90 transition-transform" href="/vendors-management">
 <span className="material-symbols-outlined">storefront</span>
 <span className="font-label-medium">Vendors</span>
 </a>
-<a className="flex flex-col items-center justify-center text-on-surface-variant scale-95 active:scale-90 transition-transform" href="#">
+<a className="flex flex-col items-center justify-center text-on-surface-variant scale-95 active:scale-90 transition-transform" href="/global-orders-finalized">
 <span className="material-symbols-outlined">shopping_cart</span>
 <span className="font-label-medium">Orders</span>
 </a>
-<a className="flex flex-col items-center justify-center text-primary font-bold scale-95 active:scale-90 transition-transform" href="#">
+<a className="flex flex-col items-center justify-center text-primary font-bold scale-95 active:scale-90 transition-transform" href="/system-settings-profile">
 <span className="material-symbols-outlined" >settings_input_component</span>
 <span className="font-label-medium">System</span>
 </a>

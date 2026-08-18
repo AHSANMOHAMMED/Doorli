@@ -247,23 +247,23 @@ export default function OrderDetailPage() {
 </main>
 {/*  Bottom Navigation (Shared Component Shell)  */}
 <nav className="bg-surface-container dark:bg-surface-container fixed bottom-0 w-full z-50 border-t border-surface-variant dark:border-surface-variant shadow-md flex justify-around items-center h-16 w-full px-2 pb-safe md:hidden">
-<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1" href="#">
+<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1" href="/dashboard">
 <span className="material-symbols-outlined" data-icon="dashboard">dashboard</span>
 <span className="font-label-medium text-label-medium">Dashboard</span>
 </a>
-<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1" href="#">
+<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1" href="/vendors-management">
 <span className="material-symbols-outlined" data-icon="store">store</span>
 <span className="font-label-medium text-label-medium">Vendors</span>
 </a>
-<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1" href="#">
+<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1" href="/user-management">
 <span className="material-symbols-outlined" data-icon="group">group</span>
 <span className="font-label-medium text-label-medium">Users</span>
 </a>
-<a className="flex flex-col items-center justify-center bg-primary-container dark:bg-primary-container text-on-primary-container dark:text-on-primary-container rounded-xl px-3 py-1" href="#">
+<a className="flex flex-col items-center justify-center bg-primary-container dark:bg-primary-container text-on-primary-container dark:text-on-primary-container rounded-xl px-3 py-1" href="/global-orders-finalized">
 <span className="material-symbols-outlined" data-icon="shopping_cart" >shopping_cart</span>
 <span className="font-label-medium text-label-medium">Orders</span>
 </a>
-<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1" href="#">
+<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1" href="/system-settings-profile">
 <span className="material-symbols-outlined" data-icon="more_horiz">more_horiz</span>
 <span className="font-label-medium text-label-medium">More</span>
 </a>

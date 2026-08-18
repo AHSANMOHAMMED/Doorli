@@ -358,7 +358,7 @@ export default function SupportPage() {
             {resources.map((resource) => (
               <a
                 key={resource.title}
-                href="#"
+                href="/account/support"
                 className="group p-5 rounded-md border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-lg transition-all"
               >
                 <div className={`w-12 h-12 rounded-md flex items-center justify-center mb-4 ${resource.color}`}>
@@ -386,7 +386,7 @@ export default function SupportPage() {
           <p className="text-sm text-green-700 dark:text-green-400">Last updated: Just now</p>
         </div>
         <a
-          href="#"
+          href="/account/support"
           className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-green-700 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/40 rounded-md transition-colors"
         >
           Status Page

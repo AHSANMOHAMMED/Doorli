@@ -121,7 +121,7 @@ export default function UserDetailEditorialVariantPage() {
 <span className="text-on-surface-variant text-[11px] font-medium uppercase tracking-tighter">14 min ago</span>
 </div>
 <p className="text-on-surface-variant mb-2">Updated access level for user <span className="text-secondary">@j.smith</span> from 'Support' to 'Manager'</p>
-<a className="text-primary font-label-medium text-[13px] flex items-center gap-1 hover:underline" href="#">
+<a className="text-primary font-label-medium text-[13px] flex items-center gap-1 hover:underline" href="/user-management">
                         View Change <span className="material-symbols-outlined text-[16px]" data-icon="open_in_new">open_in_new</span>
 </a>
 </div>
@@ -140,7 +140,7 @@ export default function UserDetailEditorialVariantPage() {
 <span className="text-on-surface-variant text-[11px] font-medium uppercase tracking-tighter">2 hours ago</span>
 </div>
 <p className="text-on-surface-variant mb-2">Transferred <span className="text-secondary">Urban Eats Co.</span> to EU Logistics cluster for optimization.</p>
-<a className="text-primary font-label-medium text-[13px] flex items-center gap-1 hover:underline" href="#">
+<a className="text-primary font-label-medium text-[13px] flex items-center gap-1 hover:underline" href="/vendors-management">
                         View Change <span className="material-symbols-outlined text-[16px]" data-icon="open_in_new">open_in_new</span>
 </a>
 </div>
@@ -159,7 +159,7 @@ export default function UserDetailEditorialVariantPage() {
 <span className="text-on-surface-variant text-[11px] font-medium uppercase tracking-tighter">Yesterday</span>
 </div>
 <p className="text-on-surface-variant mb-2">Generated full Q3 infrastructure compliance report for stakeholder review.</p>
-<a className="text-primary font-label-medium text-[13px] flex items-center gap-1 hover:underline" href="#">
+<a className="text-primary font-label-medium text-[13px] flex items-center gap-1 hover:underline" href="/global-orders-finalized">
                         View Change <span className="material-symbols-outlined text-[16px]" data-icon="open_in_new">open_in_new</span>
 </a>
 </div>
@@ -172,10 +172,10 @@ export default function UserDetailEditorialVariantPage() {
 </main>
 {/*  Bottom Navigation (Mobile)  */}
 <nav className="fixed bottom-0 w-full z-40 bg-surface-container border-t border-surface-variant flex justify-around items-center h-16 md:hidden px-2 pb-safe">
-<a className="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1" href="#"><span className="material-symbols-outlined" data-icon="dashboard">dashboard</span><span className="text-[10px]">Home</span></a>
-<a className="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1" href="#"><span className="material-symbols-outlined" data-icon="store">store</span><span className="text-[10px]">Vendors</span></a>
-<a className="flex flex-col items-center justify-center text-primary px-3 py-1 font-bold" href="#"><span className="material-symbols-outlined" data-icon="group">group</span><span className="text-[10px]">Users</span></a>
-<a className="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1" href="#"><span className="material-symbols-outlined" data-icon="shopping_cart">shopping_cart</span><span className="text-[10px]">Orders</span></a>
+<a className="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1" href="/dashboard"><span className="material-symbols-outlined" data-icon="dashboard">dashboard</span><span className="text-[10px]">Home</span></a>
+<a className="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1" href="/vendors-management"><span className="material-symbols-outlined" data-icon="store">store</span><span className="text-[10px]">Vendors</span></a>
+<a className="flex flex-col items-center justify-center text-primary px-3 py-1 font-bold" href="/user-management"><span className="material-symbols-outlined" data-icon="group">group</span><span className="text-[10px]">Users</span></a>
+<a className="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1" href="/global-orders-finalized"><span className="material-symbols-outlined" data-icon="shopping_cart">shopping_cart</span><span className="text-[10px]">Orders</span></a>
 <button className="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1" id="mobileActions"><span className="material-symbols-outlined" data-icon="settings_suggest">settings_suggest</span><span className="text-[10px]">Admin</span></button>
 </nav>
 {/*  Admin Actions Bottom Sheet  */}

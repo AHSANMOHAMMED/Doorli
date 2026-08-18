@@ -1424,7 +1424,7 @@ export default function PurchaseDetailPage() {
                   <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase mb-1">Supplier</label>
                   <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-700 rounded">
                     <Building2 size={14} className="text-gray-400" />
-                    <Link href="#" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">{purchase.supplierName || 'Not set'}</Link>
+                    <span className="text-sm text-gray-700 dark:text-gray-200">{purchase.supplierName || 'Not set'}</span>
                   </div>
                 </div>
                 <div>
@@ -1441,7 +1441,7 @@ export default function PurchaseDetailPage() {
                   ) : (
                     <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-700 rounded">
                       <Warehouse size={14} className="text-gray-400" />
-                      <Link href="#" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">{purchase.warehouseName || 'Not set'}</Link>
+                      <span className="text-sm text-gray-700 dark:text-gray-200">{purchase.warehouseName || 'Not set'}</span>
                     </div>
                   )}
                 </div>

@@ -30,14 +30,21 @@ export default function BeautyPage() {
   const [selectedCity, setSelectedCity] = useState('all');
   const [selectedService, setSelectedService] = useState('all');
 
+  async function loadBeauty() {
+    setLoading(true);
+    setError(null);
+    try {
+      const d = await apiFetch<{ items: BeautyVendor[] } | BeautyVendor[]>('/vendors?category=beauty');
+      setVendors(Array.isArray(d) ? d : d?.items || []);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load beauty services');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
-    apiFetch<{ items: BeautyVendor[] } | BeautyVendor[]>('/vendors?category=beauty')
-      .then((d) => {
-        const items = Array.isArray(d) ? d : d?.items || [];
-        setVendors(items);
-      })
-      .catch((e) => setError(e instanceof Error ? e.message : 'Failed to load beauty services'))
-      .finally(() => setLoading(false));
+    void loadBeauty();
   }, []);
 
   const cities = [...new Set(vendors.map(v => v.city).filter(Boolean))] as string[];
@@ -115,7 +122,7 @@ export default function BeautyPage() {
         {error && (
           <div className="col-span-full py-12 text-center">
             <p className="text-red-400 mb-2">{error}</p>
-            <p className="text-xs text-surface-variant">Please try again later</p>
+            <button type="button" onClick={() => void loadBeauty()} className="doorli-cta-primary mt-3 px-4 py-2 text-sm">Try again</button>
           </div>
         )}
 

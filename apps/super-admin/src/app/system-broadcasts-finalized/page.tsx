@@ -22,6 +22,7 @@ export default function SystemBroadcastsFinalizedPage() {
   const [title, setTitle] = useState('');
   const [audience, setAudience] = useState('All Platform Users');
   const [body, setBody] = useState('');
+  const [draftSaved, setDraftSaved] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -55,7 +56,7 @@ export default function SystemBroadcastsFinalizedPage() {
     try {
       const res = await superAdminFetch('/admin/broadcasts', {
         method: 'POST',
-        body: JSON.stringify({ title, body }),
+        body: JSON.stringify({ title, body, audience }),
       });
       if (res.success) {
         alert(`Broadcast dispatched successfully to ${res.count || 'all'} users!`);
@@ -69,6 +70,12 @@ export default function SystemBroadcastsFinalizedPage() {
     } finally {
       setSending(false);
     }
+  };
+
+  const handleSaveDraft = () => {
+    localStorage.setItem('doorli-broadcast-draft', JSON.stringify({ title, audience, body }));
+    setDraftSaved(true);
+    window.setTimeout(() => setDraftSaved(false), 2500);
   };
 
   return (
@@ -95,27 +102,27 @@ export default function SystemBroadcastsFinalizedPage() {
 <span className="font-label-medium text-label-medium text-on-surface-variant">v2.4.0 • Super User</span>
 </div>
 <nav className="flex-1 space-y-1">
-<a className="flex items-center px-md py-sm text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200" href="#">
+<a className="flex items-center px-md py-sm text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200" href="/dashboard">
 <span className="material-symbols-outlined mr-md">terminal</span>
 <span className="font-body-main text-body-main">Command Center</span>
 </a>
-<a className="flex items-center px-md py-sm text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200" href="#">
+<a className="flex items-center px-md py-sm text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200" href="/erp-synchronization-logs">
 <span className="material-symbols-outlined mr-md">sync_alt</span>
 <span className="font-body-main text-body-main">ERP Integration</span>
 </a>
-<a className="flex items-center px-md py-sm text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200" href="#">
+<a className="flex items-center px-md py-sm text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200" href="/user-management">
 <span className="material-symbols-outlined mr-md">group</span>
 <span className="font-body-main text-body-main">User Management</span>
 </a>
-<a className="flex items-center px-md py-sm text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200" href="#">
+<a className="flex items-center px-md py-sm text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200" href="/system-broadcasts">
 <span className="material-symbols-outlined mr-md">campaign</span>
 <span className="font-body-main text-body-main">Broadcasts</span>
 </a>
-<a className="flex items-center px-md py-sm bg-secondary-container text-on-secondary-container font-bold rounded-lg" href="#">
+<a className="flex items-center px-md py-sm bg-secondary-container text-on-secondary-container font-bold rounded-lg" href="/system-broadcasts-finalized">
 <span className="material-symbols-outlined mr-md">settings</span>
 <span className="font-body-main text-body-main">System Tools</span>
 </a>
-<a className="flex items-center px-md py-sm text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200" href="#">
+<a className="flex items-center px-md py-sm text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200" href="mailto:support@doorli.me">
 <span className="material-symbols-outlined mr-md">help_outline</span>
 <span className="font-body-main text-body-main">Support</span>
 </a>
@@ -251,8 +258,8 @@ export default function SystemBroadcastsFinalizedPage() {
                                 </p>
 </div>
 </div>
-<button className="w-full bg-primary-container text-on-primary-fixed hover:opacity-90 active:scale-95 transition-all h-12 rounded-xl font-bold flex items-center justify-center gap-sm mt-md" onClick={() => {}}><span className="material-symbols-outlined">sync</span>
-Force ERP Sync</button>
+<a href="/erp-synchronization-logs" className="w-full bg-primary-container text-on-primary-fixed hover:opacity-90 active:scale-95 transition-all h-12 rounded-xl font-bold flex items-center justify-center gap-sm mt-md"><span className="material-symbols-outlined">sync</span>
+View ERP Sync Logs</a>
 </div>
 {/*  Broadcast Notification Composer  */}
 <div className="md:col-span-12 glass-panel p-lg rounded-xl">
@@ -282,7 +289,7 @@ Force ERP Sync</button>
 </div>
 </div>
 <div className="mt-xl flex justify-end gap-md">
-<button className="px-lg py-md border border-secondary text-secondary rounded-xl font-bold hover:bg-secondary/10 transition-colors">Save Draft</button>
+<button type="button" onClick={handleSaveDraft} className="px-lg py-md border border-secondary text-secondary rounded-xl font-bold hover:bg-secondary/10 transition-colors">{draftSaved ? 'Draft Saved' : 'Save Draft'}</button>
 <button
   className={`px-xl py-md bg-primary text-on-primary rounded-xl font-bold hover:opacity-90 shadow-lg shadow-primary/20 transition-all flex items-center gap-sm ${sending ? 'opacity-50 cursor-not-allowed' : ''}`}
   onClick={handleDispatch}
@@ -303,23 +310,23 @@ Force ERP Sync</button>
 </div>
 {/*  Mobile Bottom Navigation  */}
 <nav className="fixed bottom-0 w-full z-50 flex justify-around items-center h-16 px-2 pb-safe bg-surface-container dark:bg-surface-container border-t border-surface-variant dark:border-surface-variant shadow-md md:hidden">
-<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1 hover:bg-surface-variant dark:hover:bg-surface-variant active:scale-95 transition-transform duration-150" href="#">
+<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1 hover:bg-surface-variant dark:hover:bg-surface-variant active:scale-95 transition-transform duration-150" href="/dashboard">
 <span className="material-symbols-outlined">dashboard</span>
 <span className="font-label-medium text-label-medium">Dashboard</span>
 </a>
-<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1 hover:bg-surface-variant dark:hover:bg-surface-variant active:scale-95 transition-transform duration-150" href="#">
+<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1 hover:bg-surface-variant dark:hover:bg-surface-variant active:scale-95 transition-transform duration-150" href="/vendors-management">
 <span className="material-symbols-outlined">store</span>
 <span className="font-label-medium text-label-medium">Vendors</span>
 </a>
-<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1 hover:bg-surface-variant dark:hover:bg-surface-variant active:scale-95 transition-transform duration-150" href="#">
+<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1 hover:bg-surface-variant dark:hover:bg-surface-variant active:scale-95 transition-transform duration-150" href="/user-management">
 <span className="material-symbols-outlined">group</span>
 <span className="font-label-medium text-label-medium">Users</span>
 </a>
-<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1 hover:bg-surface-variant dark:hover:bg-surface-variant active:scale-95 transition-transform duration-150" href="#">
+<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1 hover:bg-surface-variant dark:hover:bg-surface-variant active:scale-95 transition-transform duration-150" href="/global-orders-finalized">
 <span className="material-symbols-outlined">shopping_cart</span>
 <span className="font-label-medium text-label-medium">Orders</span>
 </a>
-<a className="flex flex-col items-center justify-center bg-primary-container dark:bg-primary-container text-on-primary-container dark:text-on-primary-container rounded-xl px-3 py-1 active:scale-95 transition-transform duration-150" href="#">
+<a className="flex flex-col items-center justify-center bg-primary-container dark:bg-primary-container text-on-primary-container dark:text-on-primary-container rounded-xl px-3 py-1 active:scale-95 transition-transform duration-150" href="/system-settings-profile">
 <span className="material-symbols-outlined">more_horiz</span>
 <span className="font-label-medium text-label-medium">More</span>
 </a>

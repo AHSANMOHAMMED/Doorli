@@ -97,6 +97,39 @@ android {
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
     }
+    flavorDimensions "role"
+    productFlavors {
+        customer {
+            dimension "role"
+            applicationId "app.doorli.customer"
+            resValue "string", "app_name", "Doorli Customer"
+        }
+        vendor {
+            dimension "role"
+            applicationId "app.doorli.vendor"
+            resValue "string", "app_name", "Doorli Vendor"
+        }
+        driver {
+            dimension "role"
+            applicationId "app.doorli.driver"
+            resValue "string", "app_name", "Doorli Driver"
+        }
+        admin {
+            dimension "role"
+            applicationId "app.doorli.admin"
+            resValue "string", "app_name", "Doorli Admin"
+        }
+        superAdmin {
+            dimension "role"
+            applicationId "app.doorli.superadmin"
+            resValue "string", "app_name", "Doorli Super Admin"
+        }
+        cashier {
+            dimension "role"
+            applicationId "app.doorli.cashier"
+            resValue "string", "app_name", "Doorli Cashier"
+        }
+    }
     signingConfigs {
         debug {
             storeFile file('debug.keystore')

@@ -24,9 +24,10 @@ WebBrowser.maybeCompleteAuthSession();
 
 type AuthTab = 'password' | 'otp';
 type AuthMode = 'signin' | 'signup';
-type Role = 'customer' | 'vendor' | 'driver' | 'admin';
+type Role = 'customer' | 'vendor' | 'driver' | 'admin' | 'super_admin';
 
 import { DoorliColors, DoorliGlass } from '../../constants/colors';
+import { MOBILE_APP_HOME, MOBILE_APP_ROLE, MOBILE_AUTH_ROLE } from '../../role-config';
 
 const PRIMARY = DoorliColors.primary;
 const PRIMARY_CONTAINER = DoorliColors.sky;
@@ -50,7 +51,7 @@ export default function LoginScreen() {
   const [mode, setMode] = useState<AuthMode>('signin');
   const [identifier, setIdentifier] = useState('customer@doorli.test');
   const [password, setPassword] = useState('Doorli123!');
-  const [expectedRole, setExpectedRole] = useState<Role>('customer');
+  const [expectedRole, setExpectedRole] = useState<Role>(MOBILE_AUTH_ROLE as Role);
   const [businessKey, setBusinessKey] = useState('Corner Grocery');
   const [businessName, setBusinessName] = useState('');
   const [category, setCategory] = useState('grocery');
@@ -58,14 +59,14 @@ export default function LoginScreen() {
   const [otpSent, setOtpSent] = useState(false);
   const [code, setCode] = useState('');
   const [fullName, setFullName] = useState('');
-  const [role, setRole] = useState<Role>('customer');
+  const [role, setRole] = useState<Role>(MOBILE_AUTH_ROLE as Role);
   const [loading, setLoading] = useState(false);
 
   const AUTH_URL = process.env.EXPO_PUBLIC_AUTH_URL ?? 'http://localhost:4001';
 
   function goHome(role?: string) {
     const r = role || useAuthStore.getState().user?.role || 'customer';
-    router.replace(homeForRole(r) as any);
+    router.replace((MOBILE_APP_ROLE === 'cashier' ? MOBILE_APP_HOME.cashier : homeForRole(r)) as any);
   }
 
   async function handleGoogleLogin() {
@@ -248,17 +249,11 @@ export default function LoginScreen() {
               setMode,
             )}
 
-            <Text style={styles.label}>Continue as</Text>
-            {renderSegmentedControl(
-              [
-                { label: 'Customer', value: 'customer' },
-                { label: 'Vendor', value: 'vendor' },
-                { label: 'Driver', value: 'driver' },
-                { label: 'Admin', value: 'admin' },
-              ],
-              expectedRole,
-              setExpectedRole,
-            )}
+            <Text style={styles.label}>Application</Text>
+            <View style={styles.lockedRole}>
+              <Text style={styles.lockedRoleText}>{MOBILE_APP_ROLE.replace('_', ' ')} app</Text>
+              <Text style={styles.lockedRoleHint}>This build is locked to this role.</Text>
+            </View>
 
             {mode === 'signup' && (
               <>
@@ -398,6 +393,24 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     color: ON_SURFACE_VARIANT,
     marginBottom: 16,
+  },
+  lockedRole: {
+    backgroundColor: '#e2e8f0',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    marginBottom: 24,
+  },
+  lockedRoleText: {
+    color: '#0f172a',
+    fontSize: 15,
+    fontWeight: '700',
+    textTransform: 'capitalize',
+  },
+  lockedRoleHint: {
+    color: '#64748b',
+    fontSize: 12,
+    marginTop: 3,
   },
   segmentContainer: {
     flexDirection: 'row',

@@ -29,14 +29,22 @@ export default function HallsPage() {
   const [selectedCity, setSelectedCity] = useState('all');
   const [eventType, setEventType] = useState('all');
 
+  async function loadHalls() {
+    setLoading(true);
+    setError(null);
+    try {
+      const d = await apiFetch<{ items: HallVendor[] } | HallVendor[]>('/vendors?category=hall');
+      const items = Array.isArray(d) ? d : d?.items || [];
+      setHalls(items);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load halls');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
-    apiFetch<{ items: HallVendor[] } | HallVendor[]>('/vendors?category=hall')
-      .then((d) => {
-        const items = Array.isArray(d) ? d : d?.items || [];
-        setHalls(items);
-      })
-      .catch((e) => setError(e instanceof Error ? e.message : 'Failed to load halls'))
-      .finally(() => setLoading(false));
+    void loadHalls();
   }, []);
 
   const cities = [...new Set(halls.map(h => h.city).filter(Boolean))] as string[];
@@ -117,7 +125,7 @@ export default function HallsPage() {
         {error && (
           <div className="col-span-full py-12 text-center">
             <p className="text-red-400 mb-2">{error}</p>
-            <p className="text-xs text-surface-variant">Please try again later</p>
+            <button type="button" onClick={() => void loadHalls()} className="doorli-cta-primary mt-3 px-4 py-2 text-sm">Try again</button>
           </div>
         )}
 

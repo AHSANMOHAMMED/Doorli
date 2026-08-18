@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { superAdminFetch } from '@/lib/api';
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [stats, setStats] = useState({
     totalVendors: 0,
     pendingKyc: 0,
@@ -68,7 +70,7 @@ export default function DashboardPage() {
 <div className="bg-surface-container border border-surface-variant rounded-xl p-6 mb-8">
 <div className="flex items-center justify-between mb-6">
 <h3 className="font-section-header text-section-header text-on-surface">Critical Alerts</h3>
-<button className="text-label-medium font-label-medium text-primary hover:underline">View All</button>
+<button type="button" onClick={() => router.push('/global-system-status')} className="text-label-medium font-label-medium text-primary hover:underline">View All</button>
 </div>
 <div className="space-y-4">
 {/*  Alert 1  */}
@@ -81,7 +83,7 @@ export default function DashboardPage() {
 </div>
 <p className="text-caption font-caption text-on-surface-variant mt-1">Global latency exceeded 500ms in region US-EAST-1. Investigate scaling groups.</p>
 <span className="text-[10px] font-caption text-outline mt-2 block">2 mins ago</span>
-<div className="flex justify-end mt-2"><button className="px-3 py-1 text-caption font-label-medium border border-secondary text-secondary rounded-xl hover:bg-secondary/10 transition-colors">Resolve</button></div></div>
+<div className="flex justify-end mt-2"><a href="/global-system-status" className="px-3 py-1 text-caption font-label-medium border border-secondary text-secondary rounded-xl hover:bg-secondary/10 transition-colors">Review</a></div></div>
 </div>
 {/*  Alert 2  */}
 <div className="flex items-start gap-4 p-4 rounded-lg bg-surface-container-low border-l-4 border-primary">
@@ -93,7 +95,7 @@ export default function DashboardPage() {
 </div>
 <p className="text-caption font-caption text-on-surface-variant mt-1">Stripe webhooks reporting 4% failure rate for Vendor ID #8821.</p>
 <span className="text-[10px] font-caption text-outline mt-2 block">14 mins ago</span>
-<div className="flex justify-end mt-2"><button className="px-3 py-1 text-caption font-label-medium border border-secondary text-secondary rounded-xl hover:bg-secondary/10 transition-colors">Resolve</button></div></div>
+<div className="flex justify-end mt-2"><a href="/global-system-status" className="px-3 py-1 text-caption font-label-medium border border-secondary text-secondary rounded-xl hover:bg-secondary/10 transition-colors">Review</a></div></div>
 </div>
 {/*  Alert 3  */}
 <div className="flex items-start gap-4 p-4 rounded-lg bg-surface-container-low border-l-4 border-secondary">
@@ -105,7 +107,7 @@ export default function DashboardPage() {
 </div>
 <p className="text-caption font-caption text-on-surface-variant mt-1">Auth tokens revoked for 450 users in London. Possible credential rotation event.</p>
 <span className="text-[10px] font-caption text-outline mt-2 block">45 mins ago</span>
-<div className="flex justify-end mt-2"><button className="px-3 py-1 text-caption font-label-medium border border-secondary text-secondary rounded-xl hover:bg-secondary/10 transition-colors">Resolve</button></div></div>
+<div className="flex justify-end mt-2"><a href="/global-system-status" className="px-3 py-1 text-caption font-label-medium border border-secondary text-secondary rounded-xl hover:bg-secondary/10 transition-colors">Review</a></div></div>
 </div>
 </div>
 </div><div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -211,19 +213,19 @@ export default function DashboardPage() {
 <div className="bg-surface-container border border-surface-variant rounded-xl p-6">
 <h3 className="font-section-header text-section-header text-on-surface mb-6">Quick Actions</h3>
 <div className="grid grid-cols-2 gap-3">
-<button className="flex flex-col items-center justify-center p-4 rounded-xl bg-surface-container-high border border-surface-variant hover:bg-primary/10 hover:border-primary transition-all group">
+<button type="button" onClick={() => router.push('/system-broadcasts-finalized')} className="flex flex-col items-center justify-center p-4 rounded-xl bg-surface-container-high border border-surface-variant hover:bg-primary/10 hover:border-primary transition-all group">
 <span className="material-symbols-outlined text-primary mb-2 group-hover:scale-110 transition-transform">campaign</span>
 <span className="text-label-medium font-label-medium text-on-surface">Broadcast</span>
 </button>
-<button className="flex flex-col items-center justify-center p-4 rounded-xl bg-surface-container-high border border-surface-variant hover:bg-secondary/10 hover:border-secondary transition-all group">
+<button type="button" onClick={() => router.push('/vendors-management')} className="flex flex-col items-center justify-center p-4 rounded-xl bg-surface-container-high border border-surface-variant hover:bg-secondary/10 hover:border-secondary transition-all group">
 <span className="material-symbols-outlined text-secondary mb-2 group-hover:scale-110 transition-transform">storefront</span>
 <span className="text-label-medium font-label-medium text-on-surface">Add Vendor</span>
 </button>
-<button className="flex flex-col items-center justify-center p-4 rounded-xl bg-surface-container-high border border-surface-variant hover:bg-tertiary/10 hover:border-tertiary transition-all group">
+<button type="button" onClick={() => router.push('/user-management-visual-variant')} className="flex flex-col items-center justify-center p-4 rounded-xl bg-surface-container-high border border-surface-variant hover:bg-tertiary/10 hover:border-tertiary transition-all group">
 <span className="material-symbols-outlined text-tertiary mb-2 group-hover:scale-110 transition-transform">person_add</span>
 <span className="text-label-medium font-label-medium text-on-surface">New User</span>
 </button>
-<button className="flex flex-col items-center justify-center p-4 rounded-xl bg-surface-container-high border border-surface-variant hover:bg-error/10 hover:border-error transition-all group">
+<button type="button" onClick={() => router.push('/global-system-status')} className="flex flex-col items-center justify-center p-4 rounded-xl bg-surface-container-high border border-surface-variant hover:bg-error/10 hover:border-error transition-all group">
 <span className="material-symbols-outlined text-error mb-2 group-hover:scale-110 transition-transform">health_metrics</span>
 <span className="text-label-medium font-label-medium text-on-surface">Health</span>
 </button>
@@ -248,33 +250,33 @@ export default function DashboardPage() {
 {/*  Bottom Navigation Bar  */}
 <nav className="fixed bottom-0 w-full z-50 bg-surface-container dark:bg-surface-container border-t border-surface-variant dark:border-surface-variant shadow-md h-16 px-2 pb-safe flex justify-around items-center">
 {/*  Dashboard (Active)  */}
-<a className="flex flex-col items-center justify-center bg-primary-container dark:bg-primary-container text-on-primary-container dark:text-on-primary-container rounded-xl px-3 py-1 active:scale-95 transition-transform duration-150 text-primary" href="#">
+<a className="flex flex-col items-center justify-center bg-primary-container dark:bg-primary-container text-on-primary-container dark:text-on-primary-container rounded-xl px-3 py-1 active:scale-95 transition-transform duration-150 text-primary" href="/dashboard">
 <span className="material-symbols-outlined" >dashboard</span>
 <span className="font-label-medium text-label-medium">Dashboard</span>
 </a>
 {/*  Vendors  */}
-<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1 hover:bg-surface-variant dark:hover:bg-surface-variant active:scale-95 transition-transform duration-150 rounded-xl" href="#">
+<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1 hover:bg-surface-variant dark:hover:bg-surface-variant active:scale-95 transition-transform duration-150 rounded-xl" href="/vendors-management">
 <span className="material-symbols-outlined">store</span>
 <span className="font-label-medium text-label-medium">Vendors</span>
 </a>
 {/*  Users  */}
-<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1 hover:bg-surface-variant dark:hover:bg-surface-variant active:scale-95 transition-transform duration-150 rounded-xl" href="#">
+<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1 hover:bg-surface-variant dark:hover:bg-surface-variant active:scale-95 transition-transform duration-150 rounded-xl" href="/user-management-visual-variant">
 <span className="material-symbols-outlined">group</span>
 <span className="font-label-medium text-label-medium">Users</span>
 </a>
 {/*  Orders  */}
-<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1 hover:bg-surface-variant dark:hover:bg-surface-variant active:scale-95 transition-transform duration-150 rounded-xl" href="#">
+<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1 hover:bg-surface-variant dark:hover:bg-surface-variant active:scale-95 transition-transform duration-150 rounded-xl" href="/order-detail">
 <span className="material-symbols-outlined">shopping_cart</span>
 <span className="font-label-medium text-label-medium">Orders</span>
 </a>
 {/*  More  */}
-<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1 hover:bg-surface-variant dark:hover:bg-surface-variant active:scale-95 transition-transform duration-150 rounded-xl" href="#">
+<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1 hover:bg-surface-variant dark:hover:bg-surface-variant active:scale-95 transition-transform duration-150 rounded-xl" href="/system-settings-profile">
 <span className="material-symbols-outlined">more_horiz</span>
 <span className="font-label-medium text-label-medium">More</span>
 </a>
 </nav>
 {/*  FAB for Global Broadcast (Contextual to Dashboard)  */}
-<button className="fixed right-6 bottom-20 w-14 h-14 bg-primary text-on-primary rounded-2xl shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-40 shadow-lg shadow-primary/30">
+<button type="button" aria-label="Create broadcast" onClick={() => router.push('/system-broadcasts-finalized')} className="fixed right-6 bottom-20 w-14 h-14 bg-primary text-on-primary rounded-2xl shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-40 shadow-lg shadow-primary/30">
 <span className="material-symbols-outlined text-[28px]">add</span>
 </button>
 

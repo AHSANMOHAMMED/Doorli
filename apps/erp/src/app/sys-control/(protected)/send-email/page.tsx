@@ -97,7 +97,7 @@ function getTemplateContent(template: string): { subject: string; html: string; 
       </table>
     </div>
     <div style="text-align: center; margin-bottom: 28px;">
-      <a href="#" style="display: inline-block; background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); color: #ffffff; font-size: 15px; font-weight: 600; padding: 14px 36px; border-radius: 10px; text-decoration: none;">Accept Invitation</a>
+      <a href="/c/test-company/login" style="display: inline-block; background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); color: #ffffff; font-size: 15px; font-weight: 600; padding: 14px 36px; border-radius: 10px; text-decoration: none;">Accept Invitation</a>
     </div>
     <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px; text-align: center;">
       <p style="color: #991b1b; font-size: 13px; margin: 0; font-weight: 600;">TEST EMAIL - This is not a real invitation</p>

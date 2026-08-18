@@ -47,23 +47,23 @@ export default function RegionalSecurityAuditsPage() {
 <h2 className="font-section-header text-section-header text-on-surface">Command Center</h2>
 </div>
 <nav className="flex-1 space-y-1">
-<a className="flex items-center gap-md px-md py-sm mx-2 my-1 text-on-surface-variant hover:text-on-surface hover:bg-surface-variant transition-all duration-200 ease-in-out font-label-medium text-label-medium" href="#">
+<a className="flex items-center gap-md px-md py-sm mx-2 my-1 text-on-surface-variant hover:text-on-surface hover:bg-surface-variant transition-all duration-200 ease-in-out font-label-medium text-label-medium" href="/dashboard">
 <span className="material-symbols-outlined" data-icon="dashboard">dashboard</span>
 <span>Dashboard</span>
 </a>
-<a className="flex items-center gap-md px-md py-sm mx-2 my-1 bg-secondary-container text-on-secondary-container rounded-lg font-label-medium text-label-medium transition-all duration-200 ease-in-out" href="#">
+<a className="flex items-center gap-md px-md py-sm mx-2 my-1 bg-secondary-container text-on-secondary-container rounded-lg font-label-medium text-label-medium transition-all duration-200 ease-in-out" href="/regional-security-audits">
 <span className="material-symbols-outlined" data-icon="verified_user">verified_user</span>
 <span>Security Audits</span>
 </a>
-<a className="flex items-center gap-md px-md py-sm mx-2 my-1 text-on-surface-variant hover:text-on-surface hover:bg-surface-variant transition-all duration-200 ease-in-out font-label-medium text-label-medium" href="#">
+<a className="flex items-center gap-md px-md py-sm mx-2 my-1 text-on-surface-variant hover:text-on-surface hover:bg-surface-variant transition-all duration-200 ease-in-out font-label-medium text-label-medium" href="/global-orders-finalized">
 <span className="material-symbols-outlined" data-icon="public">public</span>
 <span>Regional Map</span>
 </a>
-<a className="flex items-center gap-md px-md py-sm mx-2 my-1 text-on-surface-variant hover:text-on-surface hover:bg-surface-variant transition-all duration-200 ease-in-out font-label-medium text-label-medium" href="#">
+<a className="flex items-center gap-md px-md py-sm mx-2 my-1 text-on-surface-variant hover:text-on-surface hover:bg-surface-variant transition-all duration-200 ease-in-out font-label-medium text-label-medium" href="/system-health-matrix">
 <span className="material-symbols-outlined" data-icon="terminal">terminal</span>
 <span>System Logs</span>
 </a>
-<a className="flex items-center gap-md px-md py-sm mx-2 my-1 text-on-surface-variant hover:text-on-surface hover:bg-surface-variant transition-all duration-200 ease-in-out font-label-medium text-label-medium" href="#">
+<a className="flex items-center gap-md px-md py-sm mx-2 my-1 text-on-surface-variant hover:text-on-surface hover:bg-surface-variant transition-all duration-200 ease-in-out font-label-medium text-label-medium" href="/system-settings-profile">
 <span className="material-symbols-outlined" data-icon="settings">settings</span>
 <span>Settings</span>
 </a>

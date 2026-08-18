@@ -50,22 +50,22 @@ export default function GlobalOrdersFinalizedPage() {
 </div>
 </div>
 <nav className="flex-1 space-y-1">
-<a className="flex items-center px-md py-sm text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200 font-body-main" href="#">
+<a className="flex items-center px-md py-sm text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200 font-body-main" href="/dashboard">
 <span className="material-symbols-outlined mr-md">terminal</span> Command Center
                 </a>
-<a className="flex items-center px-md py-sm text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200 font-body-main" href="#">
+<a className="flex items-center px-md py-sm text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200 font-body-main" href="/vendors-management">
 <span className="material-symbols-outlined mr-md">sync_alt</span> ERP Integration
                 </a>
-<a className="flex items-center px-md py-sm text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200 font-body-main" href="#">
+<a className="flex items-center px-md py-sm text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200 font-body-main" href="/user-management">
 <span className="material-symbols-outlined mr-md">group</span> User Management
                 </a>
-<a className="flex items-center px-md py-sm bg-secondary-container dark:bg-secondary-container text-on-secondary-container dark:text-on-secondary-container font-bold rounded-lg transition-all duration-200 font-body-main" href="#">
+<a className="flex items-center px-md py-sm bg-secondary-container dark:bg-secondary-container text-on-secondary-container dark:text-on-secondary-container font-bold rounded-lg transition-all duration-200 font-body-main" href="/global-orders-finalized">
 <span className="material-symbols-outlined mr-md">receipt_long</span> Orders Feed
                 </a>
-<a className="flex items-center px-md py-sm text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200 font-body-main" href="#">
+<a className="flex items-center px-md py-sm text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200 font-body-main" href="/erp-synchronization-logs">
 <span className="material-symbols-outlined mr-md">campaign</span> Broadcasts
                 </a>
-<a className="flex items-center px-md py-sm text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200 font-body-main" href="#">
+<a className="flex items-center px-md py-sm text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200 font-body-main" href="/system-settings-profile">
 <span className="material-symbols-outlined mr-md">help_outline</span> Support
                 </a>
 </nav>
@@ -226,23 +226,23 @@ export default function GlobalOrdersFinalizedPage() {
 </div>
 {/*  BottomNavBar Shell (Mobile Only)  */}
 <nav className="md:hidden bg-surface-container dark:bg-surface-container font-label-medium text-label-medium fixed bottom-0 w-full z-50 border-t border-surface-variant dark:border-surface-variant shadow-md flex justify-around items-center h-16 w-full px-2 pb-safe">
-<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1 hover:bg-surface-variant dark:hover:bg-surface-variant active:scale-95 transition-transform duration-150" href="#">
+<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1 hover:bg-surface-variant dark:hover:bg-surface-variant active:scale-95 transition-transform duration-150" href="/dashboard">
 <span className="material-symbols-outlined">dashboard</span>
 <span>Dashboard</span>
 </a>
-<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1 hover:bg-surface-variant dark:hover:bg-surface-variant active:scale-95 transition-transform duration-150" href="#">
+<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1 hover:bg-surface-variant dark:hover:bg-surface-variant active:scale-95 transition-transform duration-150" href="/vendors-management">
 <span className="material-symbols-outlined">store</span>
 <span>Vendors</span>
 </a>
-<a className="flex flex-col items-center justify-center bg-primary-container dark:bg-primary-container text-on-primary-container dark:text-on-primary-container rounded-xl px-3 py-1 active:scale-95 transition-transform duration-150" href="#">
+<a className="flex flex-col items-center justify-center bg-primary-container dark:bg-primary-container text-on-primary-container dark:text-on-primary-container rounded-xl px-3 py-1 active:scale-95 transition-transform duration-150" href="/global-orders-finalized">
 <span className="material-symbols-outlined">group</span>
 <span>Users</span>
 </a>
-<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1 hover:bg-surface-variant dark:hover:bg-surface-variant active:scale-95 transition-transform duration-150" href="#">
+<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1 hover:bg-surface-variant dark:hover:bg-surface-variant active:scale-95 transition-transform duration-150" href="/system-health-matrix">
 <span className="material-symbols-outlined">shopping_cart</span>
 <span>Orders</span>
 </a>
-<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1 hover:bg-surface-variant dark:hover:bg-surface-variant active:scale-95 transition-transform duration-150" href="#">
+<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1 hover:bg-surface-variant dark:hover:bg-surface-variant active:scale-95 transition-transform duration-150" href="/system-settings-profile">
 <span className="material-symbols-outlined">more_horiz</span>
 <span>More</span>
 </a>

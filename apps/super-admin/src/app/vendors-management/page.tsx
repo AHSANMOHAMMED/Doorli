@@ -42,23 +42,23 @@ export default function VendorsManagementPage() {
 <span className="font-screen-title text-primary tracking-tight">Doorli Admin</span>
 </div>
 <nav className="flex-1 py-4 px-3 space-y-1">
-<a className="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-xl transition-colors" href="#">
+<a className="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-xl transition-colors" href="/dashboard">
 <span className="material-symbols-outlined">dashboard</span>
 <span className="font-label-medium text-label-medium">Dashboard</span>
 </a>
-<a className="flex items-center gap-3 px-4 py-3 bg-primary-container text-on-primary-container rounded-xl transition-colors" href="#">
+<a className="flex items-center gap-3 px-4 py-3 bg-primary-container text-on-primary-container rounded-xl transition-colors" href="/vendors-management">
 <span className="material-symbols-outlined">store</span>
 <span className="font-label-medium text-label-medium">Vendors</span>
 </a>
-<a className="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-xl transition-colors" href="#">
+<a className="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-xl transition-colors" href="/user-management">
 <span className="material-symbols-outlined">group</span>
 <span className="font-label-medium text-label-medium">Users</span>
 </a>
-<a className="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-xl transition-colors" href="#">
+<a className="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-xl transition-colors" href="/global-orders-finalized">
 <span className="material-symbols-outlined">shopping_cart</span>
 <span className="font-label-medium text-label-medium">Orders</span>
 </a>
-<a className="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-xl transition-colors" href="#">
+<a className="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-xl transition-colors" href="/system-settings-profile">
 <span className="material-symbols-outlined">more_horiz</span>
 <span className="font-label-medium text-label-medium">More</span>
 </a>
@@ -176,7 +176,7 @@ export default function VendorsManagementPage() {
 <span className="material-symbols-outlined text-3xl">add</span>
 </button>
 {/*  Bottom Nav Bar (Mobile Only)  */}
-<nav className="md:hidden fixed bottom-0 w-full h-16 bg-surface-container border-t border-surface-variant flex justify-around items-center px-2 pb-safe z-50"><a className="flex flex-col items-center justify-center text-on-secondary-container px-3 py-1" href="#"><span className="material-symbols-outlined">dashboard</span><span className="font-label-medium text-label-medium">Dashboard</span></a><a className="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-3 py-1" href="#"><span className="material-symbols-outlined">store</span><span className="font-label-medium text-label-medium">Vendors</span></a><a className="flex flex-col items-center justify-center text-on-secondary-container px-3 py-1" href="#"><span className="material-symbols-outlined">group</span><span className="font-label-medium text-label-medium">Users</span></a><a className="flex flex-col items-center justify-center text-on-secondary-container px-3 py-1" href="#"><span className="material-symbols-outlined">shopping_cart</span><span className="font-label-medium text-label-medium">Orders</span></a><a className="flex flex-col items-center justify-center text-on-secondary-container px-3 py-1" href="#"><span className="material-symbols-outlined">more_horiz</span><span className="font-label-medium text-label-medium">More</span></a></nav>
+<nav className="md:hidden fixed bottom-0 w-full h-16 bg-surface-container border-t border-surface-variant flex justify-around items-center px-2 pb-safe z-50"><a className="flex flex-col items-center justify-center text-on-secondary-container px-3 py-1" href="/dashboard"><span className="material-symbols-outlined">dashboard</span><span className="font-label-medium text-label-medium">Dashboard</span></a><a className="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-3 py-1" href="/vendors-management"><span className="material-symbols-outlined">store</span><span className="font-label-medium text-label-medium">Vendors</span></a><a className="flex flex-col items-center justify-center text-on-secondary-container px-3 py-1" href="/user-management"><span className="material-symbols-outlined">group</span><span className="font-label-medium text-label-medium">Users</span></a><a className="flex flex-col items-center justify-center text-on-secondary-container px-3 py-1" href="/global-orders-finalized"><span className="material-symbols-outlined">shopping_cart</span><span className="font-label-medium text-label-medium">Orders</span></a><a className="flex flex-col items-center justify-center text-on-secondary-container px-3 py-1" href="/system-settings-profile"><span className="material-symbols-outlined">more_horiz</span><span className="font-label-medium text-label-medium">More</span></a></nav>
 
 
 

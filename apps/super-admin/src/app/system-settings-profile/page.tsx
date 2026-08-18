@@ -52,35 +52,35 @@ export default function SystemSettingsProfilePage() {
 </div>
 </div>
 <nav className="flex-1 space-y-1">
-<a className="flex items-center space-x-3 p-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors" href="#">
+<a className="flex items-center space-x-3 p-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors" href="/dashboard">
 <span className="material-symbols-outlined">terminal</span>
 <span className="font-body-main text-body-main">Command Center</span>
 </a>
-<a className="flex items-center space-x-3 p-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors" href="#">
+<a className="flex items-center space-x-3 p-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors" href="/erp-synchronization-logs">
 <span className="material-symbols-outlined">sync_alt</span>
 <span className="font-body-main text-body-main">ERP Integration</span>
 </a>
-<a className="flex items-center space-x-3 p-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors" href="#">
+<a className="flex items-center space-x-3 p-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors" href="/user-management">
 <span className="material-symbols-outlined">group</span>
 <span className="font-body-main text-body-main">User Management</span>
 </a>
-<a className="flex items-center space-x-3 p-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors" href="#">
+<a className="flex items-center space-x-3 p-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors" href="/system-broadcasts">
 <span className="material-symbols-outlined">campaign</span>
 <span className="font-body-main text-body-main">Broadcasts</span>
 </a>
-<a className="flex items-center space-x-3 p-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors" href="#">
+<a className="flex items-center space-x-3 p-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors" href="/erp-synchronization-logs">
 <span className="material-symbols-outlined">terminal</span>
 <span className="font-body-main text-body-main">System Logs</span>
 </a>
 {/*  Active State  */}
-<a className="flex items-center space-x-3 p-3 bg-secondary-container text-on-secondary-container font-bold rounded-lg shadow-sm" href="#">
+<a className="flex items-center space-x-3 p-3 bg-secondary-container text-on-secondary-container font-bold rounded-lg shadow-sm" href="/system-settings-profile">
 <span className="material-symbols-outlined">settings</span>
 <span className="font-body-main text-body-main">System Settings</span>
 </a>
 </nav>
 <div className="pt-sm border-t border-outline-variant">
 <div className="px-3 py-2 text-on-surface-variant font-caption text-caption uppercase tracking-wider">v{config?.version ?? '2.4.0'}</div>
-<a className="flex items-center space-x-3 p-3 text-error hover:bg-error-container/20 rounded-lg transition-colors" href="#">
+<a className="flex items-center space-x-3 p-3 text-error hover:bg-error-container/20 rounded-lg transition-colors" href="/super-admin/login">
 <span className="material-symbols-outlined">logout</span>
 <span className="font-body-main text-body-main">Sign Out</span>
 </a>
@@ -182,7 +182,7 @@ export default function SystemSettingsProfilePage() {
 <h2 className="font-section-header text-section-header text-primary flex items-center">
 <span className="material-symbols-outlined mr-sm">key</span> API Infrastructure
                                 </h2>
-<button className="px-sm py-1 bg-secondary-container text-on-secondary-container font-label-medium text-label-medium rounded-lg hover:brightness-110 transition-all">
+<button type="button" disabled={generating} onClick={() => void handleGenerateKey()} className="px-sm py-1 bg-secondary-container text-on-secondary-container font-label-medium text-label-medium rounded-lg hover:brightness-110 transition-all disabled:opacity-60">
                                     + Generate New Key
                                 </button>
 </div>
@@ -205,7 +205,7 @@ export default function SystemSettingsProfilePage() {
   ))}
 
 </div>
-<a className="mt-md block text-center font-label-medium text-label-medium text-secondary hover:underline underline-offset-4" href="#">
+<a className="mt-md block text-center font-label-medium text-label-medium text-secondary hover:underline underline-offset-4" href="/erp-synchronization-logs">
                                 View Full API Documentation <span className="material-symbols-outlined align-middle text-sm">open_in_new</span>
 </a>
 </div>
@@ -238,19 +238,19 @@ export default function SystemSettingsProfilePage() {
 <h3 className="font-section-header text-section-header">Resources</h3>
 </div>
 <div className="flex flex-col">
-<a className="p-md flex items-center justify-between hover:bg-surface-container-high transition-colors" href="#">
+<a className="p-md flex items-center justify-between hover:bg-surface-container-high transition-colors" href="/system-settings-profile">
 <span className="font-body-main text-body-main flex items-center">
 <span className="material-symbols-outlined mr-sm text-secondary">description</span> Documentation
                                     </span>
 <span className="material-symbols-outlined text-on-surface-variant">chevron_right</span>
 </a>
-<a className="p-md flex items-center justify-between hover:bg-surface-container-high border-t border-outline-variant transition-colors" href="#">
+<a className="p-md flex items-center justify-between hover:bg-surface-container-high border-t border-outline-variant transition-colors" href="mailto:support@doorli.me">
 <span className="font-body-main text-body-main flex items-center">
 <span className="material-symbols-outlined mr-sm text-secondary">support_agent</span> Technical Support
                                     </span>
 <span className="material-symbols-outlined text-on-surface-variant">chevron_right</span>
 </a>
-<a className="p-md flex items-center justify-between hover:bg-surface-container-high border-t border-outline-variant transition-colors" href="#">
+<a className="p-md flex items-center justify-between hover:bg-surface-container-high border-t border-outline-variant transition-colors" href="/system-broadcasts">
 <span className="font-body-main text-body-main flex items-center">
 <span className="material-symbols-outlined mr-sm text-secondary">history_edu</span> Change Log
                                     </span>
@@ -274,8 +274,8 @@ export default function SystemSettingsProfilePage() {
 <span className="font-label-medium text-label-medium text-on-surface">{config?.lastUpdated ?? 'Oct 24, 2023'}</span>
 </div>
 <div className="pt-sm space-x-md">
-<a className="font-caption text-caption text-secondary hover:underline" href="#">Privacy Policy</a>
-<a className="font-caption text-caption text-secondary hover:underline" href="#">Terms of Use</a>
+<a className="font-caption text-caption text-secondary hover:underline" href="/privacy">Privacy Policy</a>
+<a className="font-caption text-caption text-secondary hover:underline" href="/terms">Terms of Use</a>
 </div>
 </div>
 </div>
@@ -283,7 +283,7 @@ export default function SystemSettingsProfilePage() {
 </div>
 {/*  Footer Sign Out (Mobile and Desktop)  */}
 <div className="mt-xl flex flex-col items-center justify-center space-y-md">
-<button className="group flex items-center space-x-3 px-xl py-md bg-on-error-container text-on-error border border-error/30 rounded-xl hover:bg-error-container transition-all scale-100 active:scale-95 shadow-lg" onClick={() => {}}>
+<button type="button" className="group flex items-center space-x-3 px-xl py-md bg-on-error-container text-on-error border border-error/30 rounded-xl hover:bg-error-container transition-all scale-100 active:scale-95 shadow-lg" onClick={() => { localStorage.removeItem('doorli_superadmin_token'); window.location.href = '/super-admin/login'; }}>
 <span className="material-symbols-outlined group-hover:rotate-180 transition-transform">logout</span>
 <span className="font-section-header text-section-header">Sign Out of Session</span>
 </button>
@@ -295,23 +295,23 @@ export default function SystemSettingsProfilePage() {
 </div>
 {/*  Bottom Navigation Bar (Mobile only)  */}
 <nav className="md:hidden fixed bottom-0 left-0 w-full flex justify-around items-center py-2 bg-surface-container border-t border-outline-variant shadow-lg z-50">
-<a className="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1 transition-transform scale-95 active:scale-90" href="#">
+<a className="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1 transition-transform scale-95 active:scale-90" href="/dashboard">
 <span className="material-symbols-outlined">dashboard</span>
 <span className="font-label-medium text-label-medium">Command</span>
 </a>
-<a className="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1 transition-transform scale-95 active:scale-90" href="#">
+<a className="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1 transition-transform scale-95 active:scale-90" href="/vendors-management">
 <span className="material-symbols-outlined">storefront</span>
 <span className="font-label-medium text-label-medium">Vendors</span>
 </a>
-<a className="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1 transition-transform scale-95 active:scale-90" href="#">
+<a className="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1 transition-transform scale-95 active:scale-90" href="/global-orders-finalized">
 <span className="material-symbols-outlined">receipt_long</span>
 <span className="font-label-medium text-label-medium">Orders</span>
 </a>
-<a className="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1 transition-transform scale-95 active:scale-90" href="#">
+<a className="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1 transition-transform scale-95 active:scale-90" href="/global-system-status">
 <span className="material-symbols-outlined">health_metrics</span>
 <span className="font-label-medium text-label-medium">Health</span>
 </a>
-<a className="flex flex-col items-center justify-center bg-primary-container text-on-primary-fixed rounded-xl px-4 py-1 transition-transform scale-95 active:scale-90" href="#">
+<a className="flex flex-col items-center justify-center bg-primary-container text-on-primary-fixed rounded-xl px-4 py-1 transition-transform scale-95 active:scale-90" href="/system-settings-profile">
 <span className="material-symbols-outlined">settings</span>
 <span className="font-label-medium text-label-medium">System</span>
 </a>

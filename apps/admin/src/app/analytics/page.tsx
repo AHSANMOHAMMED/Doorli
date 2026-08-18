@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { 
   TrendingUp as TrendingUpRaw, TrendingDown as TrendingDownRaw, DollarSign as DollarSignRaw, ShoppingCart as ShoppingCartRaw, Users as UsersRaw, Store as StoreRaw,
-  BarChart3 as BarChart3Raw, PieChart as PieChartRaw, Activity as ActivityRaw
+  BarChart3 as BarChart3Raw, PieChart as PieChartRaw, Activity as ActivityRaw, RefreshCw
 } from 'lucide-react';
 import { adminFetch } from '@/lib/api';
 import { PageHeader, Panel, StatCard, Skeleton } from '@/components/ui';
@@ -63,13 +63,21 @@ export default function AnalyticsPage() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<'today' | 'week' | 'month'>('today');
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    adminFetch<AnalyticsData>('/admin/analytics')
-      .then(setData)
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, []);
+  async function loadAnalytics() {
+    setLoading(true);
+    setError(null);
+    try {
+      setData(await adminFetch<AnalyticsData>('/admin/analytics'));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Failed to load analytics data');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => { void loadAnalytics(); }, []);
 
   const calculateGrowth = (current: number, previous: number) => {
     if (previous === 0) return current > 0 ? 100 : 0;
@@ -108,9 +116,10 @@ export default function AnalyticsPage() {
     return (
       <>
         <PageHeader title="Analytics" subtitle="Platform performance metrics and insights" />
-        <div className="text-center py-12">
-          <SafeBarChart3 className="w-12 h-12 text-[#5a6a80] mx-auto mb-4" />
-          <p className="text-[#7b8ba3]">Failed to load analytics data</p>
+          <div className="text-center py-12">
+           <SafeBarChart3 className="w-12 h-12 text-[#5a6a80] mx-auto mb-4" />
+           <p className="text-[#7b8ba3]">{error || 'No analytics data available yet'}</p>
+           <button type="button" onClick={() => void loadAnalytics()} className="btn btn-ghost mt-4"><RefreshCw size={15} /> Retry</button>
         </div>
       </>
     );
@@ -118,6 +127,11 @@ export default function AnalyticsPage() {
 
   const revenueGrowth = calculateGrowth(data.revenue.thisMonth, data.revenue.lastMonth);
   const ordersGrowth = calculateGrowth(data.orders.thisMonth, data.orders.lastMonth);
+  const rangeValues = {
+    today: { revenue: data.revenue.today, orders: data.orders.today, users: data.users.newToday, label: 'today' },
+    week: { revenue: data.revenue.thisWeek, orders: data.orders.thisWeek, users: data.users.newThisWeek, label: 'this week' },
+    month: { revenue: data.revenue.thisMonth, orders: data.orders.thisMonth, users: data.users.newThisMonth, label: 'this month' },
+  }[timeRange];
 
   return (
     <>
@@ -147,22 +161,22 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard 
           label="Revenue" 
-          value={`LKR ${data.revenue.thisMonth.toLocaleString()}`} 
-          hint={`${revenueGrowth >= 0 ? '+' : ''}${revenueGrowth.toFixed(1)}% vs last month`}
+           value={`LKR ${rangeValues.revenue.toLocaleString()}`}
+           hint={`${revenueGrowth >= 0 ? '+' : ''}${revenueGrowth.toFixed(1)}% vs last month · ${rangeValues.label}`}
           tone="teal" 
           icon={<DollarSign size={17} />} 
         />
         <StatCard 
           label="Orders" 
-          value={data.orders.thisMonth} 
-          hint={`${ordersGrowth >= 0 ? '+' : ''}${ordersGrowth.toFixed(1)}% vs last month`}
+           value={rangeValues.orders}
+           hint={`${ordersGrowth >= 0 ? '+' : ''}${ordersGrowth.toFixed(1)}% vs last month · ${rangeValues.label}`}
           tone="blue" 
           icon={<ShoppingCart size={17} />} 
         />
         <StatCard 
           label="New Users" 
-          value={data.users.newThisMonth} 
-          hint={`${data.users.activeToday} active today`}
+           value={rangeValues.users}
+           hint={`${data.users.activeToday} active today · ${rangeValues.label}`}
           tone="gold" 
           icon={<Users size={17} />} 
         />

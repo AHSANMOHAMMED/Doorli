@@ -59,27 +59,27 @@ export default function UserManagementPage() {
 </div>
 </div>
 <nav className="space-y-1">
-<a className="flex items-center gap-3 px-md py-3 text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-high rounded-lg transition-all duration-200" href="#">
+<a className="flex items-center gap-3 px-md py-3 text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-high rounded-lg transition-all duration-200" href="/dashboard">
 <span className="material-symbols-outlined">terminal</span>
 <span className="font-body-main text-body-main">Command Center</span>
 </a>
-<a className="flex items-center gap-3 px-md py-3 text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-high rounded-lg transition-all duration-200" href="#">
+<a className="flex items-center gap-3 px-md py-3 text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-high rounded-lg transition-all duration-200" href="/erp-synchronization-logs">
 <span className="material-symbols-outlined">sync_alt</span>
 <span className="font-body-main text-body-main">ERP Integration</span>
 </a>
-<a className="flex items-center gap-3 px-md py-3 bg-secondary-container dark:bg-secondary-container text-on-secondary-container dark:text-on-secondary-container font-bold rounded-lg transition-all duration-200" href="#">
+<a className="flex items-center gap-3 px-md py-3 bg-secondary-container dark:bg-secondary-container text-on-secondary-container dark:text-on-secondary-container font-bold rounded-lg transition-all duration-200" href="/user-management">
 <span className="material-symbols-outlined" >group</span>
 <span className="font-body-main text-body-main">User Management</span>
 </a>
-<a className="flex items-center gap-3 px-md py-3 text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-high rounded-lg transition-all duration-200" href="#">
+<a className="flex items-center gap-3 px-md py-3 text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-high rounded-lg transition-all duration-200" href="/system-broadcasts">
 <span className="material-symbols-outlined">campaign</span>
 <span className="font-body-main text-body-main">Broadcasts</span>
 </a>
-<a className="flex items-center gap-3 px-md py-3 text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-high rounded-lg transition-all duration-200" href="#">
+<a className="flex items-center gap-3 px-md py-3 text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-high rounded-lg transition-all duration-200" href="/erp-synchronization-logs">
 <span className="material-symbols-outlined">terminal</span>
 <span className="font-body-main text-body-main">System Logs</span>
 </a>
-<a className="flex items-center gap-3 px-md py-3 text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-high rounded-lg transition-all duration-200" href="#">
+<a className="flex items-center gap-3 px-md py-3 text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-high rounded-lg transition-all duration-200" href="mailto:support@doorli.me">
 <span className="material-symbols-outlined">help_outline</span>
 <span className="font-body-main text-body-main">Support</span>
 </a>

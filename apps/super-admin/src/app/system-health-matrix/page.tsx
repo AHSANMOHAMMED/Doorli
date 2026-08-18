@@ -284,23 +284,23 @@ export default function SystemHealthMatrixPage() {
 </main>
 
 <nav className="fixed bottom-0 left-0 w-full flex justify-around items-center py-2 bg-surface-container dark:bg-surface-container border-t border-outline-variant dark:border-outline-variant z-50 shadow-lg">
-<a className="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-3 py-1" href="#">
+<a className="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-3 py-1" href="/dashboard">
 <span className="material-symbols-outlined">dashboard</span>
 <span className="font-label-medium text-label-medium">Command</span>
 </a>
-<a className="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-3 py-1" href="#">
+<a className="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-3 py-1" href="/vendors-management">
 <span className="material-symbols-outlined">storefront</span>
 <span className="font-label-medium text-label-medium">Vendors</span>
 </a>
-<a className="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-3 py-1" href="#">
+<a className="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-3 py-1" href="/global-orders-finalized">
 <span className="material-symbols-outlined">receipt_long</span>
 <span className="font-label-medium text-label-medium">Orders</span>
 </a>
-<a className="flex flex-col items-center justify-center bg-primary-container dark:bg-primary-container text-on-primary-fixed dark:text-on-primary-fixed rounded-xl px-3 py-1" href="#">
+<a className="flex flex-col items-center justify-center bg-primary-container dark:bg-primary-container text-on-primary-fixed dark:text-on-primary-fixed rounded-xl px-3 py-1" href="/global-system-status">
 <span className="material-symbols-outlined">health_metrics</span>
 <span className="font-label-medium text-label-medium">Health</span>
 </a>
-<a className="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-3 py-1" href="#">
+<a className="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-3 py-1" href="/system-settings-profile">
 <span className="material-symbols-outlined">settings</span>
 <span className="font-label-medium text-label-medium">System</span>
 </a>

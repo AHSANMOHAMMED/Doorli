@@ -189,23 +189,23 @@ export default function ActiveUsersMonitoringPage() {
 </main>
 {/*  BottomNavBar  */}
 <nav className="fixed bottom-0 w-full z-50 bg-surface-container dark:bg-surface-container border-t border-surface-variant dark:border-surface-variant shadow-md flex justify-around items-center h-16 w-full px-2 pb-safe md:hidden">
-<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1 active:scale-95 transition-transform duration-150" href="#">
+<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1 active:scale-95 transition-transform duration-150" href="/dashboard">
 <span className="material-symbols-outlined">dashboard</span>
 <span className="font-label-medium text-label-medium">Dashboard</span>
 </a>
-<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1 active:scale-95 transition-transform duration-150" href="#">
+<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1 active:scale-95 transition-transform duration-150" href="/vendors-management">
 <span className="material-symbols-outlined">store</span>
 <span className="font-label-medium text-label-medium">Vendors</span>
 </a>
-<a className="flex flex-col items-center justify-center bg-primary-container dark:bg-primary-container text-on-primary-container dark:text-on-primary-container rounded-xl px-3 py-1 active:scale-95 transition-transform duration-150" href="#">
+<a className="flex flex-col items-center justify-center bg-primary-container dark:bg-primary-container text-on-primary-container dark:text-on-primary-container rounded-xl px-3 py-1 active:scale-95 transition-transform duration-150" href="/active-users-monitoring">
 <span className="material-symbols-outlined">group</span>
 <span className="font-label-medium text-label-medium">Users</span>
 </a>
-<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1 active:scale-95 transition-transform duration-150" href="#">
+<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1 active:scale-95 transition-transform duration-150" href="/global-orders-finalized">
 <span className="material-symbols-outlined">shopping_cart</span>
 <span className="font-label-medium text-label-medium">Orders</span>
 </a>
-<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1 active:scale-95 transition-transform duration-150" href="#">
+<a className="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container px-3 py-1 active:scale-95 transition-transform duration-150" href="/system-settings-profile">
 <span className="material-symbols-outlined">more_horiz</span>
 <span className="font-label-medium text-label-medium">More</span>
 </a>

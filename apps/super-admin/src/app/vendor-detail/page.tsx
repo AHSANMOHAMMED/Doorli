@@ -58,27 +58,27 @@ export default function VendorDetailPage() {
 <p className="text-on-surface-variant font-caption text-caption">Super User • v2.4.0</p>
 </div>
 <nav className="flex-1 space-y-1">
-<a className="flex items-center px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200" href="#">
+<a className="flex items-center px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200" href="/dashboard">
 <span className="material-symbols-outlined mr-3">terminal</span>
 <span className="font-body-main text-body-main">Command Center</span>
 </a>
-<a className="flex items-center px-4 py-3 bg-secondary-container text-on-secondary-container font-bold rounded-lg transition-all duration-200" href="#">
+<a className="flex items-center px-4 py-3 bg-secondary-container text-on-secondary-container font-bold rounded-lg transition-all duration-200" href="/vendors-management">
 <span className="material-symbols-outlined mr-3">storefront</span>
 <span className="font-body-main text-body-main">Vendors</span>
 </a>
-<a className="flex items-center px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200" href="#">
+<a className="flex items-center px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200" href="/user-management">
 <span className="material-symbols-outlined mr-3">sync_alt</span>
 <span className="font-body-main text-body-main">ERP Integration</span>
 </a>
-<a className="flex items-center px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200" href="#">
+<a className="flex items-center px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200" href="/global-orders-finalized">
 <span className="material-symbols-outlined mr-3">group</span>
 <span className="font-body-main text-body-main">User Management</span>
 </a>
-<a className="flex items-center px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200" href="#">
+<a className="flex items-center px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200" href="/erp-synchronization-logs">
 <span className="material-symbols-outlined mr-3">receipt_long</span>
 <span className="font-body-main text-body-main">Orders</span>
 </a>
-<a className="flex items-center px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200" href="#">
+<a className="flex items-center px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all duration-200" href="/system-settings-profile">
 <span className="material-symbols-outlined mr-3">help_outline</span>
 <span className="font-body-main text-body-main">Support</span>
 </a>
@@ -328,23 +328,23 @@ export default function VendorDetailPage() {
 </div>
 {/*  BottomNavBar (Shared - Mobile Only)  */}
 <nav className="md:hidden fixed bottom-0 left-0 w-full flex justify-around items-center py-2 bg-surface-container dark:bg-surface-container border-t border-outline-variant shadow-lg z-50">
-<a className="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1" href="#">
+<a className="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1" href="/dashboard">
 <span className="material-symbols-outlined">dashboard</span>
 <span className="font-label-medium text-[10px]">Command</span>
 </a>
-<a className="flex flex-col items-center justify-center bg-primary-container text-on-primary-fixed rounded-xl px-4 py-1" href="#">
+<a className="flex flex-col items-center justify-center bg-primary-container text-on-primary-fixed rounded-xl px-4 py-1" href="/vendors-management">
 <span className="material-symbols-outlined">storefront</span>
 <span className="font-label-medium text-[10px]">Vendors</span>
 </a>
-<a className="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1" href="#">
+<a className="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1" href="/user-management">
 <span className="material-symbols-outlined">receipt_long</span>
 <span className="font-label-medium text-[10px]">Orders</span>
 </a>
-<a className="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1" href="#">
+<a className="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1" href="/global-orders-finalized">
 <span className="material-symbols-outlined">health_metrics</span>
 <span className="font-label-medium text-[10px]">Health</span>
 </a>
-<a className="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1" href="#">
+<a className="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1" href="/system-settings-profile">
 <span className="material-symbols-outlined">settings</span>
 <span className="font-label-medium text-[10px]">System</span>
 </a>
