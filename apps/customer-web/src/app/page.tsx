@@ -189,6 +189,11 @@ export default function Home() {
           <motion.h1 initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .7, ease: [.16, 1, .3, 1] }}>Everything local,<br /><span>delivered in minutes.</span></motion.h1>
           <p>Discover trusted food, groceries, services, and rides near you. Doorli makes everyday life easier.</p>
           <div className="hero-actions"><Link href="/search?category=restaurant" className="primary-button"><motion.span whileTap={{ scale: .97 }}>Explore nearby <ArrowRight /></motion.span></Link><Link href="/ride" className="secondary-button">Book a ride</Link></div>
+          <div className="hero-proof-row" aria-label="Doorli service highlights">
+            <span><strong>01</strong><small>Local first</small></span>
+            <span><strong>02</strong><small>Clear updates</small></span>
+            <span><strong>03</strong><small>One account</small></span>
+          </div>
           <IntentSelector selected={intent} onChange={setIntent} />
         </div>
         <motion.div className="hero-visual" aria-label="Doorli local services preview" style={{ "--pointer-x": `${pointer.x}%`, "--pointer-y": `${pointer.y}%` } as CSSProperties} initial={{ opacity: 0, scale: .96, y: 24 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: .9, delay: .15, ease: [.16, 1, .3, 1] }}>
@@ -200,6 +205,12 @@ export default function Home() {
           <motion.div className="hero-float-card hero-float-card--bottom" animate={{ y: [0, 7, 0] }} transition={{ duration: 5.2, repeat: Infinity, ease: "easeInOut", delay: .6 }}><Clock3 /><span><strong>Live ETA</strong><small>See what happens next</small></span></motion.div>
         </motion.div>
       </section>
+
+      <div className="service-marquee" aria-label="Doorli services">
+        <div className="service-marquee-track">
+          {["FOOD", "GROCERIES", "RIDES", "LOCAL SERVICES", "STAYS", "COMMUNITY", "FOOD", "GROCERIES", "RIDES", "LOCAL SERVICES"].map((label, index) => <span key={`${label}-${index}`}><i />{label}</span>)}
+        </div>
+      </div>
 
       <section className="trust-proof page-width" aria-labelledby="trust-proof-title">
         <div className="trust-proof-lead">

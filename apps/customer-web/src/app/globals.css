@@ -518,6 +518,26 @@ body {
 @media (max-width:640px) { .consumer-hero { padding-top: 32px; } }
 @media (prefers-reduced-motion: reduce) { .hero-visual-photo, .hero-float-card { animation:none !important; transition:none !important; }.hero-visual:hover .hero-visual-photo { transform:scale(1.04); } }
 
+/* Flagship landing composition: one confident hero instead of a collection of equal cards. */
+.consumer-hero { position:relative; width:min(1360px,calc(100% - 32px)); min-height:620px; margin:18px auto 0; padding:86px clamp(26px,6vw,84px); overflow:hidden; border:1px solid rgba(255,255,255,.12); border-radius:36px; background:radial-gradient(circle at 80% 10%,rgba(93,202,165,.28),transparent 28%),radial-gradient(circle at 8% 92%,rgba(55,138,221,.34),transparent 32%),linear-gradient(125deg,#07152f 0%,#0b2343 52%,#07162c 100%); box-shadow:0 28px 80px rgba(7,21,47,.2); }
+.consumer-hero::before { position:absolute; inset:0; content:""; opacity:.14; pointer-events:none; background-image:linear-gradient(rgba(255,255,255,.16) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.16) 1px,transparent 1px); background-size:72px 72px; mask-image:linear-gradient(90deg,black,transparent 72%); }
+.consumer-hero-copy { position:relative; z-index:2; max-width:610px; }
+.consumer-hero .eyebrow { color:#8ae3c1; border:1px solid rgba(138,227,193,.2); background:rgba(93,202,165,.1); }
+.consumer-hero .eyebrow-dot { box-shadow:0 0 0 5px rgba(93,202,165,.12),0 0 18px #5dcaa5; }
+.consumer-hero h1 { color:#f5f8fc; font-size:clamp(50px,7vw,86px); letter-spacing:-.075em; text-wrap:balance; }
+.consumer-hero h1 span { color:#7fe0be; background:linear-gradient(100deg,#7fe0be,#fac775); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+.consumer-hero-copy p { max-width:520px; color:#b7c9dc; font-size:17px; }
+.consumer-hero .primary-button { color:#062319; background:#7fe0be; box-shadow:0 10px 28px rgba(93,202,165,.25); }.consumer-hero .primary-button:hover { color:#062319; background:#a2efd1; }.consumer-hero .secondary-button { color:#e0ebf4; border-color:rgba(255,255,255,.22); background:rgba(255,255,255,.08); }.consumer-hero .secondary-button:hover { background:rgba(255,255,255,.15); }
+.hero-proof-row { display:flex; gap:25px; margin-top:35px; }.hero-proof-row span { display:flex; align-items:baseline; gap:8px; }.hero-proof-row strong { color:#7fe0be; font-size:12px; letter-spacing:.12em; }.hero-proof-row small { color:#a9bdd1; font-size:11px; }
+.consumer-hero .intent-switcher { border-color:rgba(255,255,255,.15); background:rgba(255,255,255,.07); box-shadow:none; }.consumer-hero .intent-pill:not(.is-active) { color:#b7c9dc; }.consumer-hero .intent-active-bg { background:#2674c5; }
+.consumer-hero .hero-visual { min-height:450px; border-color:rgba(255,255,255,.16); background:linear-gradient(145deg,#173b5d,#0b5948); box-shadow:0 25px 60px rgba(0,0,0,.22); }
+.consumer-hero .hero-visual-photo { opacity:.58; }.consumer-hero .hero-phone-card { background:rgba(255,255,255,.92); }.consumer-hero .hero-orbit-one { border-color:rgba(127,224,190,.35); }.consumer-hero .hero-orbit-two { border-color:rgba(250,199,117,.3); }
+.service-marquee { width:100%; overflow:hidden; border-bottom:1px solid #dce7f2; background:#fff; }.service-marquee-track { display:flex; width:max-content; align-items:center; gap:34px; padding:17px 0; animation:doorli-marquee 32s linear infinite; }.service-marquee span { display:inline-flex; align-items:center; gap:14px; color:#71839a; font-size:11px; font-weight:850; letter-spacing:.18em; white-space:nowrap; }.service-marquee i { display:block; width:6px; height:6px; border-radius:50%; background:#5dcaa5; box-shadow:0 0 12px rgba(93,202,165,.8); }
+@keyframes doorli-marquee { to { transform:translateX(-50%); } }
+@media (max-width:900px) { .consumer-hero { min-height:0; padding:62px 32px 48px; }.consumer-hero-copy { max-width:none; }.consumer-hero .hero-visual { min-height:380px; margin-top:46px; } }
+@media (max-width:640px) { .consumer-hero { width:calc(100% - 14px); margin-top:7px; padding:46px 22px 26px; border-radius:25px; }.consumer-hero h1 { font-size:48px; }.consumer-hero-copy p { font-size:15px; }.hero-proof-row { gap:14px; margin-top:28px; }.hero-proof-row span { display:block; }.hero-proof-row small { display:block; margin-top:3px; }.consumer-hero .hero-visual { min-height:330px; margin-top:34px; border-radius:22px; }.service-marquee-track { gap:24px; padding:14px 0; animation-duration:24s; } }
+@media (prefers-reduced-motion:reduce) { .service-marquee-track { animation:none; } }
+
 /* Storefronts keep the marketplace's light, confident visual language. */
 .storefront-page { color:#10213f; background:#f7fafc; background-image:radial-gradient(circle at 8% 0%,rgba(55,138,221,.12),transparent 28%),radial-gradient(circle at 92% 10%,rgba(93,202,165,.11),transparent 26%); }
 .storefront-cover { position:relative; height:300px; overflow:hidden; background:linear-gradient(135deg,#185fa5,#0d5948); isolation:isolate; }
