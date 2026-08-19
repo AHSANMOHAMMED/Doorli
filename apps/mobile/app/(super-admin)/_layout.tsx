@@ -6,7 +6,7 @@ import { Redirect } from 'expo-router';
 export default function SuperAdminLayout() {
   const user = useAuthStore((s) => s.user);
 
-  if (!user || user.role !== 'super_admin') {
+  if (!user || (user.role !== 'super_admin' && user.role !== 'admin')) {
     return <Redirect href="/(auth)/login" />;
   }
 
