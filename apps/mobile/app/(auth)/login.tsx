@@ -27,7 +27,7 @@ type AuthMode = 'signin' | 'signup';
 type Role = 'customer' | 'vendor' | 'driver' | 'admin' | 'super_admin';
 
 import { DoorliColors, DoorliGlass } from '../../constants/colors';
-import { MOBILE_APP_HOME, MOBILE_APP_ROLE, MOBILE_AUTH_ROLE } from '../../role-config';
+import { MOBILE_APP_HOME, MOBILE_APP_ROLE, MOBILE_AUTH_ROLE, MOBILE_DEFAULT_IDENTIFIER } from '../../role-config';
 
 const PRIMARY = DoorliColors.primary;
 const PRIMARY_CONTAINER = DoorliColors.sky;
@@ -49,7 +49,7 @@ export default function LoginScreen() {
 
   const [authTab, setAuthTab] = useState<AuthTab>('password');
   const [mode, setMode] = useState<AuthMode>('signin');
-  const [identifier, setIdentifier] = useState('customer@doorli.test');
+  const [identifier, setIdentifier] = useState(MOBILE_DEFAULT_IDENTIFIER[MOBILE_APP_ROLE]);
   const [password, setPassword] = useState('Doorli123!');
   const [expectedRole, setExpectedRole] = useState<Role>(MOBILE_AUTH_ROLE as Role);
   const [businessKey, setBusinessKey] = useState('Corner Grocery');

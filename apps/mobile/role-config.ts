@@ -30,3 +30,12 @@ export const MOBILE_APP_HOME: Record<MobileAppRole, string> = {
 };
 
 export const MOBILE_AUTH_ROLE = MOBILE_APP_ROLE === 'cashier' ? 'vendor' : MOBILE_APP_ROLE;
+
+export const MOBILE_DEFAULT_IDENTIFIER: Record<MobileAppRole, string> = {
+  customer: 'customer@doorli.test',
+  vendor: 'vendor@doorli.test',
+  driver: 'driver@doorli.test',
+  admin: 'admin@doorli.test',
+  super_admin: 'superadmin@doorli.test',
+  cashier: 'vendor@doorli.test',
+};
